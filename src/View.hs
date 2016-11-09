@@ -1,33 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 module View (
-    render
+    textWrap
     )
     where
 
 import qualified Data.Text as T
-import Control.Arrow ((>>>), second)
 import Data.List.Extra (takeEnd)
 import Data.List (unfoldr)
 import Control.Lens
+import Control.Arrow (second)
 
 import State
 
-render :: St -> T.Text
-render = applyViewport
-     >>> over (buffers.mapped) (textWrap 40)
-     >>> over (buffers.mapped) addCursor
-     >>> view focusedBuf
+-- addCursor :: T.Text -> T.Text
+-- addCursor = (`T.snoc` '_')
 
-addCursor :: T.Text -> T.Text
-addCursor = (`T.snoc` '_')
-
-applyViewport :: St -> St
-applyViewport = do
-    viewportSize <- view vHeight
-    ls <- T.lines . view focusedBuf
-    let window = T.unlines . getWindow viewportSize $ ls
-    set focusedBuf window
-        where getWindow = takeEnd
+-- applyViewport :: St -> St
+-- applyViewport = do
+--     viewportSize <- view vHeight
+--     ls <- T.lines . view focusedBuf
+--     let window = T.unlines . getWindow viewportSize $ ls
+--     set focusedBuf window
+--         where getWindow = takeEnd
 
 
 textWrap :: Int -> T.Text -> T.Text

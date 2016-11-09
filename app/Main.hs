@@ -2,9 +2,8 @@
 module Main where
 
 import Directives
-import VtyAdapter (convertEvent)
+import VtyAdapter (convertEvent, render)
 import State
-import View (render)
 
 import Control.Lens
 import qualified Data.Text.IO as TIO
@@ -26,7 +25,8 @@ main = do
 
 eventLoop :: V.Vty -> St -> IO ()
 eventLoop vty st = do
-    let pic = V.picForImage $ text' V.defAttr (render st)
+    let pic = V.picForImage $ render st
+    refresh vty
     update vty pic
     e <- V.nextEvent vty
     let (Continue d nextState) = appEvent st e
