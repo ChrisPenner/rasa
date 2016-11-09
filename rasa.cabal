@@ -21,6 +21,8 @@ library
                      , lens
                      , data-default
                      , vty
+                     , mtl
+                     , extra
   default-language:    Haskell2010
 
 executable rasa-exe
