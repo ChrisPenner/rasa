@@ -17,5 +17,7 @@ convertKeypress :: V.Key -> [V.Modifier] -> Event
 convertKeypress V.KEnter _ = Append "\n"
 convertKeypress V.KBS _ = Backspace
 convertKeypress V.KEsc _ = Exit
-convertKeypress (V.KChar w) [V.MCtrl]  = KillWord
+convertKeypress (V.KChar 'w') [V.MCtrl]  = KillWord
+convertKeypress (V.KChar '-') _ = SwitchBuf (-1)
+convertKeypress (V.KChar '=') _  = SwitchBuf 1
 convertKeypress (V.KChar c) _  = Append (singleton c)

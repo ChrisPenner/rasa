@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Events, State, VtyAdapter
+  exposed-modules:     Events, State, VtyAdapter, View
   build-depends:       base >= 4.7 && < 5
                      , text
                      , lens

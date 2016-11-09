@@ -6,6 +6,7 @@ import Data.Default (def)
 import Events (Event(..), Continue(..), handleEvent)
 import VtyAdapter (convertEvent)
 import State
+import View (render)
 
 import qualified Data.Text.IO as TIO
 

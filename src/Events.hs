@@ -5,7 +5,7 @@ module Events (
               , nonEmpty
     ) where
 
-import State (St, text)
+import State (St, text, focused)
 
 import qualified Data.Text as T
 import Control.Lens
@@ -17,6 +17,7 @@ data Event =
     Append T.Text
   | Backspace
   | KillWord
+  | SwitchBuf Int
   | Noop
   | Exit
 
@@ -43,4 +44,5 @@ doEvent KillWord =  someText %~ d . T.stripEnd
     where d t
             | isAlphaNum . T.last $ t = T.dropWhileEnd isAlphaNum t
             | otherwise = T.init t
+doEvent (SwitchBuf n) = focused +~ n
 doEvent _ = id
