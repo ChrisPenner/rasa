@@ -20,13 +20,9 @@ data Directive =
   | DeleteChar
   | KillWord
   | SwitchBuf Int
+  | SwitchMode Mode
   | Noop
   | Exit
-
-toDirective :: Event -> St -> Directive
-toDirective e st = case st^.mode of 
-                     Insert -> insertMode e st
-                     _ -> Noop
 
 handleEvent :: Continue -> Continue
 handleEvent (Continue evt st) =
@@ -43,10 +39,12 @@ nonEmpty = prism id $ \t ->
 
 someText :: (T.Text -> Identity T.Text) -> St -> Identity St
 someText = focusedBuf.nonEmpty
+
 doEvent :: Directive -> St -> St
 doEvent (Append bufferText) =  focusedBuf %~ (`T.append` bufferText)
 doEvent DeleteChar = someText %~ T.init
 doEvent KillWord =  someText %~ (T.unwords . dropEnd 1 . T.words)
+doEvent (SwitchMode m) =  mode .~ m
 
 doEvent (SwitchBuf n) = do
     currentBuffer <- view focused
@@ -56,16 +54,18 @@ doEvent (SwitchBuf n) = do
 
 doEvent _ = id
 
+toDirective :: Mode -> Event -> Directive
+toDirective _ (Keypress '1' _ )  = SwitchMode Insert
+toDirective _ (Keypress '2' _ ) = SwitchMode Normal
+toDirective _ Esc = Exit
 
+toDirective Insert BS = DeleteChar
+toDirective Insert Enter = Append "\n"
+toDirective Insert (Keypress 'w' [Ctrl]) = KillWord
+toDirective Insert (Keypress '+' _ ) = SwitchBuf 1
+toDirective Insert (Keypress '-' _ ) = SwitchBuf (-1)
+toDirective Insert (Keypress c mods) = Append (T.singleton c)
 
+toDirective Normal (Keypress 'X' _) = DeleteChar
 
-insertMode :: Event -> St -> Directive
-insertMode Esc _ = Exit
-insertMode BS _ = DeleteChar
-insertMode Enter _ = Append "\n"
-insertMode (Keypress 'w' [Ctrl]) _ = KillWord
-insertMode (Keypress '+' _ ) _ = SwitchBuf 1
-insertMode (Keypress '-' _ ) _ = SwitchBuf (-1)
-insertMode (Keypress c mods) _ = Append (T.singleton c)
-
-
+toDirective _ _ = Noop

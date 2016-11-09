@@ -22,7 +22,7 @@ drawUi :: St -> [BT.Widget ()]
 drawUi st = [txt (render st)]
 
 toRasa :: BT.BrickEvent () e -> St -> Continue
-toRasa (BT.VtyEvent e) st = Continue (toDirective (convertEvent e) st) st
+toRasa (BT.VtyEvent e) st = Continue (toDirective (st^.mode) (convertEvent e)) st
 toRasa _ st = Continue Noop st
 
 toBrick :: Continue -> BT.EventM () (BT.Next St)
