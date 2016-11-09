@@ -5,11 +5,12 @@ module Events (
               , nonEmpty
     ) where
 
-import State (St, text, focused)
+import State
 
 import qualified Data.Text as T
 import Control.Lens
 import Data.Char
+import Data.List.Extra (dropEnd)
 
 data Continue = Continue Event St
 
@@ -20,7 +21,6 @@ data Event =
   | SwitchBuf Int
   | Noop
   | Exit
-
 
 handleEvent :: Continue -> Continue
 handleEvent (Continue evt st) =
@@ -35,14 +35,17 @@ nonEmpty = prism id $ \t ->
        else Right t
 
 someText :: (T.Text -> Identity T.Text) -> St -> Identity St
-someText = text.nonEmpty
+someText = focusedBuf.nonEmpty
 
 doEvent :: Event -> St -> St
-doEvent (Append bufferText) =  text %~ (`T.append` bufferText)
+doEvent (Append bufferText) =  focusedBuf %~ (`T.append` bufferText)
 doEvent Backspace = someText %~ T.init
-doEvent KillWord =  someText %~ d . T.stripEnd
-    where d t
-            | isAlphaNum . T.last $ t = T.dropWhileEnd isAlphaNum t
-            | otherwise = T.init t
-doEvent (SwitchBuf n) = focused +~ n
+doEvent KillWord =  someText %~ (T.unwords . dropEnd 1 . T.words)
+
+doEvent (SwitchBuf n) = do
+    currentBuffer <- view focused
+    numBuffers <- view (buffers.to length)
+    let nextFocused = (n + currentBuffer) `mod` numBuffers
+    set focused nextFocused
+
 doEvent _ = id

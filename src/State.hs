@@ -4,6 +4,7 @@ module State (
   , text
   , buffers
   , focused
+  , focusedBuf
   , vHeight
 ) where
 
@@ -29,3 +30,14 @@ instance Default St where
              }
 
 makeLenses ''St
+
+focusedBuf :: Lens' St T.Text
+focusedBuf = lens getter (flip setter)
+    where getter = do
+            foc <- view focused
+            view $ buffers . ix foc
+
+          setter a = do
+            foc <- view focused
+            set (buffers . ix foc) a
+

@@ -9,25 +9,24 @@ import Control.Arrow ((>>>), second)
 import Data.List.Extra (takeEnd)
 import Data.List (unfoldr)
 import Control.Lens
-import Control.Monad.Reader
 
 import State
 
 render :: St -> T.Text
 render = applyViewport
-     >>> over text (textWrap 80)
-     >>> addCursor
+     >>> over (buffers.mapped) (textWrap 40)
+     >>> over (buffers.mapped) addCursor
      >>> view focusedBuf
 
-addCursor :: St -> St
-addCursor = over text (`T.snoc` '_')
+addCursor :: T.Text -> T.Text
+addCursor = (`T.snoc` '_')
 
 applyViewport :: St -> St
-applyViewport = runReader . reader $ do
+applyViewport = do
     viewportSize <- view vHeight
-    ls <- T.lines . view text
+    ls <- T.lines . view focusedBuf
     let window = T.unlines . getWindow viewportSize $ ls
-    set text window
+    set focusedBuf window
         where getWindow = takeEnd
 
 
@@ -42,7 +41,4 @@ splitLine n t
 
 splitAtNewline :: T.Text -> (T.Text, T.Text)
 splitAtNewline = second (T.drop 1) . T.span (/= '\n')
-
-focusedBuf :: Prism' St T.Text
-focusedBuf = prism' undefined $ \st -> st ^. buffers ^? ix (st^.focused)
 
