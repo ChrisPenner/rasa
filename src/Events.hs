@@ -16,6 +16,7 @@ data Event =
   | Esc
   | BS
   | Enter
+  | Unknown
   deriving (Show)
 
 

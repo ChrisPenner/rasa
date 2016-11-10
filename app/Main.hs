@@ -6,6 +6,7 @@ import VtyAdapter (convertEvent, render)
 import State
 
 import Control.Lens
+import Control.Arrow ((&&&))
 import qualified Data.Text.IO as TIO
 import Data.Default (def)
 
@@ -25,8 +26,8 @@ main = do
 
 eventLoop :: V.Vty -> St -> IO ()
 eventLoop vty st = do
-    let pic = V.picForImage $ render st
-    refresh vty
+    sz <- V.displayBounds $ V.outputIface vty
+    let pic = V.picForImage $ render sz st
     update vty pic
     e <- V.nextEvent vty
     let (Continue d nextState) = appEvent st e
