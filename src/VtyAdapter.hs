@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
 module VtyAdapter (
     convertEvent
   , render
@@ -14,8 +14,15 @@ import qualified Data.Text as T
 import Data.Foldable (fold)
 import Control.Lens
 import Data.Char
+import Data.Monoid ((<>))
 import Data.List.Extra (dropEnd)
+import Data.List (unfoldr)
 import Control.Arrow ((>>>), (&&&))
+
+type Size = (Int, Int)
+
+class Renderable a b where
+    render :: Size -> a -> b
 
 convertEvent :: V.Event -> Event
 convertEvent (V.EvKey e mods) = convertKeypress e mods
@@ -34,65 +41,55 @@ convertMod m = case m of
                  V.MMeta -> Alt
                  V.MAlt -> Alt
 
-render :: (Int, Int) -> St -> V.Image
--- render = view buffers
---      >>> fmap (textWrap 40)
---      >>> fmap (V.text' bg)
---      >>> fmap (V.resizeWidth 40)
---      >>> foldr (V.<|>) V.emptyImage
---          where bg = V.withBackColor V.defAttr V.blue
-
--- render :: St -> V.Image
--- render = view focusedBuf
---         >>> V.text' fg
---             where fg = V.withForeColor V.defAttr V.red
-
--- render (width, height) = view buffers
---                      >>> fmap (V.text' fg)
---                      >>> fmap (V.resize (width - 1) (height -1))
---                      >>> foldr (V.<|>) V.emptyImage
---                          where fg = V.withForeColor V.defAttr V.red
-
-     -- >>> over (buffers.mapped) (textWrap 40)
-     -- >>> over (buffers.mapped) addCursor
-     -- >>> view focusedBuf
-
--- render (width, height) = view buffers
---                      >>> (\buffers ->
---                          fmap (textWrap (width `div` length buffers)) buffers)
---                      >>> fmap T.lines
---                      >>> (fmap.fmap) (V.text' fg)
---                      >>> (\lImages -> let m = maximum (fmap length lImages)
---                                        in fmap (\l -> take m (l ++ padding)) lImages)
---                      >>> (fmap.fmap) (V.resizeWidth 60)
---                      >>> foldr1 (zipWith (V.<|>))
---                      >>> mconcat
---                      -- >>> fmap (V.resize (width - 1) (height -1))
---                      -- >>> foldr (V.<|>) V.emptyImage
---                          where fg = V.withForeColor V.defAttr V.red
---                                padding :: [V.Image]
---                                padding = repeat mempty
-
-
 split :: (a -> b) -> (b -> a -> c) -> a -> c
 split ab bac a = bac (ab a) a
 
-render (width, height) = view buffers
-                     >>> split
-                            (div width . length)
-                            (fmap . textWrap)
-                     >>> fmap T.lines
-                     >>> (fmap.fmap) (V.text' fg)
-                     >>> split
-                            (maximum . fmap length)
-                            (fmap . pad )
-                     >>> (fmap.fmap) (V.resizeWidth 60)
-                     >>> foldr1 (zipWith (V.<|>))
-                     >>> mconcat
-                     -- >>> fmap (V.resize (width - 1) (height -1))
-                     -- >>> foldr (V.<|>) V.emptyImage
-                         where fg = V.withForeColor V.defAttr V.red
-                               padding :: [V.Image]
-                               padding = repeat mempty
-                               pad maxLength l = take maxLength (l ++ padding)
+instance Renderable St V.Image where
+    render sz@(width, height) st = head $ fmap (render sz) buffers'
+        where buffers' :: [Buffer]
+              buffers' = view buffers st
+
+
+    -- render sz@(width, height) = view buffers
+    --                     >>> fmap (view text)
+    --                     >>> split
+    --                             (div width . length)
+    --                             (fmap . textWrap)
+    --                     >>> fmap (render sz)
+    --                     >>> (fmap.fmap) (V.text' fg)
+    --                     >>> split
+    --                             (maximum . fmap length)
+    --                             (fmap . pad )
+    --                     >>> (fmap.fmap) (V.resizeWidth 60)
+    --                     >>> foldr1 (zipWith (V.<|>))
+    --                     >>> mconcat
+    --                     -- >>> fmap (V.resize (width - 1) (height -1))
+    --                     -- >>> foldr (V.<|>) V.emptyImage
+    --                         where fg = V.withForeColor V.defAttr V.red
+    --                               padding :: [V.Image]
+    --                               padding = repeat mempty
+    --                               pad maxLength l = take maxLength (l ++ padding)
+
+
+instance Renderable Buffer V.Image where
+    render (width, height) = do
+        txt <- textWrap width . view text
+        return $ (foldMap (V.<->) $ applyAttr (Coord (0, 2)) blue (T.lines txt)) V.emptyImage
+            where blue = V.defAttr `V.withForeColor` V.blue
+
+-- type Span = (Cursor, Cursor)
+
+plainText = V.text' V.defAttr
+applyAttr :: Cursor -> V.Attr -> [T.Text] -> [V.Image]
+applyAttr _ _ [] = []
+applyAttr c@(Offset i) attrs t = applyAttr (toCoord (T.unlines t) c) attrs t
+
+applyAttr (Coord (startL, startC)) attrs t
+  | startL == 0 && startC == 0 = fmap (V.text' attrs) t
+  | startL == 0 = let head' = head t
+                      prefix = T.take startC head'
+                      suffix = T.drop startC head' : drop 1 t
+                      rest = applyAttr (Coord (0, 0)) attrs suffix
+                   in (plainText prefix V.<|> head rest) : tail rest
+  | otherwise = applyAttr (Coord (0, startC)) attrs (drop startL t)
 

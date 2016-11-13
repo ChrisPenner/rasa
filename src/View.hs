@@ -35,4 +35,3 @@ splitLine n t
 
 splitAtNewline :: T.Text -> (T.Text, T.Text)
 splitAtNewline = second (T.drop 1) . T.span (/= '\n')
-
