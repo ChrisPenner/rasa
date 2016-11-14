@@ -30,7 +30,7 @@ eventLoop vty st = do
     let pic = V.picForImage $ render sz st
     update vty pic
     e <- V.nextEvent vty
-    let (Continue d nextState) = appEvent st e
-    case d of
-      Exit -> shutdown vty
-      _ -> eventLoop vty nextState
+    let (Continue dirs nextState) = appEvent st e
+    if Exit `elem` dirs
+        then shutdown vty
+        else eventLoop vty nextState

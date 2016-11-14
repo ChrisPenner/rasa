@@ -12,18 +12,6 @@ import Control.Arrow (second)
 
 import State
 
--- addCursor :: T.Text -> T.Text
--- addCursor = (`T.snoc` '_')
-
--- applyViewport :: St -> St
--- applyViewport = do
---     viewportSize <- view vHeight
---     ls <- T.lines . view focusedBuf
---     let window = T.unlines . getWindow viewportSize $ ls
---     set focusedBuf window
---         where getWindow = takeEnd
-
-
 textWrap :: Int -> T.Text -> T.Text
 textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)
 

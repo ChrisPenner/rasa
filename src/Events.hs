@@ -18,5 +18,3 @@ data Event =
   | Enter
   | Unknown
   deriving (Show)
-
-

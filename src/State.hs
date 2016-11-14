@@ -14,7 +14,8 @@ module State (
     , cursor
     , toOffset
     , toCoord
-  , Cursor(..)
+  , Cursor
+  , Coord(..)
 ) where
 
 import Data.Monoid
@@ -22,17 +23,16 @@ import Control.Lens
 import Data.Default (def, Default(..))
 import qualified Data.Text as T
 
-data Mode = Insert | Normal deriving (Show)
+data Mode = Insert | Normal deriving (Show, Eq)
 
-data Cursor = Offset Int | Coord (Int, Int) deriving (Show)
+type Cursor = Int
+newtype Coord = Coord (Int, Int) deriving (Show, Eq, Ord)
 
-toOffset :: T.Text -> Cursor -> Cursor
+toOffset :: T.Text -> Coord -> Cursor
 toOffset txt (Coord (r, c)) = undefined
-toOffset _ c = c
 
-toCoord :: T.Text -> Cursor -> Cursor
-toCoord txt (Offset n) = undefined
-toCoord _ c = c
+toCoord :: T.Text -> Cursor -> Coord
+toCoord txt n = undefined
 
 data Buffer = Buffer {
     _text :: T.Text
@@ -42,7 +42,7 @@ data Buffer = Buffer {
 buffer :: T.Text -> Buffer
 buffer t = Buffer {
         _text=t
-      , _cursor=Offset 0
+      , _cursor=0
 }
 
 data St = St {
@@ -54,10 +54,10 @@ data St = St {
 
 instance Default St where
     def = St {
-            _buffers=fmap buffer ["Buffer 0"]
+            _buffers=fmap buffer ["Buffer 0", "Buffer 1"]
           , _focused=0
           , _vHeight=10
-          , _mode=Insert
+          , _mode=Normal
              }
 
 makeLenses ''St
@@ -72,4 +72,3 @@ focusedBuf = lens getter (flip setter)
           setter a = do
             foc <- view focused
             set (buffers . ix foc) a
-

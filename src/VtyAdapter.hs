@@ -45,51 +45,41 @@ split :: (a -> b) -> (b -> a -> c) -> a -> c
 split ab bac a = bac (ab a) a
 
 instance Renderable St V.Image where
-    render sz@(width, height) st = head $ fmap (render sz) buffers'
-        where buffers' :: [Buffer]
-              buffers' = view buffers st
-
-
-    -- render sz@(width, height) = view buffers
-    --                     >>> fmap (view text)
-    --                     >>> split
-    --                             (div width . length)
-    --                             (fmap . textWrap)
-    --                     >>> fmap (render sz)
-    --                     >>> (fmap.fmap) (V.text' fg)
-    --                     >>> split
-    --                             (maximum . fmap length)
-    --                             (fmap . pad )
-    --                     >>> (fmap.fmap) (V.resizeWidth 60)
-    --                     >>> foldr1 (zipWith (V.<|>))
-    --                     >>> mconcat
-    --                     -- >>> fmap (V.resize (width - 1) (height -1))
-    --                     -- >>> foldr (V.<|>) V.emptyImage
-    --                         where fg = V.withForeColor V.defAttr V.red
-    --                               padding :: [V.Image]
-    --                               padding = repeat mempty
-    --                               pad maxLength l = take maxLength (l ++ padding)
-
+    render sz@(width, height) = do
+        focused <- view focusedBuf
+        return $ render sz focused
 
 instance Renderable Buffer V.Image where
     render (width, height) = do
         txt <- textWrap width . view text
-        return $ (foldMap (V.<->) $ applyAttr (Coord (0, 2)) blue (T.lines txt)) V.emptyImage
-            where blue = V.defAttr `V.withForeColor` V.blue
+        curs <- view cursor
+        return $ (foldMap (V.<->) $ applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt) V.emptyImage
+            where blue = V.currentAttr `V.withForeColor` V.blue
+                  green = V.currentAttr `V.withForeColor` V.green
+                  inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
--- type Span = (Cursor, Cursor)
+-- cursorHighlight :: Cursor -> M.Map Cursor V.Attr
+-- cursorHighlight c@(Cursor i) = M.union (M.singleton c blue) (M.singleton (Cursor (i + 1)) V.defAttr)
+--     where blue = V.defAttr `V.withForeColor` V.blue
 
-plainText = V.text' V.defAttr
-applyAttr :: Cursor -> V.Attr -> [T.Text] -> [V.Image]
-applyAttr _ _ [] = []
-applyAttr c@(Offset i) attrs t = applyAttr (toCoord (T.unlines t) c) attrs t
 
-applyAttr (Coord (startL, startC)) attrs t
-  | startL == 0 && startC == 0 = fmap (V.text' attrs) t
-  | startL == 0 = let head' = head t
-                      prefix = T.take startC head'
-                      suffix = T.drop startC head' : drop 1 t
-                      rest = applyAttr (Coord (0, 0)) attrs suffix
-                   in (plainText prefix V.<|> head rest) : tail rest
-  | otherwise = applyAttr (Coord (0, startC)) attrs (drop startL t)
+plainText = V.text' V.currentAttr
 
+
+applyAttrs :: [(Cursor, V.Attr)] -> T.Text -> [V.Image]
+applyAttrs attrs t = applyAttrs' attrs (T.lines t)
+
+applyAttrs' :: [(Cursor, V.Attr)] -> [T.Text] -> [V.Image]
+applyAttrs' _ [] = []
+applyAttrs' [] lines' = fmap (V.text' V.currentAttr) lines'
+applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
+  | T.length l < offset = plainText l : applyAttrs' (decr (T.length l + 1) allAttrs) lines'
+  | otherwise = let prefix = plainText (T.take offset l) V.<|> V.text' attr "|"
+                    suffix = if null rest
+                                then V.emptyImage
+                                else head rest
+                    rest = applyAttrs' (decr offset attrs) (T.drop offset l:lines')
+                 in (prefix V.<|> suffix) : drop 1 rest
+
+decr :: Int ->  [(Cursor, V.Attr)] -> [(Cursor, V.Attr)]
+decr n = fmap $ \(off, attr) -> (off - n, attr)
