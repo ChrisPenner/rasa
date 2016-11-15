@@ -12,6 +12,7 @@ import Utils
 
 import qualified Data.Text as T
 import Control.Lens
+import Control.Monad.State (execState)
 import Control.Arrow ((>>>))
 import Data.List.Extra (dropEnd)
 
@@ -51,16 +52,17 @@ moveCursorBy n = do
     moveCursorTo (curs + n)
 
 moveCursorTo :: Int -> Buffer -> Buffer
-moveCursorTo n = do
-    mx <- view (text.to T.length)
-    curs <- view cursor
-    set cursor (clamp 0 mx n)
+moveCursorTo n = execState $ do
+    mx <- use (text.to T.length)
+    curs <- use cursor
+    cursor .= clamp 0 mx n
+
 
 deleteChar :: St -> St
-deleteChar = do
-    curs <- view (focusedBuf.cursor)
-    st <- over (focusedBuf.text) (dropRange (curs-1) curs)
-    return $ st & focusedBuf %~ moveCursorBy (-1)
+deleteChar = execState $ do
+    curs <- use (focusedBuf.cursor)
+    focusedBuf.text %= dropRange (curs-1) curs
+    focusedBuf %= moveCursorBy (-1)
 
 spliceIn :: Int -> T.Text -> T.Text -> T.Text
 spliceIn index txt existing = T.take index existing `mappend` txt `mappend` T.drop index existing
@@ -92,11 +94,10 @@ doEvent StartOfBuffer = focusedBuf %~ moveCursorTo 0
 doEvent EndOfBuffer = focusedBuf %~ moveCursorTo 999999
 doEvent (FindNext txt) = focusedBuf %~ findNext txt
 
-doEvent (SwitchBuf n) = do
-    currentBuffer <- view focused
-    numBuffers <- view (buffers.to length)
-    let nextFocused = (n + currentBuffer) `mod` numBuffers
-    set focused nextFocused
+doEvent (SwitchBuf n) = execState $ do
+    currentBuffer <- use focused
+    numBuffers <- use (buffers.to length)
+    focused .= (n + currentBuffer) `mod` numBuffers
 
 doEvent _ = id
 

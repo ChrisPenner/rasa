@@ -67,7 +67,7 @@ focusedBuf :: Lens' St Buffer
 focusedBuf = lens getter (flip setter)
     where getter = do
             foc <- view focused
-            (!! foc) . view buffers
+            view (buffers. to (!! foc))
 
           setter a = do
             foc <- view focused

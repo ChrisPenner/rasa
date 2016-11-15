@@ -45,26 +45,17 @@ split :: (a -> b) -> (b -> a -> c) -> a -> c
 split ab bac a = bac (ab a) a
 
 instance Renderable St V.Image where
-    render sz@(width, height) = do
-        focused <- view focusedBuf
-        return $ render sz focused
+    render sz@(width, height) = view $ focusedBuf . to (render sz)
 
 instance Renderable Buffer V.Image where
     render (width, height) = do
         txt <- textWrap width . view text
         curs <- view cursor
-        return $ (foldMap (V.<->) $ applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt) V.emptyImage
+        let styled = applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
+        return $ foldMap (V.<->) styled V.emptyImage
             where blue = V.currentAttr `V.withForeColor` V.blue
                   green = V.currentAttr `V.withForeColor` V.green
                   inverse = V.currentAttr `V.withStyle` V.reverseVideo
-
--- cursorHighlight :: Cursor -> M.Map Cursor V.Attr
--- cursorHighlight c@(Cursor i) = M.union (M.singleton c blue) (M.singleton (Cursor (i + 1)) V.defAttr)
---     where blue = V.defAttr `V.withForeColor` V.blue
-
-
-plainText = V.text' V.currentAttr
-
 
 applyAttrs :: [(Cursor, V.Attr)] -> T.Text -> [V.Image]
 applyAttrs attrs t = applyAttrs' attrs (T.lines t)
@@ -83,3 +74,6 @@ applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
 
 decr :: Int ->  [(Cursor, V.Attr)] -> [(Cursor, V.Attr)]
 decr n = fmap $ \(off, attr) -> (off - n, attr)
+
+plainText :: T.Text -> V.Image
+plainText = V.text' V.currentAttr
