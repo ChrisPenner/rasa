@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, Rank2Types #-}
 module Directives (
                     Directive(..)
                   , toDirective
@@ -9,6 +9,8 @@ module Directives (
 import Events
 import State
 import Utils
+import TextLens
+import Buffer
 
 import qualified Data.Text as T
 import Control.Lens
@@ -51,17 +53,19 @@ moveCursorBy n = do
     curs <- view cursor
     moveCursorTo (curs + n)
 
+moveCursorBackBy :: Int -> Buffer -> Buffer
+moveCursorBackBy = moveCursorBy . negate
+
 moveCursorTo :: Int -> Buffer -> Buffer
 moveCursorTo n = execState $ do
     mx <- use (text.to T.length)
     curs <- use cursor
     cursor .= clamp 0 mx n
 
-
 deleteChar :: St -> St
 deleteChar = execState $ do
     curs <- use (focusedBuf.cursor)
-    focusedBuf.text %= dropRange (curs-1) curs
+    focusedBuf.text.range (curs-1) curs .= ""
     focusedBuf %= moveCursorBy (-1)
 
 spliceIn :: Int -> T.Text -> T.Text -> T.Text
@@ -72,15 +76,17 @@ appendText txt buf = (text %~ spliceIn curs txt)
                         >>> moveCursorBy (T.length txt) $ buf
                             where curs = buf^.cursor
 
-dropRange :: Int -> Int -> T.Text -> T.Text
-dropRange start end = T.take start `mappend` T.drop end
+findNext :: T.Text -> St -> St
+findNext txt = focusedBuf %~ useCountFor (withCursor after.tillNext txt) moveCursorBy
 
-findNext :: T.Text -> Buffer -> Buffer
-findNext txt = do
-    curs <- view cursor
-    rest <- view $ text.to (T.drop curs)
-    let offset = T.length . fst . T.breakOn txt $ rest
-    moveCursorBy offset
+findPrev :: T.Text -> St -> St
+findPrev txt = focusedBuf %~ useCountFor (withCursor before.tillPrev txt) moveCursorBackBy
+
+useCountFor :: Lens' Buffer T.Text -> (Int -> Buffer -> Buffer) -> Buffer -> Buffer
+useCountFor l f = do
+    count <- view $ l . to T.length
+    f count
+
 
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt
@@ -88,11 +94,11 @@ doEvent DeleteChar = deleteChar
 doEvent KillWord =  someText %~ (T.unwords . dropEnd 1 . T.words)
 doEvent (SwitchMode m) =  mode .~ m
 doEvent (MoveCursor n) =  focusedBuf %~ moveCursorBy n
-doEvent StartOfLine = focusedBuf %~ moveCursorTo 0
-doEvent EndOfLine = focusedBuf %~ moveCursorTo 999999
+doEvent StartOfLine = findPrev "\n"
+doEvent EndOfLine = findNext "\n"
 doEvent StartOfBuffer = focusedBuf %~ moveCursorTo 0
-doEvent EndOfBuffer = focusedBuf %~ moveCursorTo 999999
-doEvent (FindNext txt) = focusedBuf %~ findNext txt
+doEvent EndOfBuffer = focusedBuf %~ useCountFor text moveCursorTo
+doEvent (FindNext txt) = findNext txt
 
 doEvent (SwitchBuf n) = execState $ do
     currentBuffer <- use focused

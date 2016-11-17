@@ -53,6 +53,7 @@ instance Renderable Buffer V.Image where
         curs <- view cursor
         let styled = applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
         return $ foldMap (V.<->) styled V.emptyImage
+        -- return $ V.text' V.defAttr "plain " V.<|> V.text' green "" V.<|> V.text' V.currentAttr "green?"
             where blue = V.currentAttr `V.withForeColor` V.blue
                   green = V.currentAttr `V.withForeColor` V.green
                   inverse = V.currentAttr `V.withStyle` V.reverseVideo

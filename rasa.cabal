@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Events, State, VtyAdapter, View, Directives
+  exposed-modules:     Events, State, VtyAdapter, View, Directives, TextLens, Utils, Buffer
   build-depends:       base >= 4.7 && < 5
                      , text
                      , lens
@@ -49,4 +49,4 @@ test-suite rasa-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/rasa
+  location: https://github.com/ChrisPenner/rasa
