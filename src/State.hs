@@ -8,13 +8,8 @@ module State (
     , mode
 
   , Mode(..)
-  , Buffer
     , buffer
-    , text
-    , cursor
-    , toOffset
-    , toCoord
-  , Cursor
+  , Offset
   , Coord(..)
 ) where
 
@@ -23,30 +18,18 @@ import Control.Lens
 import Data.Default (def, Default(..))
 import qualified Data.Text as T
 
+import Buffer
+
 data Mode = Insert | Normal deriving (Show, Eq)
 
-type Cursor = Int
-newtype Coord = Coord (Int, Int) deriving (Show, Eq, Ord)
-
-toOffset :: T.Text -> Coord -> Cursor
-toOffset txt (Coord (r, c)) = undefined
-
-toCoord :: T.Text -> Cursor -> Coord
-toCoord txt n = undefined
-
-data Buffer = Buffer {
-    _text :: T.Text
-  , _cursor :: Cursor
-} deriving (Show)
-
-buffer :: T.Text -> Buffer
+buffer :: T.Text -> Buffer Offset
 buffer t = Buffer {
         _text=t
       , _cursor=0
 }
 
 data St = St {
-    _buffers :: [Buffer]
+    _buffers :: [Buffer Offset]
   , _focused :: Int
   , _vHeight :: Int
   , _mode :: Mode
@@ -61,9 +44,8 @@ instance Default St where
              }
 
 makeLenses ''St
-makeLenses ''Buffer
 
-focusedBuf :: Lens' St Buffer
+focusedBuf :: Lens' St (Buffer Offset)
 focusedBuf = lens getter (flip setter)
     where getter = do
             foc <- view focused

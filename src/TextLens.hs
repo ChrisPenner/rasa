@@ -1,17 +1,10 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module TextLens (
-    before
-  , after
-  , tillNext
-  , tillPrev
-  , reversed
-  , range
-    )
-    where
+module TextLens where
 
 import Control.Lens
-import Data.Text as T
+import qualified Data.Text as T
 import Data.Monoid
+import Data.List.Extra (takeEnd, dropEnd)
 
 
 before :: Int -> Lens' T.Text T.Text
@@ -30,6 +23,18 @@ tillNext pat = lens getter setter
           setter old new = new <> snd (split old)
           split = T.breakOn pat
 
+tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
+tillNextN n pat = lens getter setter
+    where getter = T.intercalate pat . take n . T.splitOn pat
+          setter old new =
+              T.append new . T.intercalate pat . drop n . T.splitOn pat $ old
+
+tillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
+tillPrevN n pat = lens getter setter
+    where getter = T.intercalate pat . takeEnd n . T.splitOn pat
+          setter old new =
+              (`T.append` new) . T.intercalate pat . dropEnd n . T.splitOn pat $ old
+
 tillPrev :: T.Text -> Lens' T.Text T.Text
 tillPrev pat = lens getter setter
     where getter = snd . split
@@ -40,3 +45,9 @@ range :: Int -> Int -> Lens' T.Text T.Text
 range start end = lens getter setter
     where getter = T.take (end - start) . T.drop start
           setter old new = T.take start old <> new <> T.drop end old
+
+matching :: T.Text -> Lens' T.Text T.Text
+matching pat = lens getter setter
+    where getter = (`T.replicate` pat) . T.count pat
+          setter old new = T.replace pat new old
+

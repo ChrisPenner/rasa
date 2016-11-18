@@ -8,14 +8,12 @@ module Directives (
 
 import Events
 import State
-import Utils
 import TextLens
 import Buffer
 
 import qualified Data.Text as T
 import Control.Lens
 import Control.Monad.State (execState)
-import Control.Arrow ((>>>))
 import Data.List.Extra (dropEnd)
 
 data Continue = Continue [Directive] St
@@ -48,45 +46,17 @@ nonEmpty = prism id $ \t ->
 someText :: (T.Text -> Identity T.Text) -> St -> Identity St
 someText = focusedBuf.text.nonEmpty
 
-moveCursorBy :: Int -> Buffer -> Buffer
-moveCursorBy n = do
-    curs <- view cursor
-    moveCursorTo (curs + n)
-
-moveCursorBackBy :: Int -> Buffer -> Buffer
-moveCursorBackBy = moveCursorBy . negate
-
-moveCursorTo :: Int -> Buffer -> Buffer
-moveCursorTo n = execState $ do
-    mx <- use (text.to T.length)
-    curs <- use cursor
-    cursor .= clamp 0 mx n
-
 deleteChar :: St -> St
 deleteChar = execState $ do
     curs <- use (focusedBuf.cursor)
     focusedBuf.text.range (curs-1) curs .= ""
     focusedBuf %= moveCursorBy (-1)
 
-spliceIn :: Int -> T.Text -> T.Text -> T.Text
-spliceIn index txt existing = T.take index existing `mappend` txt `mappend` T.drop index existing
-
-appendText :: T.Text -> Buffer -> Buffer
-appendText txt buf = (text %~ spliceIn curs txt)
-                        >>> moveCursorBy (T.length txt) $ buf
-                            where curs = buf^.cursor
-
 findNext :: T.Text -> St -> St
 findNext txt = focusedBuf %~ useCountFor (withCursor after.tillNext txt) moveCursorBy
 
 findPrev :: T.Text -> St -> St
 findPrev txt = focusedBuf %~ useCountFor (withCursor before.tillPrev txt) moveCursorBackBy
-
-useCountFor :: Lens' Buffer T.Text -> (Int -> Buffer -> Buffer) -> Buffer -> Buffer
-useCountFor l f = do
-    count <- view $ l . to T.length
-    f count
-
 
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt

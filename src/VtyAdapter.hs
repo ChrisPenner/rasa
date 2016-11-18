@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiParamTypeClasses #-}
 module VtyAdapter (
     convertEvent
   , render
@@ -7,6 +7,7 @@ module VtyAdapter (
 
 import Events(Event(..), Mod(..))
 import State
+import Buffer
 import View (textWrap)
 
 import qualified Graphics.Vty as V
@@ -47,7 +48,7 @@ split ab bac a = bac (ab a) a
 instance Renderable St V.Image where
     render sz@(width, height) = view $ focusedBuf . to (render sz)
 
-instance Renderable Buffer V.Image where
+instance Renderable (Buffer Offset) V.Image where
     render (width, height) = do
         txt <- textWrap width . view text
         curs <- view cursor
@@ -58,10 +59,10 @@ instance Renderable Buffer V.Image where
                   green = V.currentAttr `V.withForeColor` V.green
                   inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
-applyAttrs :: [(Cursor, V.Attr)] -> T.Text -> [V.Image]
+applyAttrs :: [(Offset, V.Attr)] -> T.Text -> [V.Image]
 applyAttrs attrs t = applyAttrs' attrs (T.lines t)
 
-applyAttrs' :: [(Cursor, V.Attr)] -> [T.Text] -> [V.Image]
+applyAttrs' :: [(Offset, V.Attr)] -> [T.Text] -> [V.Image]
 applyAttrs' _ [] = []
 applyAttrs' [] lines' = fmap (V.text' V.currentAttr) lines'
 applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
@@ -73,7 +74,7 @@ applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
                     rest = applyAttrs' (decr offset attrs) (T.drop offset l:lines')
                  in (prefix V.<|> suffix) : drop 1 rest
 
-decr :: Int ->  [(Cursor, V.Attr)] -> [(Cursor, V.Attr)]
+decr :: Int ->  [(Offset, V.Attr)] -> [(Offset, V.Attr)]
 decr n = fmap $ \(off, attr) -> (off - n, attr)
 
 plainText :: T.Text -> V.Image
