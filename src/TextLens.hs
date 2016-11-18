@@ -17,29 +17,47 @@ after n = lens getter setter
     where getter = T.drop n
           setter old new = T.take n old <> new
 
-tillNext :: T.Text -> Lens' T.Text T.Text
-tillNext pat = lens getter setter
-    where getter = fst . split
-          setter old new = new <> snd (split old)
-          split = T.breakOn pat
+
+intillNextN :: Int -> T.Text -> Lens' T.Text T.Text
+intillNextN 0 _ = lens (const "") const
+intillNextN n pat = lens getter setter
+    where getter = (<> pat)  . T.intercalate pat . take n . split' pat
+          setter old new =
+              T.append new . T.intercalate pat . drop n . split' pat $ old
+
+intillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
+intillPrevN 0 _ = lens (const "") const
+intillPrevN n pat = lens getter setter
+    where getter = (<> pat) . T.intercalate pat . takeEnd n . split' pat
+          setter old new =
+              (<> new) . T.intercalate pat . dropEnd n . split' pat $ old
 
 tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
+tillNextN 0 _ = lens (const "") const
 tillNextN n pat = lens getter setter
-    where getter = T.intercalate pat . take n . T.splitOn pat
+    where getter = T.intercalate pat . take n . split' pat
           setter old new =
-              T.append new . T.intercalate pat . drop n . T.splitOn pat $ old
+              T.append (new <> pat) . T.intercalate pat . drop n . split' pat $ old
+
 
 tillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
+tillPrevN 0 _ = lens (const "") const
 tillPrevN n pat = lens getter setter
-    where getter = T.intercalate pat . takeEnd n . T.splitOn pat
+    where getter = T.intercalate pat . takeEnd n . split' pat
           setter old new =
-              (`T.append` new) . T.intercalate pat . dropEnd n . T.splitOn pat $ old
+              (<> (pat <> new)) . T.intercalate pat . dropEnd n . split' pat $ old
+
+tillNext :: T.Text -> Lens' T.Text T.Text
+tillNext = tillNextN 1
+
+intillNext :: T.Text -> Lens' T.Text T.Text
+intillNext = intillNextN 1
 
 tillPrev :: T.Text -> Lens' T.Text T.Text
-tillPrev pat = lens getter setter
-    where getter = snd . split
-          setter old new = fst (split old) <> new
-          split = T.breakOnEnd pat
+tillPrev = tillPrevN 1
+
+intillPrev :: T.Text -> Lens' T.Text T.Text
+intillPrev = intillPrevN 1
 
 range :: Int -> Int -> Lens' T.Text T.Text
 range start end = lens getter setter
@@ -50,4 +68,9 @@ matching :: T.Text -> Lens' T.Text T.Text
 matching pat = lens getter setter
     where getter = (`T.replicate` pat) . T.count pat
           setter old new = T.replace pat new old
+
+split' :: T.Text -> T.Text -> [T.Text]
+split' pat t = case T.splitOn pat t of
+                [x] -> []
+                xs -> xs
 

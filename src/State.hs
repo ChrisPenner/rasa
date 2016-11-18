@@ -37,7 +37,7 @@ data St = St {
 
 instance Default St where
     def = St {
-            _buffers=fmap buffer ["Buffer 0", "Buffer 1"]
+            _buffers=fmap buffer ["Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?", "Buffer 1"]
           , _focused=0
           , _vHeight=10
           , _mode=Normal

@@ -52,9 +52,13 @@ instance Renderable (Buffer Offset) V.Image where
     render (width, height) = do
         txt <- textWrap width . view text
         curs <- view cursor
+        coord <- view $ asCoord.cursor
         let styled = applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
-        return $ foldMap (V.<->) styled V.emptyImage
-        -- return $ V.text' V.defAttr "plain " V.<|> V.text' green "" V.<|> V.text' V.currentAttr "green?"
+            txtLines = foldMap (V.<->) styled V.emptyImage
+            cursorLine = V.text' V.defAttr (T.pack $ show curs <> " | " <> show coord)
+
+        return $ cursorLine V.<-> txtLines
+
             where blue = V.currentAttr `V.withForeColor` V.blue
                   green = V.currentAttr `V.withForeColor` V.green
                   inverse = V.currentAttr `V.withStyle` V.reverseVideo

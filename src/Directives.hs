@@ -25,11 +25,13 @@ data Directive =
   | SwitchBuf Int
   | SwitchMode Mode
   | MoveCursor Int
+  | MoveCursorCoordBy Coord
   | StartOfLine
   | EndOfLine
   | StartOfBuffer
   | EndOfBuffer
   | FindNext T.Text
+  | FindPrev T.Text
   | Noop
   | Exit
   deriving (Show, Eq)
@@ -52,11 +54,11 @@ deleteChar = execState $ do
     focusedBuf.text.range (curs-1) curs .= ""
     focusedBuf %= moveCursorBy (-1)
 
-findNext :: T.Text -> St -> St
-findNext txt = focusedBuf %~ useCountFor (withCursor after.tillNext txt) moveCursorBy
+findNext :: T.Text -> Buffer Offset -> Buffer Offset
+findNext txt = useCountFor (withCursor after.tillNext txt) moveCursorBy
 
-findPrev :: T.Text -> St -> St
-findPrev txt = focusedBuf %~ useCountFor (withCursor before.tillPrev txt) moveCursorBackBy
+findPrev :: T.Text -> Buffer Offset -> Buffer Offset
+findPrev txt = useCountFor (withCursor before.tillPrev txt) moveCursorBackBy
 
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt
@@ -64,18 +66,18 @@ doEvent DeleteChar = deleteChar
 doEvent KillWord =  someText %~ (T.unwords . dropEnd 1 . T.words)
 doEvent (SwitchMode m) =  mode .~ m
 doEvent (MoveCursor n) =  focusedBuf %~ moveCursorBy n
-doEvent StartOfLine = findPrev "\n"
-doEvent EndOfLine = findNext "\n"
+doEvent (MoveCursorCoordBy coords) =  focusedBuf %~ moveCursorCoordBy coords
+doEvent StartOfLine = focusedBuf %~ findPrev "\n"
+doEvent EndOfLine = focusedBuf %~ findNext "\n"
 doEvent StartOfBuffer = focusedBuf %~ moveCursorTo 0
 doEvent EndOfBuffer = focusedBuf %~ useCountFor text moveCursorTo
-doEvent (FindNext txt) = findNext txt
+doEvent (FindNext txt) = focusedBuf %~ findNext txt
+doEvent (FindPrev txt) = focusedBuf %~ findPrev txt
 
 doEvent (SwitchBuf n) = execState $ do
     currentBuffer <- use focused
     numBuffers <- use (buffers.to length)
     focused .= (n + currentBuffer) `mod` numBuffers
-
-doEvent _ = id
 
 toDirective :: Mode -> Event -> [Directive]
 toDirective Insert Esc = [SwitchMode Normal]
@@ -99,6 +101,10 @@ toDirective Normal (Keypress '+' _ ) = [SwitchBuf 1]
 toDirective Normal (Keypress '-' _ ) = [SwitchBuf (-1)]
 toDirective Normal (Keypress 'h' _ )  = [MoveCursor (-1)]
 toDirective Normal (Keypress 'l' _ )  = [MoveCursor 1]
+toDirective Normal (Keypress 'k' _ )  = [MoveCursorCoordBy (-1, 0)]
+toDirective Normal (Keypress 'j' _ )  = [MoveCursorCoordBy (1, 0)]
+toDirective Normal (Keypress 'f' _ )  = [FindNext "f"]
+toDirective Normal (Keypress 'F' _ )  = [FindPrev "f"]
 toDirective Normal (Keypress 'X' _) = [DeleteChar]
 toDirective Normal (Keypress 'x' _) = [MoveCursor 1, DeleteChar]
 toDirective Normal (Keypress 'q' _) = [Exit]
