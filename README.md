@@ -1,8 +1,7 @@
-# Rasa
+Rasa
+====
 
-Modular text editor built in Haskell.
-
-[Here's the Roadmap](https://github.com/ChrisPenner/rasa/issues/2)
+Extremely modular text editor built in Haskell using Lens combinators
 
 Core Principles
 ---------------
@@ -69,7 +68,8 @@ Note that almost all of these are *not* proper lenses since they edit the struct
 practice they work just fine.
 
 
-## Installation
+Installation
+------------
 
 At the moment you must build rasa from source, 
 
@@ -78,6 +78,16 @@ At the moment you must build rasa from source,
 3. Inside `rasa` run `stack build`
 4. Run with `stack exec rasa-exe`
 
-## Using Rasa
+Contributing
+============
 
-At the moment things are changing very quickly, but you can get a rough idea of the controls from [here](https://github.com/ChrisPenner/rasa/blob/master/src/Directives.hs).
+Things are moving quickly, but I'd love a hand! You can get a rough idea of where
+you can help out at the [Roadmap](https://github.com/ChrisPenner/rasa/issues/2), feel free to leave a comment there
+asking any questions, I'm always free to chat.
+
+Using Rasa
+----------
+
+At the moment things are changing very quickly, but you can get a rough idea of
+the controls from
+[here](https://github.com/ChrisPenner/rasa/blob/master/src/Directives.hs).
