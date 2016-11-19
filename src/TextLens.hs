@@ -21,23 +21,27 @@ after n = lens getter setter
 intillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 intillNextN 0 _ = lens (const "") const
 intillNextN n pat = lens getter setter
-    where getter = (<> pat)  . T.intercalate pat . take n . split' pat
+    where getter = padIfFound  . T.intercalate pat . take n . split' pat
           setter old new =
               T.append new . T.intercalate pat . drop n . split' pat $ old
+          padIfFound "" = ""
+          padIfFound x = x <> pat
 
 intillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
 intillPrevN 0 _ = lens (const "") const
 intillPrevN n pat = lens getter setter
-    where getter = (<> pat) . T.intercalate pat . takeEnd n . split' pat
+    where getter = padIfFound . T.intercalate pat . takeEnd n . split' pat
           setter old new =
               (<> new) . T.intercalate pat . dropEnd n . split' pat $ old
+          padIfFound "" = ""
+          padIfFound x = pat <> x
 
 tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 tillNextN 0 _ = lens (const "") const
 tillNextN n pat = lens getter setter
     where getter = T.intercalate pat . take n . split' pat
           setter old new =
-              T.append (new <> pat) . T.intercalate pat . drop n . split' pat $ old
+              T.append new . T.intercalate pat . drop n . split' pat $ old
 
 
 tillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
@@ -45,7 +49,7 @@ tillPrevN 0 _ = lens (const "") const
 tillPrevN n pat = lens getter setter
     where getter = T.intercalate pat . takeEnd n . split' pat
           setter old new =
-              (<> (pat <> new)) . T.intercalate pat . dropEnd n . split' pat $ old
+              (<> new) . T.intercalate pat . dropEnd n . split' pat $ old
 
 tillNext :: T.Text -> Lens' T.Text T.Text
 tillNext = tillNextN 1

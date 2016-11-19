@@ -55,10 +55,10 @@ deleteChar = execState $ do
     focusedBuf %= moveCursorBy (-1)
 
 findNext :: T.Text -> Buffer Offset -> Buffer Offset
-findNext txt = useCountFor (withCursor after.tillNext txt) moveCursorBy
+findNext txt = useCountFor (withOffset after.tillNext txt) moveCursorBy
 
 findPrev :: T.Text -> Buffer Offset -> Buffer Offset
-findPrev txt = useCountFor (withCursor before.tillPrev txt) moveCursorBackBy
+findPrev txt = useCountFor (withOffset before.intillPrev txt) moveCursorBackBy
 
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt

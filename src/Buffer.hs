@@ -6,7 +6,7 @@ module Buffer (
     , text
   , Offset
   , Coord(..)
-  , withCursor
+  , withOffset
   , inBuf
   , moveCursorBy
   , moveCursorCoordBy
@@ -35,8 +35,8 @@ data Buffer c = Buffer {
 } deriving (Show, Eq)
 makeLenses ''Buffer
 
-withCursor :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text
-withCursor l = lens getter setter
+withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text
+withOffset l = lens getter setter
     where getter = evalState $ do
             curs <- use cursor
             use (text.l curs)
@@ -96,7 +96,7 @@ bufToCoord = do
     cursor .~ toCoord offs txt
 
 toOffset :: Coord -> T.Text -> Offset
-toOffset (row, col) t = rowCount + clamp 0 rowLen col
+toOffset (row, col) t = clamp 0 (T.length t) $ rowCount + clamp 0 rowLen col
     where rowCount = t^.intillNextN row "\n" . to T.length
           rowLen = T.length $ T.lines t ^. ix row
 
