@@ -15,7 +15,18 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Events, State, VtyAdapter, View, Directives, TextLens, Utils, Buffer
+  exposed-modules:     Events
+                       State
+                       VtyAdapter
+                       View
+                       Directives
+                       TextLens
+                       Utils
+                       Buffer
+                       Extensions
+
+                       Ext.Vim
+
   build-depends:       base >= 4.7 && < 5
                      , text
                      , lens
@@ -25,6 +36,9 @@ library
                      , extra
                      , containers
   default-language:    Haskell2010
+
+  default-extensions:  TemplateHaskell
+                       OverloadedStrings
 
 executable rasa-exe
   hs-source-dirs:      app

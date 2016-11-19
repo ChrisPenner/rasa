@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module VtyAdapter (
     convertEvent
   , render
@@ -8,7 +8,7 @@ module VtyAdapter (
 import Events(Event(..), Mod(..))
 import State
 import Buffer
-import View (textWrap)
+import View
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T
@@ -19,11 +19,6 @@ import Data.Monoid ((<>))
 import Data.List.Extra (dropEnd)
 import Data.List (unfoldr)
 import Control.Arrow ((>>>), (&&&))
-
-type Size = (Int, Int)
-
-class Renderable a b where
-    render :: Size -> a -> b
 
 convertEvent :: V.Event -> Event
 convertEvent (V.EvKey e mods) = convertKeypress e mods
