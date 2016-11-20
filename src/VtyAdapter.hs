@@ -18,7 +18,7 @@ import Data.Char
 import Data.Monoid ((<>))
 import Data.List.Extra (dropEnd)
 import Data.List (unfoldr)
-import Control.Arrow ((>>>), (&&&))
+import Control.Arrow ((>>>), (&&&), first)
 
 convertEvent :: V.Event -> Event
 convertEvent (V.EvKey e mods) = convertKeypress e mods
@@ -74,7 +74,7 @@ applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
                  in (prefix V.<|> suffix) : drop 1 rest
 
 decr :: Int ->  [(Offset, V.Attr)] -> [(Offset, V.Attr)]
-decr n = fmap $ \(off, attr) -> (off - n, attr)
+decr n = fmap $ first (subtract n)
 
 plainText :: T.Text -> V.Image
 plainText = V.text' V.currentAttr

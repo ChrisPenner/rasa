@@ -1,7 +1,5 @@
 module Ext.Vim (vim) where
 
-import Control.Lens
-
 import Types
 import Data.Default (Default, def)
 import qualified Data.Text as T

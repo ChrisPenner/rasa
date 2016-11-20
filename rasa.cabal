@@ -23,6 +23,7 @@ library
                        Utils
                        Buffer
                        Types
+                       Extensions
 
                        Config
                        Ext.Vim
@@ -35,7 +36,6 @@ library
                      , mtl
                      , extra
                      , containers
-                     , vault
   default-language:    Haskell2010
 
   default-extensions:  TemplateHaskell

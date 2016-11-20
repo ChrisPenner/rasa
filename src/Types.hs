@@ -37,6 +37,7 @@ data Directive =
 
 type Offset = Int
 type Coord = (Int, Int)
+type Size = (Int, Int)
 
 data Buffer c = Buffer {
     _text :: T.Text
@@ -44,20 +45,16 @@ data Buffer c = Buffer {
 } deriving (Show, Eq)
 makeLenses ''Buffer
 
-data St = St {
-    _buffers :: [Buffer Offset]
-  , _focused :: Int
-}
-makeLenses ''St
-
 data Extension = forall extSt. Extension {
     _extState :: extSt
   , _apply :: extSt -> St -> Event -> (extSt, [Directive])
 }
 
-applyExtension :: St -> Event -> Extension -> (Extension, [Directive])
-applyExtension st evt (Extension extSt ap) =
-    let (newExtState, dirs) = ap extSt st evt
-     in (Extension newExtState ap, dirs)
+data St = St {
+    _buffers :: [Buffer Offset]
+  , _focused :: Int
+  , _extensions :: [Extension]
+}
+makeLenses ''St
 
-data Continue = Continue [Extension] [Directive] St
+data Continue = Continue St [Directive]

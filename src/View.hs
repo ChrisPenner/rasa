@@ -7,15 +7,13 @@ module View (
     )
     where
 
+import Types
+
 import qualified Data.Text as T
 import Data.List.Extra (takeEnd)
 import Data.List (unfoldr)
 import Control.Lens
 import Control.Arrow (second)
-
-import State
-
-type Size = (Int, Int)
 
 class Renderable a b where
     render :: Size -> a -> b

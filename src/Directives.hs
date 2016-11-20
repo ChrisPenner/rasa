@@ -1,22 +1,19 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module Directives (
-                    Directive(..)
-                  , Continue(..)
-                  , handleEvent
-                  ) where
+module Directives (handleEvent) where
 
 import State
 import TextLens
 import Buffer
-
-import qualified Data.Text as T
-import Control.Lens
-import Control.Monad.State (execState)
-import Data.List.Extra (dropEnd)
 import Types
 
+import Control.Lens
+import qualified Data.Text as T
+import Control.Monad.State (execState)
+import Data.List.Extra (dropEnd)
+
 handleEvent :: Continue -> Continue
-handleEvent (Continue exts dirs st) = Continue exts dirs $ foldl (flip doEvent) st dirs
+handleEvent (Continue st dirs) = Continue newState dirs
+    where newState = foldl (flip doEvent) st dirs
 
 nonEmpty :: Prism' T.Text T.Text
 nonEmpty = prism id $ \t ->

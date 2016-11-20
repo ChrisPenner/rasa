@@ -3,6 +3,7 @@ module Buffer (
     Buffer(..)
     , cursor
     , text
+    , buffer
   , Offset
   , Coord(..)
   , withOffset
@@ -26,6 +27,12 @@ import Types
 import TextLens
 import Utils
 
+
+buffer :: T.Text -> Buffer Offset
+buffer t = Buffer {
+        _text=t
+      , _cursor=0
+}
 
 withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text
 withOffset l = lens getter setter
