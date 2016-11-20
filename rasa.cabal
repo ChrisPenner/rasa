@@ -41,10 +41,12 @@ library
   default-extensions:  TemplateHaskell
                        OverloadedStrings
 
+  ghc-options:         -Wall -fno-warn-orphans
+
 executable rasa-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N 
   build-depends:       base
                      , rasa
                      , text

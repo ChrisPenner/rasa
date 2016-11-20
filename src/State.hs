@@ -1,7 +1,5 @@
 module State (
     focusedBuf
-  , Offset
-  , Coord(..)
 ) where
 
 import Control.Lens

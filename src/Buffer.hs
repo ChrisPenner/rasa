@@ -5,7 +5,7 @@ module Buffer (
     , text
     , buffer
   , Offset
-  , Coord(..)
+  , Coord
   , withOffset
   , inBuf
   , moveCursorBy
@@ -18,7 +18,7 @@ module Buffer (
   , asOffset
 ) where
 
-import Data.Text as T
+import qualified Data.Text as T
 import Control.Monad.State (evalState, execState)
 import Control.Arrow ((>>>))
 import Control.Lens hiding (matching)
@@ -60,7 +60,6 @@ moveCursorCoordBy c = asCoord.cursor %~ addPair c
 moveCursorTo :: Int -> Buffer Offset -> Buffer Offset
 moveCursorTo n = execState $ do
     mx <- use (text.to T.length)
-    curs <- use cursor
     cursor .= clamp 0 mx n
 
 moveCursorBackBy :: Int -> Buffer Offset -> Buffer Offset

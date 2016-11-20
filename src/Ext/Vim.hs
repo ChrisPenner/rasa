@@ -19,7 +19,7 @@ vim :: Extension
 vim = Extension def applyVim
 
 applyVim :: VimSt -> St -> Event -> (VimSt, [Directive])
-applyVim (VimSt mode) st = fromMode mode
+applyVim (VimSt mode) _ = fromMode mode
 
 fromMode :: Mode -> Event -> (VimSt, [Directive])
 fromMode Insert Esc = (VimSt Normal, [])
@@ -27,7 +27,7 @@ fromMode Insert BS = (VimSt Insert, [DeleteChar])
 fromMode Insert Enter = (VimSt Insert, [Append "\n"])
 fromMode Insert (Keypress 'w' [Ctrl]) = (VimSt Insert, [KillWord])
 fromMode Insert (Keypress 'c' [Ctrl]) = (VimSt Insert, [Exit])
-fromMode Insert (Keypress c mods) = (VimSt Insert, [Append (T.singleton c)])
+fromMode Insert (Keypress c _) = (VimSt Insert, [Append (T.singleton c)])
 
 fromMode Normal (Keypress 'i' _ )  = (VimSt Insert, [])
 fromMode Normal (Keypress 'I' _ )  = (VimSt Insert, [StartOfLine])

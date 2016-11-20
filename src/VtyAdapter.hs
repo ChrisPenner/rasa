@@ -12,13 +12,9 @@ import Types
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T
-import Data.Foldable (fold)
 import Control.Lens
-import Data.Char
 import Data.Monoid ((<>))
-import Data.List.Extra (dropEnd)
-import Data.List (unfoldr)
-import Control.Arrow ((>>>), (&&&), first)
+import Control.Arrow (first)
 
 convertEvent :: V.Event -> Event
 convertEvent (V.EvKey e mods) = convertKeypress e mods
@@ -29,6 +25,7 @@ convertKeypress V.KEnter _ = Enter
 convertKeypress V.KBS _ = BS
 convertKeypress V.KEsc _ = Esc
 convertKeypress (V.KChar c) mods  = Keypress c (fmap convertMod mods)
+convertKeypress _ _  = Unknown
 
 convertMod :: V.Modifier -> Mod
 convertMod m = case m of
@@ -37,14 +34,11 @@ convertMod m = case m of
                  V.MMeta -> Alt
                  V.MAlt -> Alt
 
-split :: (a -> b) -> (b -> a -> c) -> a -> c
-split ab bac a = bac (ab a) a
-
 instance Renderable St V.Image where
-    render sz@(width, height) = view $ focusedBuf . to (render sz)
+    render sz = view $ focusedBuf . to (render sz)
 
 instance Renderable (Buffer Offset) V.Image where
-    render (width, height) = do
+    render (width, _) = do
         txt <- textWrap width . view text
         curs <- view cursor
         coord <- view $ asCoord.cursor
@@ -54,9 +48,7 @@ instance Renderable (Buffer Offset) V.Image where
 
         return $ cursorLine V.<-> txtLines
 
-            where blue = V.currentAttr `V.withForeColor` V.blue
-                  green = V.currentAttr `V.withForeColor` V.green
-                  inverse = V.currentAttr `V.withStyle` V.reverseVideo
+            where inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
 applyAttrs :: [(Offset, V.Attr)] -> T.Text -> [V.Image]
 applyAttrs attrs t = applyAttrs' attrs (T.lines t)

@@ -2,7 +2,6 @@
 module Main where
 
 import VtyAdapter (convertEvent, render)
-import State
 import Extensions
 import Directives (handleEvent)
 import Types as T

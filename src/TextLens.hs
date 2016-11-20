@@ -75,6 +75,6 @@ matching pat = lens getter setter
 
 split' :: T.Text -> T.Text -> [T.Text]
 split' pat t = case T.splitOn pat t of
-                [x] -> []
+                [_] -> []
                 xs -> xs
 

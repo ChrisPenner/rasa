@@ -10,9 +10,7 @@ module View (
 import Types
 
 import qualified Data.Text as T
-import Data.List.Extra (takeEnd)
 import Data.List (unfoldr)
-import Control.Lens
 import Control.Arrow (second)
 
 class Renderable a b where

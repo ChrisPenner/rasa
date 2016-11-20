@@ -49,6 +49,7 @@ doEvent EndOfBuffer = focusedBuf %~ useCountFor text moveCursorTo
 doEvent (FindNext txt) = focusedBuf %~ findNext txt
 doEvent (FindPrev txt) = focusedBuf %~ findPrev txt
 doEvent Exit = id
+doEvent Noop = id
 
 doEvent (SwitchBuf n) = execState $ do
     currentBuffer <- use focused
