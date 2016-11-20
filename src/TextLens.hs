@@ -8,9 +8,9 @@ import Data.List.Extra (takeEnd, dropEnd)
 
 
 before :: Int -> Lens' T.Text T.Text
-before n = lens getter (flip setter)
+before n = lens getter setter
     where getter = T.take n
-          setter old new = T.drop n old <> new
+          setter old new = new <> T.drop n old
 
 after :: Int -> Lens' T.Text T.Text
 after n = lens getter setter
