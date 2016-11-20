@@ -5,10 +5,10 @@ module VtyAdapter (
     )
     where
 
-import Events(Event(..), Mod(..))
 import State
 import Buffer
 import View
+import Types
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T

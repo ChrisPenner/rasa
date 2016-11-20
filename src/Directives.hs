@@ -5,7 +5,6 @@ module Directives (
                   , handleEvent
                   ) where
 
-import Events
 import State
 import TextLens
 import Buffer
@@ -14,28 +13,10 @@ import qualified Data.Text as T
 import Control.Lens
 import Control.Monad.State (execState)
 import Data.List.Extra (dropEnd)
-
-data Continue = Continue [Directive] St
-
-data Directive =
-    Append T.Text
-  | DeleteChar
-  | KillWord
-  | SwitchBuf Int
-  | MoveCursor Int
-  | MoveCursorCoordBy Coord
-  | StartOfLine
-  | EndOfLine
-  | StartOfBuffer
-  | EndOfBuffer
-  | FindNext T.Text
-  | FindPrev T.Text
-  | Noop
-  | Exit
-  deriving (Show, Eq)
+import Types
 
 handleEvent :: Continue -> Continue
-handleEvent (Continue dirs st) = Continue dirs $ foldl (flip doEvent) st dirs
+handleEvent (Continue exts dirs st) = Continue exts dirs $ foldl (flip doEvent) st dirs
 
 nonEmpty :: Prism' T.Text T.Text
 nonEmpty = prism id $ \t ->

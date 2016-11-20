@@ -1,16 +1,27 @@
-module Ext.Vim (toDirective) where
+module Ext.Vim (vim) where
 
 import Control.Lens
 
-import Directives (Directive(..))
-import State (St, ExtensionState, getState, extStates, VimSt(..), Mode(..))
-import Events (Event(..), Mod(..))
+import Types
 import Data.Default (Default, def)
 import qualified Data.Text as T
 
-toDirective :: St -> Event -> (VimSt, [Directive])
-toDirective st = fromMode mode
-    where (VimSt mode) = getState st
+data VimSt =
+    VimSt Mode
+    deriving (Show, Eq)
+
+data Mode = Insert
+          | Normal
+          deriving (Show, Eq)
+
+instance Default VimSt where
+    def = VimSt Normal
+
+vim :: Extension
+vim = Extension def applyVim
+
+applyVim :: VimSt -> St -> Event -> (VimSt, [Directive])
+applyVim (VimSt mode) st = fromMode mode
 
 fromMode :: Mode -> Event -> (VimSt, [Directive])
 fromMode Insert Esc = (VimSt Normal, [])

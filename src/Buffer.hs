@@ -1,5 +1,4 @@
-{-# LANGUAGE TemplateHaskell, OverloadedStrings, Rank2Types #-}
-
+{-# LANGUAGE Rank2Types #-}
 module Buffer (
     Buffer(..)
     , cursor
@@ -23,17 +22,10 @@ import Control.Monad.State (evalState, execState)
 import Control.Arrow ((>>>))
 import Control.Lens hiding (matching)
 
+import Types
 import TextLens
 import Utils
 
-type Offset = Int
-type Coord = (Int, Int)
-
-data Buffer c = Buffer {
-    _text :: T.Text
-  , _cursor :: c
-} deriving (Show, Eq)
-makeLenses ''Buffer
 
 withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text
 withOffset l = lens getter setter
