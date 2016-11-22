@@ -34,7 +34,7 @@ findNext :: T.Text -> Buffer Offset -> Buffer Offset
 findNext txt = useCountFor (withOffset after.tillNext txt) moveCursorBy
 
 findPrev :: T.Text -> Buffer Offset -> Buffer Offset
-findPrev txt = useCountFor (withOffset before.intillPrev txt) moveCursorBackBy
+findPrev txt = useCountFor (withOffset before.tillPrev txt) moveCursorBackBy
 
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt

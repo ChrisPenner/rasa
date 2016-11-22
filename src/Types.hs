@@ -46,15 +46,19 @@ data Buffer c = Buffer {
 makeLenses ''Buffer
 
 data Extension = forall extSt. Extension {
-    _extState :: extSt
+    _name :: String
+  , _extState :: extSt
   , _apply :: extSt -> St -> Event -> (extSt, [Directive])
 }
+
+instance Show Extension where
+    show = _name
 
 data St = St {
     _buffers :: [Buffer Offset]
   , _focused :: Int
   , _extensions :: [Extension]
-}
+} deriving (Show)
 makeLenses ''St
 
 data Continue = Continue St [Directive]

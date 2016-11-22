@@ -21,11 +21,10 @@ after n = lens getter setter
 intillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 intillNextN 0 _ = lens (const "") const
 intillNextN n pat = lens getter setter
-    where getter = padIfFound  . T.intercalate pat . take n . split' pat
+    where getter = pad . T.intercalate pat . take n . split' pat
           setter old new =
               T.append new . T.intercalate pat . drop n . split' pat $ old
-          padIfFound "" = ""
-          padIfFound x = x <> pat
+          pad = (<> pat)
 
 intillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
 intillPrevN 0 _ = lens (const "") const
@@ -33,7 +32,6 @@ intillPrevN n pat = lens getter setter
     where getter = padIfFound . T.intercalate pat . takeEnd n . split' pat
           setter old new =
               (<> new) . T.intercalate pat . dropEnd n . split' pat $ old
-          padIfFound "" = ""
           padIfFound x = pat <> x
 
 tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
@@ -78,3 +76,9 @@ split' pat t = case T.splitOn pat t of
                 [_] -> []
                 xs -> xs
 
+splittingBy :: T.Text -> Prism' T.Text  [T.Text]
+splittingBy pat = prism' rejoin $ \t -> case T.splitOn pat t of
+                                       [_] -> Nothing
+                                       xs -> Just xs
+
+   where rejoin = T.intercalate pat

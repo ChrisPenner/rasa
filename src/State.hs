@@ -22,8 +22,17 @@ focusedBuf = lens getter (flip setter)
     where getter = do
             foc <- view focused
             -- TODO use ix here and make it safe??
-            view (buffers. to (!! foc))
+            view (buffers.to (!! foc))
 
           setter a = do
             foc <- view focused
             set (buffers . ix foc) a
+
+-- focusedBuf :: Prism' St (Buffer Offset)
+-- focusedBuf = prism' embed getFocused
+--     where embed buf = def & buffers .~ [buf]
+--           getFocused :: St -> Maybe (Buffer Offset)
+--           getFocused = do
+--               foc <- view focused
+--               bufs <- view buffers
+--               return (bufs ^? ix foc)

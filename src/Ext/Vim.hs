@@ -16,7 +16,7 @@ instance Default VimSt where
     def = VimSt Normal
 
 vim :: Extension
-vim = Extension def applyVim
+vim = Extension "Vim" def applyVim
 
 applyVim :: VimSt -> St -> Event -> (VimSt, [Directive])
 applyVim (VimSt mode) _ = fromMode mode
