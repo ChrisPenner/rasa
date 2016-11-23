@@ -100,20 +100,20 @@ textlens = hspec $ describe "TextLens" $ do
         --     ("my test str" & TL.intillPrevN 1 "xx" .~ "_") `shouldBe` "my test str"
 
 
-    -- describe "tillPrevN" $ do
-    --     it "gets text up to but not including prev pattern" $
-    --         "my test str" ^. TL.tillPrevN 1 "test" `shouldBe` " str"
-    --     it "gets text up to but not including 2nd pattern" $
-    --         "my test str test end" ^. TL.tillPrevN 2 "test" `shouldBe` " str test end"
-    --     it "gets \"\" when pattern is first" $
-    --         "my test" ^. TL.tillPrevN 1 "test" `shouldBe` ""
-    --     it "gets \"\" when no match" $
-    --         "my test" ^. TL.tillPrevN 1 "nope" `shouldBe` ""
+    describe "tillPrevN" $ do
+        it "gets text up to but not including prev pattern" $
+            "my test str" ^. TL.tillPrevN 1 "test" `shouldBe` " str"
+        it "gets text up to but not including 2nd pattern" $
+            "my test str test end" ^. TL.tillPrevN 2 "test" `shouldBe` " str test end"
+        it "gets \"\" when pattern is first" $
+            "my test" ^. TL.tillPrevN 1 "test" `shouldBe` ""
+        it "gets \"\" when no match" $
+            "my test" ^. TL.tillPrevN 1 "nope" `shouldBe` ""
 
-        -- it "sets text up to but not including next pattern" $
-        --     ("my test test str" & TL.tillPrevN 2 "te" .~ "_") `shouldBe` "my te_"
-        -- it "set is null op if no match found" $
-        --     ("my test str" & TL.tillPrevN 1 "xx" .~ "_") `shouldBe` "my test str"
+        it "sets text up to but not including next pattern" $
+            ("my test test str" & TL.tillPrevN 2 "te" .~ "_") `shouldBe` "my te_"
+        it "set is null op if no match found" $
+            ("my test str" & TL.tillPrevN 1 "xx" .~ "_") `shouldBe` "my test str"
 
     describe "range" $ do
         it "gets the proper range" $

@@ -26,12 +26,16 @@ intillNextN n pat = lens getter setter
           setter old new = old & focus .~ new
 
 intillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
-intillPrevN 0 _ = lens (const "") const
 intillPrevN n pat = lens getter setter
-    where getter = padIfFound . T.intercalate pat . takeEnd n . split' pat
-          setter old new =
-              (<> new) . T.intercalate pat . dropEnd n . split' pat $ old
-          padIfFound x = pat <> x
+    where focus :: Traversal' T.Text T.Text
+          focus =
+              splittingByInc pat .
+              moreThanOne .
+              lTakeEnd n .
+              joiningByInc pat
+
+          getter = view focus
+          setter old new = old & focus .~ new
 
 tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 tillNextN n pat = lens getter setter
@@ -46,9 +50,8 @@ tillPrevN n pat = lens getter setter
     where focus :: Traversal' T.Text T.Text
           focus =
               splittingBy pat .
-              reversed .
-              lTake n .
-              reversed .
+              moreThanOne .
+              lTakeEnd n .
               joiningBy pat
 
           getter = view focus
@@ -126,6 +129,16 @@ lTake :: Int -> Lens' [a] [a]
 lTake n = lens getter setter
     where getter = take n
           setter old new = new ++ drop n old
+
+lTakeEnd :: Int -> Lens' [a] [a]
+lTakeEnd n = lens getter setter
+    where getter = takeEnd n
+          setter old new = dropEnd n old ++ new
+
+lDropEnd :: Int -> Lens' [a] [a]
+lDropEnd n = lens getter setter
+    where getter = dropEnd n
+          setter old new = new ++ takeEnd n old
 
 lDrop :: Int -> Lens' [a] [a]
 lDrop n = lens getter setter
