@@ -1,6 +1,7 @@
 module Ext.Vim (vim) where
 
 import Types
+import Control.Monad.State
 import Data.Default (Default, def)
 import qualified Data.Text as T
 
@@ -16,41 +17,42 @@ instance Default VimSt where
     def = VimSt Normal
 
 vim :: Extension
-vim = Extension "Vim" def applyVim
+vim = Extension "Vim" applyVim def
 
-applyVim :: VimSt -> St -> Event -> (VimSt, [Directive])
-applyVim (VimSt mode) _ = fromMode mode
+applyVim :: St -> Event -> State VimSt [Directive]
+applyVim _ evt = state go
+    where go (VimSt mode) = fromMode mode evt
 
-fromMode :: Mode -> Event -> (VimSt, [Directive])
-fromMode Insert Esc = (VimSt Normal, [])
-fromMode Insert BS = (VimSt Insert, [DeleteChar])
-fromMode Insert Enter = (VimSt Insert, [Append "\n"])
-fromMode Insert (Keypress 'w' [Ctrl]) = (VimSt Insert, [KillWord])
-fromMode Insert (Keypress 'c' [Ctrl]) = (VimSt Insert, [Exit])
-fromMode Insert (Keypress c _) = (VimSt Insert, [Append (T.singleton c)])
+fromMode :: Mode -> Event -> ([Directive], VimSt)
+fromMode Insert Esc = ([], VimSt Normal)
+fromMode Insert BS = ([DeleteChar], VimSt Insert)
+fromMode Insert Enter = ([Append "\n"], VimSt Insert)
+fromMode Insert (Keypress 'w' [Ctrl]) = ([KillWord], VimSt Insert)
+fromMode Insert (Keypress 'c' [Ctrl]) = ([Exit], VimSt Insert)
+fromMode Insert (Keypress c _) = ([Append $ T.singleton c], VimSt Insert)
 
-fromMode Normal (Keypress 'i' _ )  = (VimSt Insert, [])
-fromMode Normal (Keypress 'I' _ )  = (VimSt Insert, [StartOfLine])
-fromMode Normal (Keypress 'a' _ )  = (VimSt Insert, [MoveCursor 1])
-fromMode Normal (Keypress 'A' _ )  = (VimSt Insert, [EndOfLine])
-fromMode Normal (Keypress '0' _ )  = (VimSt Normal, [StartOfLine])
-fromMode Normal (Keypress '$' _ )  = (VimSt Normal, [FindNext "\n"])
-fromMode Normal (Keypress 'g' _ )  = (VimSt Normal, [StartOfBuffer])
-fromMode Normal (Keypress 'G' _ )  = (VimSt Normal, [EndOfBuffer])
-fromMode Normal (Keypress 'o' _ )  = (VimSt Insert, [EndOfLine, Append "\n"])
-fromMode Normal (Keypress 'O' _ )  = (VimSt Insert, [StartOfLine, Append "\n"])
-fromMode Normal (Keypress '+' _ ) = (VimSt Normal, [SwitchBuf 1])
-fromMode Normal (Keypress '-' _ ) = (VimSt Normal, [SwitchBuf (-1)])
-fromMode Normal (Keypress 'h' _ )  = (VimSt Normal, [MoveCursor (-1)])
-fromMode Normal (Keypress 'l' _ )  = (VimSt Normal, [MoveCursor 1])
-fromMode Normal (Keypress 'k' _ )  = (VimSt Normal, [MoveCursorCoordBy (-1, 0)])
-fromMode Normal (Keypress 'j' _ )  = (VimSt Normal, [MoveCursorCoordBy (1, 0)])
-fromMode Normal (Keypress 'f' _ )  = (VimSt Normal, [FindNext "f"])
-fromMode Normal (Keypress 'F' _ )  = (VimSt Normal, [FindPrev "f"])
-fromMode Normal (Keypress 'X' _) = (VimSt Normal, [DeleteChar])
-fromMode Normal (Keypress 'x' _) = (VimSt Normal, [MoveCursor 1, DeleteChar])
-fromMode Normal (Keypress 'D' _ )  = (VimSt Normal, [DeleteTillEOL])
-fromMode Normal (Keypress 'q' _) = (VimSt Normal, [Exit])
-fromMode Normal (Keypress 'c' [Ctrl]) = (VimSt Normal, [Exit])
+fromMode Normal (Keypress 'i' _ )  = ([], VimSt Insert)
+fromMode Normal (Keypress 'I' _ )  = ([StartOfLine], VimSt Insert)
+fromMode Normal (Keypress 'a' _ )  = ([MoveCursor 1], VimSt Insert)
+fromMode Normal (Keypress 'A' _ )  = ([EndOfLine], VimSt Insert)
+fromMode Normal (Keypress '0' _ )  = ([StartOfLine], VimSt Normal)
+fromMode Normal (Keypress '$' _ )  = ([FindNext "\n"], VimSt Normal)
+fromMode Normal (Keypress 'g' _ )  = ([StartOfBuffer], VimSt Normal)
+fromMode Normal (Keypress 'G' _ )  = ([EndOfBuffer], VimSt Normal)
+fromMode Normal (Keypress 'o' _ )  = ([EndOfLine, Append "\n"], VimSt Insert)
+fromMode Normal (Keypress 'O' _ )  = ([StartOfLine, Append "\n"], VimSt Insert)
+fromMode Normal (Keypress '+' _ ) = ([SwitchBuf 1], VimSt Normal)
+fromMode Normal (Keypress '-' _ ) = ([SwitchBuf (-1)], VimSt Normal)
+fromMode Normal (Keypress 'h' _ )  = ([MoveCursor (-1)], VimSt Normal)
+fromMode Normal (Keypress 'l' _ )  = ([MoveCursor 1], VimSt Normal)
+fromMode Normal (Keypress 'k' _ )  = ([MoveCursorCoordBy (-1, 0)], VimSt Normal)
+fromMode Normal (Keypress 'j' _ )  = ([MoveCursorCoordBy (1, 0)], VimSt Normal)
+fromMode Normal (Keypress 'f' _ )  = ([FindNext "f"], VimSt Normal)
+fromMode Normal (Keypress 'F' _ )  = ([FindPrev "f"], VimSt Normal)
+fromMode Normal (Keypress 'X' _) = ([DeleteChar], VimSt Normal)
+fromMode Normal (Keypress 'x' _) = ([MoveCursor 1, DeleteChar], VimSt Normal)
+fromMode Normal (Keypress 'D' _ )  = ([DeleteTillEOL], VimSt Normal)
+fromMode Normal (Keypress 'q' _) = ([Exit], VimSt Normal)
+fromMode Normal (Keypress 'c' [Ctrl]) = ([Exit], VimSt Normal)
 
-fromMode mode _ = (VimSt mode, [])
+fromMode mode _ = ([], VimSt mode)

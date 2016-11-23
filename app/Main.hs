@@ -4,6 +4,7 @@ module Main where
 import VtyAdapter (convertEvent, render)
 import Extensions
 import Directives (handleEvent)
+import Control.Monad.State
 import Types as T
 
 import Data.Default (def)
@@ -14,7 +15,8 @@ appEvent :: St -> V.Event -> Continue
 appEvent st evt = handleEvent $ toRasa evt st
 
 toRasa :: V.Event -> St -> Continue
-toRasa e st = uncurry Continue (applyExtensions st (convertEvent e))
+toRasa e st = (uncurry $ flip Continue) (runState (applyExtensions evt) st )
+    where evt = convertEvent e
 
 main :: IO ()
 main = do

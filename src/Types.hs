@@ -2,6 +2,7 @@
 module Types where
 
 import Data.Text as T
+import Control.Monad.State (State)
 import Control.Lens
 
 data Mod =
@@ -48,8 +49,8 @@ makeLenses ''Buffer
 
 data Extension = forall extSt. Extension {
     _name :: String
+  , _apply :: St -> Event -> State extSt [Directive]
   , _extState :: extSt
-  , _apply :: extSt -> St -> Event -> (extSt, [Directive])
 }
 
 instance Show Extension where
