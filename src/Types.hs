@@ -31,6 +31,7 @@ data Directive =
   | EndOfBuffer
   | FindNext T.Text
   | FindPrev T.Text
+  | DeleteTillEOL
   | Noop
   | Exit
   deriving (Show, Eq)

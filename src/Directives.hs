@@ -36,6 +36,9 @@ findNext txt = useCountFor (withOffset after.tillNext txt) moveCursorBy
 findPrev :: T.Text -> Buffer Offset -> Buffer Offset
 findPrev txt = useCountFor (withOffset before.tillPrev txt) moveCursorBackBy
 
+deleteTillEOL :: Buffer Offset -> Buffer Offset
+deleteTillEOL = withOffset after.tillNext "\n" .~ ""
+
 doEvent :: Directive -> St -> St
 doEvent (Append txt) =  focusedBuf %~ appendText txt
 doEvent DeleteChar = deleteChar
@@ -48,6 +51,7 @@ doEvent StartOfBuffer = focusedBuf %~ moveCursorTo 0
 doEvent EndOfBuffer = focusedBuf %~ useCountFor text moveCursorTo
 doEvent (FindNext txt) = focusedBuf %~ findNext txt
 doEvent (FindPrev txt) = focusedBuf %~ findPrev txt
+doEvent DeleteTillEOL = focusedBuf %~ deleteTillEOL
 doEvent Exit = id
 doEvent Noop = id
 

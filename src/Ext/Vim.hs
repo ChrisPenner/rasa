@@ -49,6 +49,7 @@ fromMode Normal (Keypress 'f' _ )  = (VimSt Normal, [FindNext "f"])
 fromMode Normal (Keypress 'F' _ )  = (VimSt Normal, [FindPrev "f"])
 fromMode Normal (Keypress 'X' _) = (VimSt Normal, [DeleteChar])
 fromMode Normal (Keypress 'x' _) = (VimSt Normal, [MoveCursor 1, DeleteChar])
+fromMode Normal (Keypress 'D' _ )  = (VimSt Normal, [DeleteTillEOL])
 fromMode Normal (Keypress 'q' _) = (VimSt Normal, [Exit])
 fromMode Normal (Keypress 'c' [Ctrl]) = (VimSt Normal, [Exit])
 
