@@ -107,14 +107,6 @@ splittingByInc pat = lens getter setter
                         in lst & reversed . dropping 1 traverse %~ (<> pat)
           setter _ = T.concat
 
--- splittingBy :: T.Text -> Prism' T.Text  [T.Text]
--- splittingBy pat = prism' review' getter
---     where review' = T.intercalate pat
---           getter :: T.Text -> Maybe [T.Text]
---           getter t = case T.splitOn pat t of
---                    [_] -> Nothing
---                    xs -> Just xs
-
 joiningByInc :: T.Text -> Lens' [T.Text] T.Text
 joiningByInc pat = lens getter setter
     where getter = T.concat

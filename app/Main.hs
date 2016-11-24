@@ -3,19 +3,20 @@ module Main where
 
 import VtyAdapter (convertEvent, render)
 import Extensions
-import Directives (handleEvent)
+import Directives (applyDirectives)
 import Control.Monad.State
+import Data.Tuple (swap)
 import Types as T
 
 import Data.Default (def)
 
 import Graphics.Vty as V
 
-appEvent :: St -> V.Event -> Continue
-appEvent st evt = handleEvent $ toRasa evt st
+handleEvent :: V.Event -> St -> Continue
+handleEvent evt = applyDirectives . toRasa evt
 
 toRasa :: V.Event -> St -> Continue
-toRasa e st = (uncurry $ flip Continue) (runState (applyExtensions evt) st )
+toRasa e = uncurry Continue . swap . runState (applyExtensions evt)
     where evt = convertEvent e
 
 main :: IO ()
@@ -30,7 +31,7 @@ eventLoop vty st = do
     let pic = V.picForImage $ render sz st
     update vty pic
     e <- V.nextEvent vty
-    let (Continue nextState dirs) = appEvent st e
+    let (Continue nextState dirs) = handleEvent e st
     if Exit `elem` dirs
        then shutdown vty
        else eventLoop vty nextState
