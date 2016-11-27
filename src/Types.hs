@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Types where
 
-import Data.Text as T
+import qualified Data.Text as T
 import Control.Monad.State (State)
 import Control.Lens
 
@@ -19,8 +19,22 @@ data Event =
   | Unknown
   deriving (Show)
 
+data CustomOp =
+    OverState (St -> St)
+  | OverBuffer (Buffer Offset -> Buffer Offset)
+  | OverText (T.Text -> T.Text)
+
+instance Eq CustomOp where
+    _ == _ = False
+
+instance Show CustomOp where
+    show (OverState _) = "OverState"
+    show (OverBuffer _) = "OverBuffer"
+    show (OverText _) = "OverText"
+
 data Directive =
-    Append T.Text
+    CustomOp CustomOp
+  | Append T.Text
   | DeleteChar
   | KillWord
   | SwitchBuf Int
@@ -45,7 +59,6 @@ data Buffer c = Buffer {
     _text :: T.Text
   , _cursor :: c
 } deriving (Show, Eq)
-makeLenses ''Buffer
 
 data Extension = forall extSt. Extension {
     _name :: String
@@ -61,6 +74,8 @@ data St = St {
   , _focused :: Int
   , _extensions :: [Extension]
 } deriving (Show)
-makeLenses ''St
 
 data Continue = Continue St [Directive]
+
+makeLenses ''Buffer
+makeLenses ''St

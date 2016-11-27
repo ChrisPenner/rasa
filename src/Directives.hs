@@ -28,6 +28,9 @@ deleteTillEOL :: Buffer Offset -> Buffer Offset
 deleteTillEOL = withOffset after.tillNext "\n" .~ ""
 
 doEvent :: Directive -> St -> St
+doEvent (CustomOp (OverState f)) = f
+doEvent (CustomOp (OverBuffer f)) = focusedBuf %~ f
+doEvent (CustomOp (OverText f)) = focusedBuf.text %~ f
 doEvent (Append txt) =  focusedBuf %~ appendText txt
 doEvent DeleteChar = focusedBuf %~ deleteChar
 doEvent KillWord =  focusedBuf.text %~ (T.unwords . dropEnd 1 . T.words)
