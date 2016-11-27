@@ -27,12 +27,3 @@ focusedBuf = lens getter (flip setter)
           setter a = do
             foc <- view focused
             set (buffers . ix foc) a
-
--- focusedBuf :: Prism' St (Buffer Offset)
--- focusedBuf = prism' embed getFocused
---     where embed buf = def & buffers .~ [buf]
---           getFocused :: St -> Maybe (Buffer Offset)
---           getFocused = do
---               foc <- view focused
---               bufs <- view buffers
---               return (bufs ^? ix foc)

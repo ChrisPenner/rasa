@@ -58,7 +58,7 @@ applyAttrs' _ [] = []
 applyAttrs' [] lines' = fmap (V.text' V.currentAttr) lines'
 applyAttrs' allAttrs@((offset, attr):attrs) (l:lines')
   | T.length l < offset = plainText l : applyAttrs' (decr (T.length l + 1) allAttrs) lines'
-  | otherwise = let prefix = plainText (T.take offset l) V.<|> V.text' attr " "
+  | otherwise = let prefix = plainText (T.take offset l) V.<|> V.text' attr ""
                     suffix = if null rest
                                 then V.emptyImage
                                 else head rest

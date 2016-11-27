@@ -32,6 +32,7 @@ buffer :: T.Text -> Buffer Offset
 buffer t = Buffer {
         _text=t
       , _cursor=0
+      , _filename="junkfile.txt"
 }
 
 withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text

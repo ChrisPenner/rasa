@@ -19,21 +19,11 @@ data Event =
   | Unknown
   deriving (Show)
 
-data CustomOp =
-    OverState (St -> St)
-  | OverBuffer (Buffer Offset -> Buffer Offset)
-  | OverText (T.Text -> T.Text)
-
-instance Eq CustomOp where
-    _ == _ = False
-
-instance Show CustomOp where
-    show (OverState _) = "OverState"
-    show (OverBuffer _) = "OverBuffer"
-    show (OverText _) = "OverText"
-
 data Directive =
-    CustomOp CustomOp
+    OverState (St -> IO St)
+  | OverBuffer (Buffer Offset -> IO (Buffer Offset))
+  | OverText (T.Text -> IO T.Text)
+  | Effect (IO ())
   | Append T.Text
   | DeleteChar
   | KillWord
@@ -49,7 +39,6 @@ data Directive =
   | DeleteTillEOL
   | Noop
   | Exit
-  deriving (Show, Eq)
 
 type Offset = Int
 type Coord = (Int, Int)
@@ -58,6 +47,7 @@ type Size = (Int, Int)
 data Buffer c = Buffer {
     _text :: T.Text
   , _cursor :: c
+  , _filename :: String
 } deriving (Show, Eq)
 
 data Extension = forall extSt. Extension {
@@ -74,8 +64,6 @@ data St = St {
   , _focused :: Int
   , _extensions :: [Extension]
 } deriving (Show)
-
-data Continue = Continue St [Directive]
 
 makeLenses ''Buffer
 makeLenses ''St

@@ -27,6 +27,7 @@ library
 
                        Config
                        Ext.Vim
+                       Ext.Files
 
   build-depends:       base >= 4.7 && < 5
                      , text

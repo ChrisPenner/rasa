@@ -5,19 +5,22 @@ import VtyAdapter (convertEvent, render)
 import Extensions
 import Directives (applyDirectives)
 import Control.Monad.State
-import Data.Tuple (swap)
-import Types as T
+import Types
 
 import Data.Default (def)
-
 import Graphics.Vty as V
 
-handleEvent :: V.Event -> St -> Continue
-handleEvent evt = applyDirectives . toRasa evt
+shouldExit :: [Directive] -> Bool
+shouldExit = any isExit
 
-toRasa :: V.Event -> St -> Continue
-toRasa e = uncurry Continue . swap . runState (applyExtensions evt)
+isExit :: Directive -> Bool
+isExit Exit = True
+isExit _ = False
+
+handleEvent :: V.Event -> St -> (Bool, IO St)
+handleEvent e st = (shouldExit dirs, applyDirectives newState dirs)
     where evt = convertEvent e
+          (dirs, newState) = runState (applyExtensions evt) st
 
 main :: IO ()
 main = do
@@ -31,7 +34,8 @@ eventLoop vty st = do
     let pic = V.picForImage $ render sz st
     update vty pic
     e <- V.nextEvent vty
-    let (Continue nextState dirs) = handleEvent e st
-    if Exit `elem` dirs
+    let (exit, getNewState) = handleEvent e st
+    newState <- getNewState
+    if exit
        then shutdown vty
-       else eventLoop vty nextState
+       else eventLoop vty newState
