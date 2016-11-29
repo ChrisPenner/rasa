@@ -2,13 +2,13 @@
 module Main where
 
 import VtyAdapter (convertEvent, render)
-import Extensions
+import Extensions (runExtensions)
 import Directives (applyDirectives)
-import Control.Monad.State
 import Types
 
+import Control.Lens
 import Data.Default (def)
-import Graphics.Vty as V
+import qualified Graphics.Vty as V
 
 shouldExit :: [Directive] -> Bool
 shouldExit = any isExit
@@ -17,10 +17,11 @@ isExit :: Directive -> Bool
 isExit Exit = True
 isExit _ = False
 
-handleEvent :: V.Event -> St -> (Bool, IO St)
-handleEvent e st = (shouldExit dirs, applyDirectives newState dirs)
-    where evt = convertEvent e
-          (dirs, newState) = runState (applyExtensions evt) st
+handleEvent :: Event -> St -> IO ([Extension], [Directive])
+handleEvent e st = runAlteration alt (st, e)
+    where exts = st^.extensions
+          alt :: Alteration [Extension]
+          alt = runExtensions exts
 
 main :: IO ()
 main = do
@@ -32,10 +33,10 @@ eventLoop :: V.Vty -> St -> IO ()
 eventLoop vty st = do
     sz <- V.displayBounds $ V.outputIface vty
     let pic = V.picForImage $ render sz st
-    update vty pic
-    e <- V.nextEvent vty
-    let (exit, getNewState) = handleEvent e st
-    newState <- getNewState
-    if exit
-       then shutdown vty
+    V.update vty pic
+    evt <- convertEvent <$> V.nextEvent vty
+    (exts, dirs) <- handleEvent evt st
+    newState <- applyDirectives st dirs <&> extensions .~ exts
+    if shouldExit dirs
+       then V.shutdown vty
        else eventLoop vty newState

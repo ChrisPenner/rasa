@@ -1,29 +1,32 @@
 module Ext.Files (files) where
 
 import Types
-import Control.Monad.State
-import Data.Default (Default, def)
+import Control.Monad.Reader
+import Control.Monad.Writer
+import Data.Default (def)
 import qualified Data.Text.IO as TIO
 import Control.Lens
 
-data FileSt = FileSt
-    deriving (Show, Eq)
+type FileSt = ()
 
 data Mode = Insert
           | Normal
           deriving (Show, Eq)
 
-instance Default FileSt where
-    def = FileSt
+name :: String
+name = "Files"
 
 files :: Extension
-files = Extension "Files" applyFiles def
+files = Extension name applyFiles def
 
-applyFiles :: St -> Event -> State FileSt [Directive]
-applyFiles _ evt = state $ perform evt
+applyFiles :: FileSt -> Alteration Extension
+applyFiles _ = do
+    (_, evt) <- ask
+    tell $ perform evt
+    return files
 
-perform :: Event -> FileSt -> ([Directive], FileSt)
-perform (Keypress 's' [Ctrl]) fileSt = ([OverBuffer go], fileSt)
+perform :: Event -> [Directive]
+perform (Keypress 's' [Ctrl]) = [OverBuffer go]
     where go :: Buffer Offset -> IO (Buffer Offset)
           go buf = do
               let fname = buf^.filename
@@ -31,4 +34,4 @@ perform (Keypress 's' [Ctrl]) fileSt = ([OverBuffer go], fileSt)
               TIO.writeFile fname contents
               return buf
 
-perform _ fileSt = ([], fileSt)
+perform _ = []

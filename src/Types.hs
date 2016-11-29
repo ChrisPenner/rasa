@@ -1,9 +1,15 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, GeneralizedNewtypeDeriving #-}
 module Types where
 
 import qualified Data.Text as T
-import Control.Monad.State (State)
+import Control.Monad.Reader
+import Control.Monad.Writer
 import Control.Lens
+
+type Alteration a = ReaderT (St, Event) (WriterT [Directive] IO) a
+
+runAlteration :: Alteration a -> (St, Event) -> IO (a, [Directive])
+runAlteration alt = runWriterT . runReaderT alt
 
 data Mod =
     Ctrl
@@ -50,9 +56,9 @@ data Buffer c = Buffer {
   , _filename :: String
 } deriving (Show, Eq)
 
-data Extension = forall extSt. Extension {
+data Extension = forall extSt . Extension {
     _name :: String
-  , _apply :: St -> Event -> State extSt [Directive]
+  , _apply :: extSt -> Alteration Extension
   , _extState :: extSt
 }
 

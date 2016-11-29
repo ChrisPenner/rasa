@@ -1,7 +1,8 @@
 module Ext.Vim (vim) where
 
 import Types
-import Control.Monad.State
+import Control.Monad.Reader
+import Control.Monad.Writer
 import Data.Default (Default, def)
 import qualified Data.Text as T
 
@@ -16,12 +17,18 @@ data Mode = Insert
 instance Default VimSt where
     def = VimSt Normal
 
-vim :: Extension
-vim = Extension "Vim" applyVim def
+name :: String
+name = "Vim"
 
-applyVim :: St -> Event -> State VimSt [Directive]
-applyVim _ evt = state go
-    where go (VimSt mode) = fromMode mode evt
+vim :: Extension
+vim = Extension name applyVim def
+
+applyVim :: VimSt -> Alteration Extension
+applyVim (VimSt mode) = do
+    (_, evt) <- ask
+    let (dirs, newSt) = fromMode mode evt
+    tell dirs
+    return $ Extension name applyVim newSt
 
 fromMode :: Mode -> Event -> ([Directive], VimSt)
 fromMode Insert Esc = ([], VimSt Normal)
