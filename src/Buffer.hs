@@ -1,8 +1,12 @@
 {-# LANGUAGE Rank2Types #-}
 module Buffer (
-    cursor
+    Buffer
+  , Offset
+  , Coord
+  , cursor
   , text
   , buffer
+  , filename
 
   , withOffset
   , moveCursorBy
@@ -17,10 +21,19 @@ module Buffer (
 import qualified Data.Text as T
 import Control.Lens hiding (matching)
 
-import Types
 import TextLens
 import Utils
 
+type Offset = Int
+type Coord = (Int, Int)
+
+data Buffer c = Buffer {
+    _text :: T.Text
+  , _cursor :: c
+  , _filename :: String
+} deriving (Show, Eq)
+
+makeLenses ''Buffer
 
 buffer :: T.Text -> Buffer Offset
 buffer t = Buffer {

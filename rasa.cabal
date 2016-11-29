@@ -17,19 +17,23 @@ library
   hs-source-dirs:      src
   other-modules:
                        Buffer
-                       State
                        View
                        Utils
 
   exposed-modules:
+                       State
+                       Event
                        TextLens
-                       Types
                        VtyAdapter
-                       Directives
+                       Directive
+                       Alteration
 
                        Config
+                       ConfigState
                        Ext.Vim
+                       Ext.Vim.State
                        Ext.Files
+                       Ext.Utils
 
   build-depends:       base >= 4.7 && < 5
                      , text

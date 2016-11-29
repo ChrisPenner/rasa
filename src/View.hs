@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module View (
     textWrap
   , Size
@@ -7,12 +7,11 @@ module View (
     )
     where
 
-import Types
-
 import qualified Data.Text as T
 import Data.List (unfoldr)
 import Control.Arrow (second)
 
+type Size = (Int, Int)
 class Renderable a b where
     render :: Size -> a -> b
 

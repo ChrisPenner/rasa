@@ -1,26 +1,26 @@
 module Ext.Vim (vim, VimSt) where
 
-import Types
+import Ext.Vim.State
+import Directive
+import Alteration
+import Event
 
-import Data.Default (Default, def)
+import Ext.Utils
+
 import qualified Data.Text as T
 
-data VimSt = Normal | Insert
-
-instance Default VimSt where
-    def = Normal
-
-vim :: VimSt -> Alteration VimSt
-vim mode = do
-    evt <- getEvent
+vim :: Alteration ()
+vim = do
+    mode <- getVim
     let modeFunc = case mode of
                     Normal -> normal
                     Insert -> insert
 
-    case evt of
-      Just e -> let (dirs, newMode) = modeFunc e
-                 in apply dirs >> return newMode
-      Nothing -> return mode
+    evt <- getEvent
+    mapM_ (performEvent modeFunc) evt
+        where performEvent modeFunc e = 
+                let (dirs, newMode) = modeFunc e
+                 in apply dirs >> setVim newMode
 
 insert :: Event -> ([Directive], VimSt)
 insert Esc = ([], Normal)

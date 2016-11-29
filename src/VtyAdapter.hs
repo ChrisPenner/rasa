@@ -8,7 +8,7 @@ module VtyAdapter (
 import State
 import Buffer
 import View
-import Types
+import Event
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T

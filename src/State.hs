@@ -1,12 +1,21 @@
 module State (
-    focusedBuf
+    St
+  , focusedBuf
+  , focused
+  , buffers
 ) where
 
 import Control.Lens
 import Data.Default (def, Default(..))
 
 import Buffer
-import Types
+
+data St = St {
+    _buffers :: [Buffer Offset]
+  , _focused :: Int
+}
+
+makeLenses ''St
 
 instance Default St where
     def = St {
@@ -25,3 +34,4 @@ focusedBuf = lens getter (flip setter)
           setter a = do
             foc <- view focused
             set (buffers . ix foc) a
+

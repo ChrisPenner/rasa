@@ -1,15 +1,18 @@
 module Ext.Files (files) where
 
-import Types
 import qualified Data.Text.IO as TIO
 import Control.Lens
+
+import Alteration
+import Directive
+import Buffer
+import Event
+import Ext.Utils
 
 files :: Alteration ()
 files = do
     evt <- getEvent
-    case evt of
-      Just e -> apply $ perform e
-      Nothing -> return ()
+    mapM_ (apply . perform) evt
 
 perform :: Event -> [Directive]
 perform (Keypress 's' [Ctrl]) = [OverBuffer saveFile]

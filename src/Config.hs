@@ -1,12 +1,10 @@
 module Config where
-import Ext.Vim (vim, VimSt)
+import Ext.Vim (vim)
 import Ext.Files (files)
-import Types
 
-type ExtType = VimSt
+import Alteration
 
-runExtensions :: ExtType -> Alteration ExtType
-runExtensions vimState = do
-    newVimState <- vim vimState
+runExtensions :: Alteration ()
+runExtensions = do
+    vim
     files
-    return newVimState

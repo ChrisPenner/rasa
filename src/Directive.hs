@@ -1,16 +1,36 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module Directives (applyDirectives) where
+module Directive (applyDirectives, Directive(..)) where
 
 import State
 import TextLens
 import Buffer
-import Types
 
 import Control.Lens
 import qualified Data.Text as T
 import Control.Monad.State (execState)
 import Data.Foldable (foldlM)
 import Data.List.Extra (dropEnd)
+
+data Directive =
+    OverState (St -> IO St)
+  | OverBuffer (Buffer Offset -> IO (Buffer Offset))
+  | OverText (T.Text -> IO T.Text)
+  | Effect (IO ())
+  | Append T.Text
+  | DeleteChar
+  | KillWord
+  | SwitchBuf Int
+  | MoveCursor Int
+  | MoveCursorCoordBy Coord
+  | StartOfLine
+  | EndOfLine
+  | StartOfBuffer
+  | EndOfBuffer
+  | FindNext T.Text
+  | FindPrev T.Text
+  | DeleteTillEOL
+  | Noop
+  | Exit
 
 applyDirectives :: St -> [Directive] -> IO St
 applyDirectives = foldlM (flip doEvent)
