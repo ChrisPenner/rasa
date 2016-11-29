@@ -1,13 +1,10 @@
 {-# LANGUAGE Rank2Types #-}
 module Buffer (
-    Buffer(..)
-    , cursor
-    , text
-    , buffer
-  , Offset
-  , Coord
+    cursor
+  , text
+  , buffer
+
   , withOffset
-  , inBuf
   , moveCursorBy
   , moveCursorCoordBy
   , moveCursorBackBy
@@ -15,12 +12,9 @@ module Buffer (
   , appendText
   , useCountFor
   , asCoord
-  , asOffset
 ) where
 
 import qualified Data.Text as T
-import Control.Monad.State (evalState, execState)
-import Control.Arrow ((>>>))
 import Control.Lens hiding (matching)
 
 import Types
@@ -37,17 +31,11 @@ buffer t = Buffer {
 
 withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text
 withOffset l = lens getter setter
-    where getter = evalState $ do
-            curs <- use cursor
-            use (text.l curs)
+    where getter buf = let curs = buf^.cursor
+                        in buf^.text.l curs
 
-          setter old new = flip execState old $ do
-              curs <- use cursor
-              (text.l curs) .= new
-
-inBuf :: Lens' T.Text T.Text -> Lens' (Buffer a) T.Text
-inBuf = (text.)
-
+          setter old new = let curs = old^.cursor
+                            in old & text.l curs .~ new
 
 moveCursorBy :: Int -> Buffer Offset -> Buffer Offset
 moveCursorBy n = do
@@ -59,28 +47,25 @@ moveCursorCoordBy c = asCoord.cursor %~ addPair c
     where addPair (a, b) (a', b') = (a + a', b + b')
 
 moveCursorTo :: Int -> Buffer Offset -> Buffer Offset
-moveCursorTo n = execState $ do
-    mx <- use (text.to T.length)
-    cursor .= clamp 0 mx n
+moveCursorTo n = do
+    mx <- view (text.to T.length)
+    cursor .~ clamp 0 mx n
 
 moveCursorBackBy :: Int -> Buffer Offset -> Buffer Offset
 moveCursorBackBy = moveCursorBy . negate
 
 appendText :: T.Text -> Buffer Offset -> Buffer Offset
-appendText txt buf = (text.range curs curs .~ txt)
-                        >>> moveCursorBy (T.length txt) $ buf
-                            where curs = buf^.cursor
+appendText txt buf = buf
+                     & text.range curs curs .~ txt
+                     & moveCursorBy (T.length txt)
+                         where curs = buf^.cursor
 
 useCountFor :: Lens' (Buffer Offset) T.Text -> (Int -> Buffer Offset -> Buffer Offset) -> Buffer Offset -> Buffer Offset
-useCountFor l f = do
-    count <- view $ l . to T.length
-    f count
+useCountFor l f buf = f curs buf
+    where curs = buf^.l.to T.length
 
 asCoord :: Iso' (Buffer Offset) (Buffer Coord)
 asCoord = iso bufToCoord bufToOffset
-
-asOffset :: Iso' (Buffer Coord) (Buffer Offset)
-asOffset = iso bufToOffset bufToCoord
 
 bufToOffset :: Buffer Coord -> Buffer Offset
 bufToOffset = do

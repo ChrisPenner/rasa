@@ -15,15 +15,19 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     State
-                       VtyAdapter
-                       View
-                       Directives
-                       TextLens
-                       Utils
+  other-modules:
                        Buffer
+                       State
+                       View
+                       Utils
+                       Trans
+
+  exposed-modules:
+                       TextLens
                        Types
                        Extensions
+                       VtyAdapter
+                       Directives
 
                        Config
                        Ext.Vim
@@ -47,7 +51,7 @@ library
 executable rasa-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N 
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , rasa
                      , text
@@ -61,6 +65,7 @@ test-suite rasa-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
+  other-modules:       TextLensTest
   build-depends:       base
                      , rasa
                      , hspec
