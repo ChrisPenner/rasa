@@ -65,14 +65,13 @@ data Buffer c = Buffer {
   , _filename :: String
 } deriving (Show, Eq)
 
-data Extension = forall extSt . Extension {
-    _name :: String
-  , _apply :: extSt -> Alteration Extension
-  , _extState :: extSt
+data Extension = Extension {
+    _extName :: String
+  , runExtension :: Alteration Extension
 }
 
 instance Show Extension where
-    show = _name
+    show = _extName
 
 data St = St {
     _buffers :: [Buffer Offset]
@@ -80,5 +79,6 @@ data St = St {
   , _extensions :: [Extension]
 } deriving (Show)
 
+makeLenses ''Extension
 makeLenses ''Buffer
 makeLenses ''St

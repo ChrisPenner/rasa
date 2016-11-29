@@ -1,24 +1,17 @@
 module Ext.Files (files) where
 
 import Types
-import Data.Default (def)
 import qualified Data.Text.IO as TIO
 import Control.Lens
-
-type FileSt = ()
-
-data Mode = Insert
-          | Normal
-          deriving (Show, Eq)
 
 name :: String
 name = "Files"
 
 files :: Extension
-files = Extension name applyFiles def
+files = Extension name applyFiles
 
-applyFiles :: FileSt -> Alteration Extension
-applyFiles _ = do
+applyFiles :: Alteration Extension
+applyFiles = do
     evt <- getEvent
     apply $ perform evt
     return files
