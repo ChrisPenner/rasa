@@ -20,7 +20,6 @@ library
                        State
                        View
                        Utils
-                       Trans
 
   exposed-modules:
                        TextLens

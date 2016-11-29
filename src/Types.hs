@@ -11,6 +11,15 @@ type Alteration a = ReaderT (St, Event) (WriterT [Directive] IO) a
 runAlteration :: Alteration a -> (St, Event) -> IO (a, [Directive])
 runAlteration alt = runWriterT . runReaderT alt
 
+apply :: [Directive] -> Alteration ()
+apply = tell
+
+getState :: Alteration St
+getState = fst <$> ask
+
+getEvent :: Alteration Event
+getEvent = snd <$> ask
+
 data Mod =
     Ctrl
   | Alt

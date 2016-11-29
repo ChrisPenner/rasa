@@ -1,8 +1,6 @@
 module Ext.Files (files) where
 
 import Types
-import Control.Monad.Reader
-import Control.Monad.Writer
 import Data.Default (def)
 import qualified Data.Text.IO as TIO
 import Control.Lens
@@ -21,14 +19,14 @@ files = Extension name applyFiles def
 
 applyFiles :: FileSt -> Alteration Extension
 applyFiles _ = do
-    (_, evt) <- ask
-    tell $ perform evt
+    evt <- getEvent
+    apply $ perform evt
     return files
 
 perform :: Event -> [Directive]
-perform (Keypress 's' [Ctrl]) = [OverBuffer go]
-    where go :: Buffer Offset -> IO (Buffer Offset)
-          go buf = do
+perform (Keypress 's' [Ctrl]) = [OverBuffer saveFile]
+    where saveFile :: Buffer Offset -> IO (Buffer Offset)
+          saveFile buf = do
               let fname = buf^.filename
                   contents = buf^.text
               TIO.writeFile fname contents
