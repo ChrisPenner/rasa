@@ -5,7 +5,6 @@ module State (
 import Control.Lens
 import Data.Default (def, Default(..))
 
-import qualified Config as C
 import Buffer
 import Types
 
@@ -13,7 +12,6 @@ instance Default St where
     def = St {
             _buffers=fmap buffer ["Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?", "Buffer 1"]
           , _focused=0
-          , _extensions=C.extensions
              }
 
 

@@ -4,17 +4,11 @@ import Types
 import qualified Data.Text.IO as TIO
 import Control.Lens
 
-name :: String
-name = "Files"
-
-files :: Extension
-files = Extension name applyFiles
-
-applyFiles :: Alteration Extension
-applyFiles = do
+files :: Alteration ()
+files = do
     evt <- getEvent
     apply $ perform evt
-    return files
+    return ()
 
 perform :: Event -> [Directive]
 perform (Keypress 's' [Ctrl]) = [OverBuffer saveFile]

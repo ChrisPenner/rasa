@@ -1,14 +1,14 @@
 name:                rasa
 version:             0.1.0.0
-synopsis:            Initial project template from stack
-description:         Please see README.md
-homepage:            https://github.com/githubuser/rasa#readme
-license:             BSD3
+synopsis:            A modular text editor
+description:         A modular text editor
+homepage:            https://github.com/ChrisPenner/rasa#readme
+license:             MIT
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2016 Author name here
-category:            Web
+author:              Chris Penner
+maintainer:          christopher.penner@gmail.com
+copyright:           2016 Chris Penner
+category:            Text Editor
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
@@ -24,7 +24,6 @@ library
   exposed-modules:
                        TextLens
                        Types
-                       Extensions
                        VtyAdapter
                        Directives
 
