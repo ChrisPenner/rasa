@@ -4,21 +4,25 @@ module Types where
 import qualified Data.Text as T
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Control.Monad.State
 import Control.Lens
 
-type Alteration a = ReaderT (St, Event) (WriterT [Directive] IO) a
+type Alteration a = StateT (Maybe Event) (ReaderT St (WriterT [Directive] IO)) a
 
-runAlteration :: Alteration a -> (St, Event) -> IO (a, [Directive])
-runAlteration alt = runWriterT . runReaderT alt
+runAlteration :: Alteration a -> Maybe Event -> St -> IO (a, [Directive])
+runAlteration alt evt st = runWriterT $ flip runReaderT st $ evalStateT alt evt
 
 apply :: [Directive] -> Alteration ()
 apply = tell
 
 getState :: Alteration St
-getState = fst <$> ask
+getState = ask
 
-getEvent :: Alteration Event
-getEvent = snd <$> ask
+getEvent :: Alteration (Maybe Event)
+getEvent = get
+
+setEvent :: Maybe Event -> Alteration ()
+setEvent = put
 
 data Mod =
     Ctrl

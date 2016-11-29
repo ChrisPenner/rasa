@@ -7,8 +7,9 @@ import Control.Lens
 files :: Alteration ()
 files = do
     evt <- getEvent
-    apply $ perform evt
-    return ()
+    case evt of
+      Just e -> apply $ perform e
+      Nothing -> return ()
 
 perform :: Event -> [Directive]
 perform (Keypress 's' [Ctrl]) = [OverBuffer saveFile]

@@ -13,11 +13,14 @@ instance Default VimSt where
 vim :: VimSt -> Alteration VimSt
 vim mode = do
     evt <- getEvent
-    let (dirs, newMode) = case mode of
-                            Normal -> normal evt
-                            Insert -> insert evt
-    apply dirs
-    return newMode
+    let modeFunc = case mode of
+                    Normal -> normal
+                    Insert -> insert
+
+    case evt of
+      Just e -> let (dirs, newMode) = modeFunc e
+                 in apply dirs >> return newMode
+      Nothing -> return mode
 
 insert :: Event -> ([Directive], VimSt)
 insert Esc = ([], Normal)

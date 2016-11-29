@@ -13,7 +13,7 @@ shouldExit = any isExit
     where isExit Exit = True
           isExit _ = False
 
-handleEvent :: Alteration ExtType -> (St, Event) -> IO (ExtType, [Directive])
+handleEvent :: Alteration ExtType -> Maybe Event -> St -> IO (ExtType, [Directive])
 handleEvent = runAlteration
 
 main :: IO ()
@@ -28,7 +28,7 @@ eventLoop vty st extState = do
     let pic = V.picForImage $ render sz st
     V.update vty pic
     evt <- convertEvent <$> V.nextEvent vty
-    (newExtState, dirs) <- handleEvent (runExtensions extState) (st, evt)
+    (newExtState, dirs) <- handleEvent (runExtensions extState) (Just evt) st
     newState <- applyDirectives st dirs
     if shouldExit dirs
        then V.shutdown vty
