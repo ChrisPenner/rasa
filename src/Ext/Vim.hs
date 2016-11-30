@@ -5,6 +5,8 @@ import Alteration
 import Event
 
 import Ext.Vim.State
+import Ext.Files (saveCurrent)
+
 import ConfigState
 import Ext.Utils
 
@@ -53,5 +55,6 @@ normal (Keypress 'x' _) = moveCursor 1 >> deleteChar >> moveCursor (-1)
 normal (Keypress 'D' _ )  = deleteTillEOL
 normal (Keypress 'q' _) = exit
 normal (Keypress 'c' [Ctrl]) = exit
+normal (Keypress 's' [Ctrl]) = saveCurrent
 
 normal _ = return ()
