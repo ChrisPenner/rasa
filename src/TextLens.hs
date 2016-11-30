@@ -27,15 +27,18 @@ intillNextN n pat = lens getter setter
 
 intillPrevN :: Int -> T.Text -> Lens' T.Text T.Text
 intillPrevN n pat = lens getter setter
-    where focus :: Traversal' T.Text T.Text
-          focus =
-              splittingByInc pat .
+    where getter = view $ splittingByInc pat .
               moreThanOne .
               lTakeEnd n .
+              to (pat :) .
               joiningByInc pat
 
-          getter = view focus
-          setter old new = old & focus .~ new
+          setter old new = old
+            & splittingBy pat . moreThanOne
+            .~ (T.dropEnd 
+                    (getter old ^. to T.length) 
+                    old <> new) 
+                ^. splittingBy pat
 
 tillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 tillNextN n pat = lens getter setter
