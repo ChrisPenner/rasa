@@ -1,20 +1,66 @@
 Rasa
 ====
 
-Extremely modular text editor built in Haskell using Lens combinators
+Exessively modular customizable text editor built in Haskell using Lens
+combinators
+
+What people are saying
+----------------------
+
+> Excessively Modular! - some bald guy
+
+> I'm glad I'm unemployed so I have time to configure it! - my mate Steve
+
+> Get that camera out of my face. - Mother
 
 Core Principles
 ---------------
 
-Rasa is meant to be about as modular as an editor an be, the goal is for as
-much code as possible to be extracted into composable extensions. If the core
-editing facilities can't be implemented as extensions, then the extension
-interface isn't powerful enough.
+Rasa is meant to be about as modular as an editor can be, I mean it. the goal
+is for as much code as possible to be extracted into composable extensions. If
+the core editing facilities can't be implemented as extensions, then the
+extension interface isn't powerful enough. I've taken this to its extreme, for
+instance all the following tasks are simply extensions just like anyone could
+write.
 
-Most functionality is implemented through the use of lenses, for any given operation over a block of text a lens
-(or composition of lenses) is defined to 'get' or 'set' that block of text, then any operation may be performed
-'over' that block of text. This allows us to maintain generality, allowing 'what' and 'how' to be specified
-separately and be re-used between commands.
+- Loading and saving files 
+- Keybindings
+- Syntax Highlighting
+- Even the regular everyday cursor is just an extension!
+
+This of course can result in a fractured eco-system really quickly so I'll
+likely define a few standard typeclasses for things like cursor support so we
+can all work on the same page.
+
+Note that extensions can be dependent on (and import) other extensions, this
+allows sharing of the workload, why implement multiple cursor support again
+when some other extension has done it already?
+
+Rasa exposes combinators and utilities from a small library of "Text Lenses"
+that I've written. These lenses are available to plugins and provide high-level
+abstractions for editing and navigating text. I'll be breaking it out into its
+own independent library soon. A sampling of some operations it allows are:
+
+- Perform function over text after the cursor
+- Edit the text after index 10 and before index 20
+- Alter every occurance of the string "Hello"
+- Move the cursor to the next occurance of "World"
+
+These base level operations can be combined in interesting ways, for example I've
+built a small extension which emulates many of the basic Vim commands. The
+extension interface allows you to combine the to express things like:
+
+- Delete until end of line: `set (tillNext "\n") ""`
+- Uppercase current word: `over currentWord (fmap toUpper)`
+
+If the library is missing a combinator you need, open a PR! Let's keep making
+it better.
+
+Most text-editing is implemented through the use of lenses, for any given
+operation over a block of text a lens (or composition of lenses) is defined to
+'get' or 'set' that block of text, then any operation may be performed 'over'
+that block of text. This allows us to maintain generality, allowing 'what' and
+'how' to be specified separately and be re-used between commands.
 
 For example a 'motion' may be defined as the 'next paragraph'. This lens could be defined as a composite lens using
 other primitive lenses as follows:
