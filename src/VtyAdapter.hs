@@ -5,7 +5,7 @@ module VtyAdapter (
     )
     where
 
-import State
+import Editor
 import Buffer
 import View
 import Event
@@ -34,7 +34,7 @@ convertMod m = case m of
                  V.MMeta -> Alt
                  V.MAlt -> Alt
 
-instance Renderable St V.Image where
+instance Renderable Editor V.Image where
     render sz = view $ focusedBuf . to (render sz)
 
 instance Renderable (Buffer Offset) V.Image where

@@ -19,7 +19,7 @@ module Directive (
     , deleteTillEOL
 ) where
 
-import State
+import Editor
 import TextLens
 import Buffer
 import Alteration
@@ -33,14 +33,14 @@ import Data.List.Extra (dropEnd)
 getFocusedBuffer :: Alteration (Buffer Offset)
 getFocusedBuffer = zoom (editor.focusedBuf) get
 
-embed :: (St -> St) -> Alteration ()
+embed :: (Editor -> Editor) -> Alteration ()
 embed = zoom editor . modify
 
 exit :: Alteration ()
 exit = zoom editor $ exiting .= True
 
 
-overState :: (St -> St) -> Alteration ()
+overState :: (Editor -> Editor) -> Alteration ()
 overState = embed
 
 overBuffer :: (Buffer Offset -> Buffer Offset) -> Alteration ()

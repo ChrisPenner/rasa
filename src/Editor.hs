@@ -1,5 +1,5 @@
-module State (
-    St
+module Editor (
+    Editor
   , focusedBuf
   , focused
   , buffers
@@ -11,23 +11,23 @@ import Data.Default (def, Default(..))
 
 import Buffer
 
-data St = St {
+data Editor = Editor {
     _buffers :: [Buffer Offset]
   , _focused :: Int
   , _exiting :: Bool
 }
 
-makeLenses ''St
+makeLenses ''Editor
 
-instance Default St where
-    def = St {
+instance Default Editor where
+    def = Editor {
             _buffers=fmap buffer ["Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?", "Buffer 1"]
           , _focused=0
           , _exiting=False
              }
 
 
-focusedBuf :: Lens' St (Buffer Offset)
+focusedBuf :: Lens' Editor (Buffer Offset)
 focusedBuf = lens getter (flip setter)
     where getter = do
             foc <- view focused

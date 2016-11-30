@@ -21,7 +21,7 @@ library
                        Utils
 
   exposed-modules:
-                       State
+                       Editor
                        Event
                        TextLens
                        VtyAdapter

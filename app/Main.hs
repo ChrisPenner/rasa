@@ -4,14 +4,14 @@ import VtyAdapter (convertEvent, render)
 import Alteration
 import Config (runExtensions)
 import Event
-import State
+import Editor
 import ConfigState (ExtState)
 
 import Control.Lens
 import Data.Default (def)
 import qualified Graphics.Vty as V
 
-handleEvent :: Alteration () -> Maybe Event -> ExtState -> St -> IO Store
+handleEvent :: Alteration () -> Maybe Event -> ExtState -> Editor -> IO Store
 handleEvent = runAlteration
 
 main :: IO ()
@@ -20,7 +20,7 @@ main = do
     vty <- V.mkVty cfg
     eventLoop vty def def
 
-eventLoop :: V.Vty -> St -> ExtState -> IO ()
+eventLoop :: V.Vty -> Editor -> ExtState -> IO ()
 eventLoop vty st extSt = do
     sz <- V.displayBounds $ V.outputIface vty
     let pic = V.picForImage $ render sz st

@@ -2,7 +2,7 @@
 module Ext.Utils where
 
 import Alteration
-import State
+import Editor
 import Event
 
 import Control.Monad.State
@@ -15,7 +15,7 @@ getPlugin l = zoom (extState.l) get
 setPlugin :: Lens' ExtState a -> a -> Alteration ()
 setPlugin l = zoom (extState.l) . put
 
-getState :: Alteration St
+getState :: Alteration Editor
 getState = zoom editor get
 
 getEvent :: Alteration (Maybe Event)
