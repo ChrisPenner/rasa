@@ -4,7 +4,7 @@ import Ext.Files (files)
 
 import Alteration
 
-runExtensions :: Alteration ()
-runExtensions = do
-    vim
+extensions :: Alteration ()
+extensions = do
     files
+    vim

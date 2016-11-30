@@ -21,7 +21,8 @@ makeLenses ''Editor
 
 instance Default Editor where
     def = Editor {
-            _buffers=fmap buffer ["Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?", "Buffer 1"]
+            _buffers=fmap buffer [ ("Buf0.txt", "Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?")
+                                 , ("Buf1.txt", "Buffer 1\nNew buffer eh? nice!") ]
           , _focused=0
           , _exiting=False
              }

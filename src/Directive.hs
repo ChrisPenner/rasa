@@ -17,6 +17,7 @@ module Directive (
     , findNext
     , findPrev
     , deleteTillEOL
+    , addBuffer
 ) where
 
 import Editor
@@ -29,6 +30,8 @@ import qualified Data.Text as T
 import Control.Monad.State
 import Data.List.Extra (dropEnd)
 
+addBuffer :: (String, T.Text) -> Alteration ()
+addBuffer info = zoom editor $ buffers %= (buffer info:)
 
 getFocusedBuffer :: Alteration (Buffer Offset)
 getFocusedBuffer = zoom (editor.focusedBuf) get

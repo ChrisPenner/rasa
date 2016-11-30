@@ -1,4 +1,5 @@
 module Event where
+import Data.Default
 
 data Mod =
     Ctrl
@@ -11,5 +12,9 @@ data Event =
   | Esc
   | BS
   | Enter
+  | Init
   | Unknown
   deriving (Show)
+
+instance Default Event where
+    def = Init

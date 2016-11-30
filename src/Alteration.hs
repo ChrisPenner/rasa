@@ -6,6 +6,7 @@ import Event
 import Editor
 
 import Control.Lens
+import Data.Default
 
 import ConfigState (ExtState)
 
@@ -17,12 +18,14 @@ data Store = Store {
 
 makeLenses ''Store
 
+instance Default Store where
+    def = Store {
+    _event=Just def
+  , _editor=def
+  , _extState=def
+                }
+
 type Alteration a = StateT Store IO a
 
-runAlteration :: Alteration () -> Maybe Event -> ExtState -> Editor -> IO Store
-runAlteration alt evt extSt st = execStateT alt store
-    where store = Store {
-                          _event=evt
-                        , _editor=st
-                        , _extState=extSt
-                       }
+runAlteration :: Alteration () -> Store -> IO Store
+runAlteration = execStateT
