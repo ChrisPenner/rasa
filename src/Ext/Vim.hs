@@ -5,7 +5,7 @@ import Alteration
 import Event
 
 import Ext.Vim.State
-
+import ConfigState
 import Ext.Utils
 
 import qualified Data.Text as T

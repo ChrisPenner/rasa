@@ -5,15 +5,12 @@ import Control.Lens
 import Data.Default
 
 data ExtState = ExtState {
-                    _vimState :: VimSt
+                    _vim' :: VimSt
                          }
 
 makeLenses ''ExtState
 
 instance Default ExtState where
     def = ExtState {
-    _vimState=def
+    _vim'=def
                    }
-
-instance VimState ExtState where
-    vim' = vimState
