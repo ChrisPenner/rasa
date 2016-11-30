@@ -1,9 +1,10 @@
 module Ext.Vim (vim, VimSt) where
 
-import Ext.Vim.State
 import Directive
 import Alteration
 import Event
+
+import Ext.Vim.State
 
 import Ext.Utils
 
@@ -11,7 +12,7 @@ import qualified Data.Text as T
 
 vim :: Alteration ()
 vim = do
-    mode <- getVim
+    mode <- getPlugin vim'
     let modeFunc = case mode of
                     Normal -> normal
                     Insert -> insert
@@ -20,7 +21,7 @@ vim = do
     mapM_ modeFunc evt
 
 insert :: Event -> Alteration ()
-insert Esc = setVim Normal
+insert Esc = setPlugin vim' Normal
 insert BS = deleteChar
 insert Enter = insertText "\n"
 insert (Keypress 'w' [Ctrl]) = killWord
@@ -29,16 +30,16 @@ insert (Keypress c _) = insertText $ T.singleton c
 insert _ = return ()
 
 normal :: Event -> Alteration ()
-normal (Keypress 'i' _ )  = setVim Insert
-normal (Keypress 'I' _ )  = startOfLine >> setVim Insert
-normal (Keypress 'a' _ )  = moveCursor 1 >> setVim Insert
-normal (Keypress 'A' _ )  = endOfLine >> setVim Insert
+normal (Keypress 'i' _ )  = setPlugin vim' Insert
+normal (Keypress 'I' _ )  = startOfLine >> setPlugin vim' Insert
+normal (Keypress 'a' _ )  = moveCursor 1 >> setPlugin vim' Insert
+normal (Keypress 'A' _ )  = endOfLine >> setPlugin vim' Insert
 normal (Keypress '0' _ )  = startOfLine
 normal (Keypress '$' _ )  = findNext "\n"
 normal (Keypress 'g' _ )  = startOfBuffer
 normal (Keypress 'G' _ )  = endOfBuffer
-normal (Keypress 'o' _ )  = endOfLine >> insertText "\n" >> setVim Insert
-normal (Keypress 'O' _ )  = startOfLine >> insertText "\n" >> setVim Insert
+normal (Keypress 'o' _ )  = endOfLine >> insertText "\n" >> setPlugin vim' Insert
+normal (Keypress 'O' _ )  = startOfLine >> insertText "\n" >> setPlugin vim' Insert
 normal (Keypress '+' _ ) = switchBuf 1
 normal (Keypress '-' _ ) = switchBuf (-1)
 normal (Keypress 'h' _ )  = moveCursor (-1)
