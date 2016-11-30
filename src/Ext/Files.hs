@@ -3,6 +3,8 @@ module Ext.Files (files) where
 import qualified Data.Text.IO as TIO
 import Control.Lens
 
+import Control.Monad.IO.Class
+
 import Alteration
 import Directive
 import Buffer
@@ -12,15 +14,13 @@ import Ext.Utils
 files :: Alteration ()
 files = do
     evt <- getEvent
-    mapM_ (apply . perform) evt
+    mapM_ perform evt
 
-perform :: Event -> [Directive]
-perform (Keypress 's' [Ctrl]) = [OverBuffer saveFile]
-    where saveFile :: Buffer Offset -> IO (Buffer Offset)
-          saveFile buf = do
+perform :: Event -> Alteration ()
+perform (Keypress 's' [Ctrl]) = do
+              buf <- getFocusedBuffer
               let fname = buf^.filename
                   contents = buf^.text
-              TIO.writeFile fname contents
-              return buf
+              liftIO $ TIO.writeFile fname contents
 
-perform _ = []
+perform _ = return ()

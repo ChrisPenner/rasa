@@ -1,79 +1,102 @@
-{-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module Directive (applyDirectives, Directive(..)) where
+module Directive (
+      getFocusedBuffer
+    , exit
+    , overState
+    , overBuffer
+    , overText
+    , insertText
+    , deleteChar
+    , killWord
+    , switchBuf
+    , moveCursor
+    , moveCursorCoord
+    , startOfLine
+    , endOfLine
+    , startOfBuffer
+    , endOfBuffer
+    , findNext
+    , findPrev
+    , deleteTillEOL
+) where
 
 import State
 import TextLens
 import Buffer
+import Alteration
 
 import Control.Lens
 import qualified Data.Text as T
-import Control.Monad.State (execState)
-import Data.Foldable (foldlM)
+import Control.Monad.State
 import Data.List.Extra (dropEnd)
 
-data Directive =
-    OverState (St -> IO St)
-  | OverBuffer (Buffer Offset -> IO (Buffer Offset))
-  | OverText (T.Text -> IO T.Text)
-  | Effect (IO ())
-  | Append T.Text
-  | DeleteChar
-  | KillWord
-  | SwitchBuf Int
-  | MoveCursor Int
-  | MoveCursorCoordBy Coord
-  | StartOfLine
-  | EndOfLine
-  | StartOfBuffer
-  | EndOfBuffer
-  | FindNext T.Text
-  | FindPrev T.Text
-  | DeleteTillEOL
-  | Noop
-  | Exit
 
-applyDirectives :: St -> [Directive] -> IO St
-applyDirectives = foldlM (flip doEvent)
+getFocusedBuffer :: Alteration (Buffer Offset)
+getFocusedBuffer = zoom (editor.focusedBuf) get
 
-deleteChar :: Buffer Offset -> Buffer Offset
-deleteChar = withOffset before %~ T.dropEnd 1
+embed :: (St -> St) -> Alteration ()
+embed = zoom editor . modify
 
-findNext :: T.Text -> Buffer Offset -> Buffer Offset
-findNext txt = useCountFor (withOffset after.tillNext txt) moveCursorBy
+exit :: Alteration ()
+exit = zoom editor $ exiting .= True
 
-findPrev :: T.Text -> Buffer Offset -> Buffer Offset
-findPrev txt = useCountFor (withOffset before.tillPrev txt) moveCursorBackBy
 
-deleteTillEOL :: Buffer Offset -> Buffer Offset
-deleteTillEOL = withOffset after.tillNext "\n" .~ ""
+overState :: (St -> St) -> Alteration ()
+overState = embed
 
-embed :: (St -> St) -> (St -> IO St)
-embed = (return .)
+overBuffer :: (Buffer Offset -> Buffer Offset) -> Alteration ()
+overBuffer = embed . over focusedBuf
 
-doEvent :: Directive -> St -> IO St
-doEvent (OverState f) = f
-doEvent (OverBuffer f) = traverseOf focusedBuf f
-doEvent (OverText f) = traverseOf (focusedBuf.text) f
-doEvent (Append txt) = embed $ focusedBuf %~ appendText txt
-doEvent DeleteChar = embed $ focusedBuf %~ deleteChar
-doEvent KillWord = embed $ focusedBuf.text %~ (T.unwords . dropEnd 1 . T.words)
-doEvent (MoveCursor n) = embed $  focusedBuf %~ moveCursorBy n
-doEvent (MoveCursorCoordBy coords) = embed $  focusedBuf %~ moveCursorCoordBy coords
-doEvent StartOfLine = embed $ focusedBuf %~ findPrev "\n"
-doEvent EndOfLine = embed $ focusedBuf %~ findNext "\n"
-doEvent StartOfBuffer = embed $ focusedBuf %~ moveCursorTo 0
-doEvent EndOfBuffer = embed $ focusedBuf %~ useCountFor text moveCursorTo
-doEvent (FindNext txt) = embed $ focusedBuf %~ findNext txt
-doEvent (FindPrev txt) = embed $ focusedBuf %~ findPrev txt
-doEvent DeleteTillEOL = embed $ focusedBuf %~ deleteTillEOL
-doEvent Exit = return
-doEvent Noop = return
+overText :: (T.Text -> T.Text) -> Alteration ()
+overText = embed . over (focusedBuf.text)
 
-doEvent (Effect io) = \st -> do
-    io
-    return st
+insertText :: T.Text -> Alteration ()
+insertText txt = embed $ focusedBuf %~ appendText txt
 
-doEvent (SwitchBuf n) = embed $ execState $ do
+deleteChar :: Alteration ()
+deleteChar = embed $ focusedBuf %~ (withOffset before %~ T.dropEnd 1)
+
+killWord :: Alteration ()
+killWord = embed $ focusedBuf.text %~ (T.unwords . dropEnd 1 . T.words)
+
+switchBuf :: Int -> Alteration ()
+switchBuf n = embed $ execState $ do
     currentBuffer <- use focused
     numBuffers <- use (buffers.to length)
     focused .= (n + currentBuffer) `mod` numBuffers
+
+moveCursor :: Int -> Alteration ()
+moveCursor n = embed $ focusedBuf %~ moveCursorBy n
+
+moveCursorCoord :: Coord -> Alteration ()
+moveCursorCoord crd = embed $ focusedBuf %~ moveCursorCoordBy crd
+
+startOfLine :: Alteration ()
+startOfLine = embed $ focusedBuf %~ findPrev' "\n"
+
+endOfLine :: Alteration ()
+endOfLine = embed $ focusedBuf %~ findNext' "\n"
+
+startOfBuffer :: Alteration ()
+startOfBuffer = embed $ focusedBuf %~ moveCursorTo 0
+
+endOfBuffer :: Alteration ()
+endOfBuffer = embed $ focusedBuf %~ useCountFor text moveCursorTo
+
+
+findNext' :: T.Text -> Buffer Offset -> Buffer Offset
+findNext' txt = useCountFor (withOffset after.tillNext txt) moveCursorBy
+
+findNext :: T.Text -> Alteration ()
+findNext txt = embed $ focusedBuf %~ findNext' txt
+
+findPrev' :: T.Text -> Buffer Offset -> Buffer Offset
+findPrev' txt = useCountFor (withOffset before.tillPrev txt) moveCursorBackBy
+
+findPrev :: T.Text -> Alteration ()
+findPrev txt = embed $ focusedBuf %~ findPrev' txt
+
+deleteTillEOL' :: Buffer Offset -> Buffer Offset
+deleteTillEOL' =  withOffset after.tillNext "\n" .~ ""
+
+deleteTillEOL :: Alteration ()
+deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
