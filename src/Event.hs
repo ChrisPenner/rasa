@@ -1,14 +1,16 @@
 module Event where
+
 import Data.Default
 
-data Mod =
-    Ctrl
+data Mod
+  = Ctrl
   | Alt
   | Shift
   deriving (Show)
 
-data Event =
-    Keypress Char [Mod]
+data Event
+  = Keypress Char
+             [Mod]
   | Esc
   | BS
   | Enter
@@ -17,4 +19,4 @@ data Event =
   deriving (Show)
 
 instance Default Event where
-    def = Init
+  def = Init
