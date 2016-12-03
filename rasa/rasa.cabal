@@ -1,0 +1,33 @@
+name:                rasa
+version:             0.1.0.0
+synopsis:            A modular text editor
+description:         A modular text editor
+homepage:            https://github.com/ChrisPenner/rasa#readme
+license:             MIT
+license-file:        LICENSE
+author:              Chris Penner
+maintainer:          christopher.penner@gmail.com
+copyright:           2016 Chris Penner
+category:            Text Editor
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:
+                       Rasa.Run
+
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base >= 4.7 && < 5
+                     , rasa-core
+                     , rasa-vty
+                     , vty
+                     , lens
+                     , data-default
+
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/ChrisPenner/rasa

@@ -1,5 +1,5 @@
-Rasa
-====
+Rasa (Rah-zah)
+==============
 
 Exessively modular customizable text editor built in Haskell using Lens
 combinators

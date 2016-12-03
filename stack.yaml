@@ -36,8 +36,19 @@ resolver: lts-7.11
 # non-dependency (i.e. a user package), and its test suites and benchmarks
 # will not be run. This is useful for tweaking upstream packages.
 packages:
-- '.'
-- '../vty'
+- './rasa'
+- './rasa-core'
+- './rasa-vty'
+- './rasa-ext'
+- './rasa-ext-files'
+- './rasa-ext-vim'
+
+- './text-lens'
+- './user-config'
+- location:
+    git: https://github.com/chrispenner/vty.git
+    commit: d482c11f41a0cd8ba0f23362b96e35a68624ab69
+# - '../vty'
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
