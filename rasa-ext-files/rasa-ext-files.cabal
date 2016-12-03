@@ -19,7 +19,6 @@ library
                        Rasa.Ext.Files
 
   build-depends:       base >= 4.7 && < 5
-                     , rasa-core
                      , rasa-ext
                      , lens
                      , text

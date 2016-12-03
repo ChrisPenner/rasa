@@ -12,11 +12,8 @@ import Data.String (fromString)
 import Control.Monad.IO.Class
 import Control.Monad
 
-import Rasa.Alteration
 import Rasa.Ext.Directive
 import Rasa.Ext
-import Rasa.Buffer
-import Rasa.Event
 
 files :: Alteration e ()
 files = do

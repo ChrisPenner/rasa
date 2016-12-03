@@ -24,6 +24,7 @@ executable my-rasa
                      , rasa-core
                      , rasa-ext-vim
                      , rasa-ext-files
+                     , rasa-vty
                      , lens
                      , data-default
   default-language:    Haskell2010

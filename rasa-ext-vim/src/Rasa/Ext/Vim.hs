@@ -3,14 +3,11 @@ module Rasa.Ext.Vim
   , VimSt
   ) where
 
-import Rasa.Ext.Directive
-import Rasa.Alteration
-import Rasa.Event
-
 import Rasa.Ext.Vim.State
 import Rasa.Ext.Files (saveCurrent)
 
 import Rasa.Ext
+import Rasa.Ext.Directive
 
 import qualified Data.Text as T
 

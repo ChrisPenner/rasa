@@ -1,10 +1,24 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Rasa.Ext where
+module Rasa.Ext
+  ( Alteration
+  , Event(..)
+  , Mod(..)
+
+  , text
+  , filename
+
+  , getPlugin
+  , setPlugin
+  , getState
+  , getEvent
+  , setEvent
+  ) where
 
 import Rasa.Alteration
 import Rasa.Editor
-import Rasa.Event
+import Rasa.Event (Event(..), Mod(..))
+import Rasa.Buffer
 
 import Control.Monad.State
 import Control.Lens

@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
 module Rasa.Adapters.Vty (
-    convertEvent
-  , render
+    renderer
     )
     where
 
@@ -12,9 +11,36 @@ import Rasa.Event
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T
+import Control.Monad.IO.Class
 import Control.Lens
 import Data.Monoid ((<>))
 import Control.Arrow (first)
+
+renderer :: MonadIO m => (m V.Vty, V.Vty -> Editor -> m (), V.Vty -> m Event, V.Vty -> m ())
+renderer = (initUi, render, getEvent, shutdown)
+
+initUi :: MonadIO m => m V.Vty
+initUi = do
+    cfg <- liftIO V.standardIOConfig
+    liftIO $ V.mkVty cfg
+
+getSize :: MonadIO m => V.Vty -> m (Int, Int)
+getSize vty = liftIO $ V.displayBounds $ V.outputIface vty
+
+getEvent :: MonadIO m => V.Vty -> m Event
+getEvent vty = liftIO $ convertEvent <$> V.nextEvent vty
+
+shutdown :: MonadIO m => V.Vty -> m ()
+shutdown vty = liftIO $ V.shutdown vty
+
+render :: MonadIO m => V.Vty -> Editor -> m ()
+render vty editor = do
+    sz <- getSize vty
+    let pic = V.picForImage $ render' sz editor
+    liftIO $ V.update vty pic
+
+class Renderable a b where
+    render' :: Size -> a -> b
 
 convertEvent :: V.Event -> Event
 convertEvent (V.EvKey e mods) = convertKeypress e mods
@@ -35,10 +61,10 @@ convertMod m = case m of
                  V.MAlt -> Alt
 
 instance Renderable Editor V.Image where
-    render sz = view $ focusedBuf . to (render sz)
+    render' sz = view $ focusedBuf . to (render' sz)
 
 instance Renderable (Buffer Offset) V.Image where
-    render (width, _) = do
+    render' (width, _) = do
         txt <- textWrap width . view text
         curs <- view cursor
         coord <- view $ asCoord.cursor

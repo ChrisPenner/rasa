@@ -2,8 +2,6 @@
 module Rasa.View (
     textWrap
   , Size
-  , Renderable
-  , render
     )
     where
 
@@ -12,8 +10,6 @@ import Data.List (unfoldr)
 import Control.Arrow (second)
 
 type Size = (Int, Int)
-class Renderable a b where
-    render :: Size -> a -> b
 
 textWrap :: Int -> T.Text -> T.Text
 textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)

@@ -20,7 +20,6 @@ library
                        Rasa.Ext.Vim.State
 
   build-depends:       base >= 4.7 && < 5
-                     , rasa-core
                      , rasa-ext
                      , rasa-ext-files
                      , text
