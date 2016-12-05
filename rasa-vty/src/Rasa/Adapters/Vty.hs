@@ -1,43 +1,60 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-module Rasa.Adapters.Vty (
-    renderer
-    )
+module Rasa.Adapters.Vty (vty, VtyState, HasVty, vty')
     where
 
 import Rasa.Editor
 import Rasa.Buffer
 import Rasa.View
 import Rasa.Event
+import Rasa.Ext
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T
 import Control.Monad.IO.Class
 import Control.Lens
+import Control.Monad
 import Data.Monoid ((<>))
 import Control.Arrow (first)
 
-renderer :: MonadIO m => (m V.Vty, V.Vty -> Editor -> m (), V.Vty -> m Event, V.Vty -> m ())
-renderer = (initUi, render, getEvent, shutdown)
+type VtyState = V.Vty
 
-initUi :: MonadIO m => m V.Vty
+class HasVty e where
+    vty' :: Lens' e V.Vty
+
+vty :: HasVty e => Alteration e ()
+vty = do
+    evt <- getEvent
+    when (Init `elem` evt) initUi
+    if Exit `elem` evt then shutdown
+                       else render >> nextEvent
+
+initUi :: HasVty e => Alteration e ()
 initUi = do
     cfg <- liftIO V.standardIOConfig
-    liftIO $ V.mkVty cfg
+    v <- liftIO $ V.mkVty cfg
+    setPlugin vty' v
 
 getSize :: MonadIO m => V.Vty -> m (Int, Int)
-getSize vty = liftIO $ V.displayBounds $ V.outputIface vty
+getSize v = liftIO $ V.displayBounds $ V.outputIface v
 
-getEvent :: MonadIO m => V.Vty -> m Event
-getEvent vty = liftIO $ convertEvent <$> V.nextEvent vty
+nextEvent :: HasVty e => Alteration e ()
+nextEvent = do
+    v <- getPlugin vty'
+    evt <- liftIO $ convertEvent <$> V.nextEvent v
+    setEvent [evt]
 
-shutdown :: MonadIO m => V.Vty -> m ()
-shutdown vty = liftIO $ V.shutdown vty
+shutdown :: HasVty e => Alteration e ()
+shutdown = do
+    v <- getPlugin vty'
+    liftIO $ V.shutdown v
 
-render :: MonadIO m => V.Vty -> Editor -> m ()
-render vty editor = do
-    sz <- getSize vty
+render :: HasVty e => Alteration e ()
+render = do
+    v <- getPlugin vty'
+    editor <- getState
+    sz <- getSize v
     let pic = V.picForImage $ render' sz editor
-    liftIO $ V.update vty pic
+    liftIO $ V.update v pic
 
 class Renderable a b where
     render' :: Size -> a -> b

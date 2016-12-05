@@ -15,6 +15,7 @@ data Event
   | BS
   | Enter
   | Init
+  | Exit
   | Unknown
   deriving (Show, Eq)
 

@@ -22,6 +22,7 @@ executable my-rasa
   build-depends:       base >= 4.7 && < 5
                      , rasa
                      , rasa-core
+                     , rasa-ext
                      , rasa-ext-vim
                      , rasa-ext-files
                      , rasa-vty
