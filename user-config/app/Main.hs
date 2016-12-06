@@ -11,11 +11,14 @@ import Control.Monad.IO.Class
 logger :: Alteration ()
 logger = do
   evt <- getEvent
-  liftIO $ when (Init `elem` evt) (writeFile "logs" "Event Log\n")
-  liftIO $ appendFile "logs" (show evt ++ "\n")
+  liftIO $ when (Init `elem` evt) (writeFile "logs.log" "Event Log\n")
+  liftIO $ appendFile "logs.log" (show evt ++ "\n")
+
+eventListeners :: [Alteration [Event]]
+eventListeners = [vtyEvent]
 
 main :: IO ()
-main = rasa $ do
+main = rasa eventListeners $ do
   vim
   vty
   logger

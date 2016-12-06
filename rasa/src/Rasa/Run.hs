@@ -3,18 +3,27 @@ module Rasa.Run (rasa) where
 
 import Rasa.Alteration
 import Rasa.Editor
+import Rasa.Event
 
 import Control.Lens
+import Control.Concurrent.Async
 import Control.Monad
 import Data.Default (def)
 
-handleEvent :: Alteration () -> Store -> IO Store
-handleEvent = runAlteration
+handleEvent :: Store -> Alteration () -> IO Store
+handleEvent = execAlteration
 
-rasa :: Alteration () -> IO ()
-rasa extensions = eventLoop extensions def
+rasa :: [Alteration [Event]] -> Alteration () -> IO ()
+rasa eventListeners extensions = eventLoop eventListeners extensions def
 
-eventLoop :: Alteration () -> Store -> IO ()
-eventLoop extensions store = do
-    newStore <- handleEvent extensions store
-    unless (newStore^.editor.exiting) (eventLoop extensions newStore)
+isExiting :: Store -> Bool
+isExiting = view (editor.exiting)
+
+eventLoop ::  [Alteration [Event]] -> Alteration () -> Store -> IO ()
+eventLoop eventListeners extensions store = do
+  newStore <- handleEvent store extensions
+  unless (isExiting newStore) $ do
+    asyncEventListeners <- traverse (async.evalAlteration newStore) eventListeners
+    (_, nextEvents) <- waitAny asyncEventListeners
+    let withEvent = newStore & event .~ nextEvents
+    eventLoop eventListeners extensions withEvent

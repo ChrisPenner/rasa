@@ -23,6 +23,7 @@ library
                      , rasa-core
                      , rasa-vty
                      , rasa-ext
+                     , async
                      , vty
                      , lens
                      , data-default

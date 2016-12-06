@@ -28,5 +28,8 @@ instance Default Store where
 
 type Alteration a = StateT Store IO a
 
-runAlteration :: Alteration () -> Store -> IO Store
-runAlteration = execStateT
+execAlteration :: Store -> Alteration ()-> IO Store
+execAlteration = flip execStateT
+
+evalAlteration :: Store -> Alteration a -> IO a
+evalAlteration = flip evalStateT

@@ -1,4 +1,4 @@
-module Rasa.Adapters.Vty (vty) where
+module Rasa.Adapters.Vty (vty, vtyEvent) where
 
 import Rasa.Adapters.Vty.Render (render)
 import Rasa.Event
@@ -18,7 +18,7 @@ vty :: Alteration ()
 vty = do
     evt <- getEvent
     if Exit `elem` evt then shutdown
-                       else render' >> nextEvent
+                       else render'
 
 initUi :: Alteration V.Vty
 initUi = do
@@ -32,11 +32,10 @@ getSize = do
   v <- getVty
   liftIO $ V.displayBounds $ V.outputIface v
 
-nextEvent :: Alteration ()
-nextEvent = do
+vtyEvent :: Alteration [Event]
+vtyEvent = do
     v <- getVty
-    evt <- liftIO $ convertEvent <$> V.nextEvent v
-    setEvent [evt]
+    liftIO $ ((:[]).convertEvent) <$> V.nextEvent v
 
 shutdown :: Alteration ()
 shutdown = do
@@ -68,4 +67,3 @@ convertMod m = case m of
                  V.MCtrl -> Ctrl
                  V.MMeta -> Alt
                  V.MAlt -> Alt
-
