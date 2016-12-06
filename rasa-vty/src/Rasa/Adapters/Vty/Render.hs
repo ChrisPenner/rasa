@@ -1,9 +1,13 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-module Rasa.Adapters.Vty.Render (render) where
+module Rasa.Adapters.Vty.Render (render') where
 
+import Rasa.Ext
 import Rasa.Editor
 import Rasa.Buffer
 import Rasa.View
+
+import Rasa.Adapters.Vty.State
+import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V
 import qualified Data.Text as T
@@ -50,3 +54,16 @@ decr n = fmap $ first (subtract n)
 
 plainText :: T.Text -> V.Image
 plainText = V.text' V.currentAttr
+
+getSize :: Alteration (Int, Int)
+getSize = do
+  v <- getVty
+  liftIO $ V.displayBounds $ V.outputIface v
+
+render' :: Alteration ()
+render' = do
+    editor <- getState
+    sz <- getSize
+    let pic = V.picForImage $ render sz editor
+    v <- getVty
+    liftIO $ V.update v pic
