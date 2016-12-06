@@ -6,15 +6,15 @@ import Rasa.Editor
 
 import Control.Lens
 import Control.Monad
-import Data.Default (def, Default)
+import Data.Default (def)
 
-handleEvent :: Alteration e () -> Store e -> IO (Store e)
+handleEvent :: Alteration () -> Store -> IO Store
 handleEvent = runAlteration
 
-rasa :: Default e => Alteration e () -> IO ()
+rasa :: Alteration () -> IO ()
 rasa extensions = eventLoop extensions def
 
-eventLoop :: Alteration e () -> Store e -> IO ()
+eventLoop :: Alteration () -> Store -> IO ()
 eventLoop extensions store = do
     newStore <- handleEvent extensions store
     unless (newStore^.editor.exiting) (eventLoop extensions newStore)

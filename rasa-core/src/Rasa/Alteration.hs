@@ -2,6 +2,7 @@
 module Rasa.Alteration where
 
 import Control.Monad.State
+import Data.Dynamic
 
 import Rasa.Event
 import Rasa.Editor
@@ -9,23 +10,23 @@ import Rasa.Editor
 import Control.Lens
 import Data.Default
 
-data Store extState = Store
+data Store = Store
   { _event :: [Event]
   , _editor :: Editor
-  , _extState :: extState
+  , _extState :: [Dynamic]
   }
 
 makeLenses ''Store
 
-instance Default e => Default (Store e) where
+instance Default Store where
   def =
     Store
     { _event = [def]
     , _editor = def
-    , _extState = def
+    , _extState = []
     }
 
-type Alteration extState a = StateT (Store extState) IO a
+type Alteration a = StateT Store IO a
 
-runAlteration :: Alteration e () -> Store e -> IO (Store e)
+runAlteration :: Alteration () -> Store -> IO Store
 runAlteration = execStateT

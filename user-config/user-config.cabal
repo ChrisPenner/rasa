@@ -16,9 +16,6 @@ cabal-version:       >=1.10
 executable my-rasa
   hs-source-dirs:      app
   main-is:             Main.hs
-  other-modules:
-                       Config
-                       ConfigState
   build-depends:       base >= 4.7 && < 5
                      , rasa
                      , rasa-core

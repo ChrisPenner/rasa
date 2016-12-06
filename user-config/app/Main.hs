@@ -1,40 +1,21 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Main where
 
 import Rasa.Run (rasa)
 import Rasa.Ext
-import Rasa.Ext.Vim.State
 import Rasa.Ext.Vim
 import Rasa.Adapters.Vty
 
-import Control.Lens
-import Data.Default
+import Control.Monad
+import Control.Monad.IO.Class
 
-data ExtState = ExtState
-  { _vimSt :: VimSt
-  , _vtySt :: VtyState
-  }
-
-makeLenses ''ExtState
-
-instance Default ExtState where
-  def =
-    ExtState
-    { _vimSt = def
-    , _vtySt = undefined
-    }
-
-instance HasVim ExtState where
-  vim' = vimSt
-
-instance HasVty ExtState where
-  vty' = vtySt
-
-extensions :: Alteration ExtState ()
-extensions = do
-  vty
-  vim
+logger :: Alteration ()
+logger = do
+  evt <- getEvent
+  liftIO $ when (Init `elem` evt) (writeFile "logs" "Event Log\n")
+  liftIO $ appendFile "logs" (show evt ++ "\n")
 
 main :: IO ()
-main = rasa extensions
+main = rasa $ do
+  vim
+  vty
+  logger

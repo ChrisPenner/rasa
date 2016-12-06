@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:
                        Rasa.Adapters.Vty
+                       Rasa.Adapters.Vty.Render
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-core

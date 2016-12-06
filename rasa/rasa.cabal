@@ -22,6 +22,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , rasa-core
                      , rasa-vty
+                     , rasa-ext
                      , vty
                      , lens
                      , data-default

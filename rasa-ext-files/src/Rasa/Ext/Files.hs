@@ -15,19 +15,19 @@ import Control.Monad
 import Rasa.Ext.Directive
 import Rasa.Ext
 
-files :: Alteration e ()
+files :: Alteration ()
 files = do
   evt <- getEvent
   when (Init `elem` evt) loadFiles
 
-saveCurrent :: Alteration e ()
+saveCurrent :: Alteration ()
 saveCurrent = do
   buf <- getFocusedBuffer
   let fname = buf ^. filename
       contents = buf ^. text
   liftIO $ TIO.writeFile fname contents
 
-loadFiles :: Alteration e ()
+loadFiles :: Alteration ()
 loadFiles = do
   fileNames <- liftIO getArgs
   files' <- liftIO $ traverse (TIO.readFile . fromString) fileNames
