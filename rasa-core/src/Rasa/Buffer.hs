@@ -5,6 +5,8 @@ module Rasa.Buffer
   , Offset
   , Coord
   , cursor
+  , bufExts
+  , attrs
   , text
   , buffer
   , filename
@@ -21,6 +23,10 @@ module Rasa.Buffer
 import qualified Data.Text as T
 import Control.Lens hiding (matching)
 import Control.Lens.Text
+import Data.Default
+import Data.Dynamic
+
+import Rasa.Attributes
 
 type Offset = Int
 
@@ -30,7 +36,10 @@ data Buffer c = Buffer
   { _text :: T.Text
   , _cursor :: c
   , _filename :: String
-  } deriving (Show, Eq)
+  , _bufExts :: [Dynamic]
+  -- This list must always remain sorted by offset
+  , _attrs :: [IAttr]
+  } deriving (Show)
 
 makeLenses ''Buffer
 
@@ -40,6 +49,8 @@ buffer (fname, t) =
   { _text = t
   , _cursor = 0
   , _filename = fname
+  , _bufExts = []
+  , _attrs = def
   }
 
 withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer Offset) T.Text

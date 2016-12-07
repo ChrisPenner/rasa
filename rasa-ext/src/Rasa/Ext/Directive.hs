@@ -41,7 +41,7 @@ embed :: (Editor -> Editor) -> Alteration ()
 embed = zoom editor . modify
 
 exit :: Alteration ()
-exit = do 
+exit = do
   zoom editor $ exiting .= True
   setEvent [Exit]
 

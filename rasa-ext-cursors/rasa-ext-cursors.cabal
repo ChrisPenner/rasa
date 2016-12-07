@@ -1,34 +1,24 @@
-name:                rasa-core
+name:                rasa-ext-cursors
 version:             0.1.0.0
-synopsis:            Base Rasa Lib
-description:         Base Rasa Lib
+synopsis:            Rasa Ext adding cursor(s)
+description:         Rasa Ext adding cursor(s)
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com
 copyright:           2016 Chris Penner
-category:            Editor
+category:            Extension
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:
-                       Rasa.Alteration
-                       Rasa.Buffer
-                       Rasa.Event
-                       Rasa.View
-                       Rasa.Editor
-                       Rasa.Attributes
-
+  exposed-modules:     Rasa.Ext.Cursors
   build-depends:       base >= 4.7 && < 5
-                     , text
-                     , text-lens
+                     , rasa-ext
                      , lens
-                     , mtl
-                     , data-default
   default-language:    Haskell2010
 
   default-extensions:  OverloadedStrings

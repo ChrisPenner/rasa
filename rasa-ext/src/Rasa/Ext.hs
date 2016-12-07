@@ -6,8 +6,10 @@ module Rasa.Ext
   , Mod(..)
   , text
   , filename
-  , getPlugin
-  , setPlugin
+  , getExt
+  , getBufExt
+  , setExt
+  , setBufExt
   , getState
   , getEvent
   , setEvent
@@ -24,25 +26,32 @@ import Data.Maybe
 import Control.Monad.State
 import Control.Lens
 
-getPlugin :: forall a.  Typeable a => Alteration (Maybe a)
-getPlugin = do
-  exts <- zoom extState get
+extract :: forall a. Typeable a => [Dynamic] -> Maybe a
+extract exts =
   let mExts =
         fmap fromDynamic exts :: Typeable a =>
                                  [Maybe a]
    in case catMaybes mExts of
-        [] -> return Nothing
-        (x:_) -> return $ Just x
+        [] -> Nothing
+        (x:_) -> Just x
 
-setPlugin :: Typeable a => a -> Alteration ()
-setPlugin newExt = do
-  exts <- zoom extState get
-  let newExts = toDyn newExt : filter (not . isMatch) exts
-  zoom extState $ put newExts
+replace :: forall a. Typeable a => a -> [Dynamic] -> [Dynamic]
+replace new exts = toDyn new :filter (not . isMatch) exts
   where
-    rep = typeOf newExt
     isMatch :: Dynamic -> Bool
-    isMatch e = typeOf e == rep
+    isMatch e = typeOf e == typeOf new
+
+getBufExt :: forall a. Typeable a => Int -> Alteration (Maybe a)
+getBufExt i = extract <$> zoom (editor.buffers.ix i.bufExts) get
+
+getExt :: forall a.  Typeable a => Alteration (Maybe a)
+getExt = extract <$> zoom extState get
+
+setExt :: Typeable a => a -> Alteration ()
+setExt newExt = extState %= replace newExt
+
+setBufExt :: forall a. Typeable a => Int -> a -> Alteration ()
+setBufExt i newExt = editor.buffers.ix i.bufExts %= replace newExt
 
 getState :: Alteration Editor
 getState = zoom editor get

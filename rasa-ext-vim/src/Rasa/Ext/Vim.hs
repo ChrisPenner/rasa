@@ -21,7 +21,7 @@ instance Default VimSt where
   def = Normal
 
 getVim :: Alteration VimSt
-getVim = fromMaybe def <$> getPlugin
+getVim = fromMaybe def <$> getExt
 
 vim :: Alteration ()
 vim = do
@@ -34,7 +34,7 @@ vim = do
   mapM_ modeFunc evt
 
 insert :: Event -> Alteration ()
-insert Esc = setPlugin Normal
+insert Esc = setExt Normal
 insert BS = deleteChar
 insert Enter = insertText "\n"
 insert (Keypress 'w' [Ctrl]) = killWord
@@ -43,16 +43,16 @@ insert (Keypress c _) = insertText $ T.singleton c
 insert _ = return ()
 
 normal :: Event -> Alteration ()
-normal (Keypress 'i' _) = setPlugin Insert
-normal (Keypress 'I' _) = startOfLine >> setPlugin Insert
-normal (Keypress 'a' _) = moveCursor 1 >> setPlugin Insert
-normal (Keypress 'A' _) = endOfLine >> setPlugin Insert
+normal (Keypress 'i' _) = setExt Insert
+normal (Keypress 'I' _) = startOfLine >> setExt Insert
+normal (Keypress 'a' _) = moveCursor 1 >> setExt Insert
+normal (Keypress 'A' _) = endOfLine >> setExt Insert
 normal (Keypress '0' _) = startOfLine
 normal (Keypress '$' _) = findNext "\n"
 normal (Keypress 'g' _) = startOfBuffer
 normal (Keypress 'G' _) = endOfBuffer
-normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> setPlugin Insert
-normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setPlugin Insert
+normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> setExt Insert
+normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setExt Insert
 normal (Keypress '+' _) = switchBuf 1
 normal (Keypress '-' _) = switchBuf (-1)
 normal (Keypress 'h' _) = moveCursor (-1)
