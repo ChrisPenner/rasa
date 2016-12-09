@@ -1,12 +1,10 @@
-{-# LANGUAGE Rank2Types #-}
-
-module Rasa.Ext
+module Rasa.Adapter
   ( Alteration
+  , E.Editor
   , Event(..)
   , Mod(..)
-  , bufText
-  , newBuffer
-  , buffers
+  , Buffer
+  , editor
   , exiting
   , ext
   , bufExt
@@ -14,6 +12,7 @@ module Rasa.Ext
   ) where
 
 import Rasa.Alteration
+import qualified Rasa.Editor as E
 import Rasa.State
 import Rasa.Event
 import Rasa.Buffer

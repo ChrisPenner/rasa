@@ -1,35 +1,15 @@
-{-# LANGUAGE TemplateHaskell #-}
 module Rasa.Alteration where
 
 import Control.Monad.State
-import Data.Dynamic
+import Control.Monad.Except
 
-import Rasa.Event
-import Rasa.Editor
+import Rasa.State
 
-import Control.Lens
-import Data.Default
 
-data Store = Store
-  { _event :: [Event]
-  , _editor :: Editor
-  , _extState :: [Dynamic]
-  }
+type Alteration a = StateT Store (ExceptT String IO) a
 
-makeLenses ''Store
+execAlteration :: Store -> Alteration () -> IO (Either String Store)
+execAlteration store alt = runExceptT $ execStateT alt store
 
-instance Default Store where
-  def =
-    Store
-    { _event = [def]
-    , _editor = def
-    , _extState = []
-    }
-
-type Alteration a = StateT Store IO a
-
-execAlteration :: Store -> Alteration ()-> IO Store
-execAlteration = flip execStateT
-
-evalAlteration :: Store -> Alteration a -> IO a
-evalAlteration = flip evalStateT
+evalAlteration :: Store -> Alteration a -> IO (Either String a)
+evalAlteration store alt = runExceptT $ evalStateT alt store

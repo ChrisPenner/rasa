@@ -1,7 +1,7 @@
-name:                rasa-vty
+name:                rasa-adapter
 version:             0.1.0.0
-synopsis:            Rasa adapter for rendering to terminal with vty
-description:         Rasa adapter for rendering to terminal with vty
+synopsis:            Lib for developing rendering adapters for rasa
+description:         Lib for developing rendering adapters for rasa
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -16,20 +16,18 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Adapters.Vty
-  other-modules:
-                       Rasa.Adapters.Vty.Render
-                       Rasa.Adapters.Vty.Event
-                       Rasa.Adapters.Vty.State
+                       Rasa.Adapter
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-core
-                     , rasa-ext
-                     , text
                      , lens
-                     , vty >= 5.14
-                     , transformers
+                     , text
+                     , text-lens
+                     , mtl
+                     , extra
   default-language:    Haskell2010
+
+  default-extensions:  OverloadedStrings
 
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 

@@ -8,14 +8,8 @@ module Rasa.Buffer
   , bufExts
   , attrs
   , text
-  , buffer
-  , filename
+  , newBuffer
   , withOffset
-  , moveCursorBy
-  , moveCursorCoordBy
-  , moveCursorBackBy
-  , moveCursorTo
-  , appendText
   , useCountFor
   , asCoord
   ) where
@@ -35,7 +29,6 @@ type Coord = (Int, Int)
 data Buffer c = Buffer
   { _text :: T.Text
   , _cursor :: c
-  , _filename :: String
   , _bufExts :: [Dynamic]
   -- This list must always remain sorted by offset
   , _attrs :: [IAttr]
@@ -43,12 +36,11 @@ data Buffer c = Buffer
 
 makeLenses ''Buffer
 
-buffer :: (String, T.Text) -> Buffer Offset
-buffer (fname, t) =
+newBuffer :: T.Text -> Buffer Offset
+newBuffer txt =
   Buffer
-  { _text = t
+  { _text = txt
   , _cursor = 0
-  , _filename = fname
   , _bufExts = []
   , _attrs = def
   }
@@ -62,29 +54,6 @@ withOffset l = lens getter setter
     setter old new =
       let curs = old ^. cursor
       in old & text . l curs .~ new
-
-moveCursorBy :: Int -> Buffer Offset -> Buffer Offset
-moveCursorBy n = do
-  curs <- view cursor
-  moveCursorTo (curs + n)
-
-moveCursorCoordBy :: Coord -> Buffer Offset -> Buffer Offset
-moveCursorCoordBy c = asCoord . cursor %~ addPair c
-  where
-    addPair (a, b) (a', b') = (a + a', b + b')
-
-moveCursorTo :: Int -> Buffer Offset -> Buffer Offset
-moveCursorTo n = do
-  mx <- view (text . to T.length)
-  cursor .~ clamp 0 mx n
-
-moveCursorBackBy :: Int -> Buffer Offset -> Buffer Offset
-moveCursorBackBy = moveCursorBy . negate
-
-appendText :: T.Text -> Buffer Offset -> Buffer Offset
-appendText txt buf = buf & text . range curs curs .~ txt & moveCursorBy (T.length txt)
-  where
-    curs = buf ^. cursor
 
 useCountFor :: Lens' (Buffer Offset) T.Text
             -> (Int -> Buffer Offset -> Buffer Offset)

@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
 module Rasa.Adapters.Vty.Render (render') where
 
-import Rasa.Ext
+import Rasa.Adapter
 import Rasa.Editor
 import Rasa.Buffer
 import Rasa.View
@@ -29,7 +29,7 @@ instance Renderable (Buffer Offset) V.Image where
             where inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
 applyAttrs :: [(Offset, V.Attr)] -> T.Text -> V.Image
-applyAttrs attrs t = applyAttrs' attrs (T.lines t)
+applyAttrs atts t = applyAttrs' atts (T.lines t)
 
 getSize :: Alteration (Int, Int)
 getSize = do
@@ -38,11 +38,11 @@ getSize = do
 
 render' :: Alteration ()
 render' = do
-    editor <- getState
-    sz <- getSize
-    let pic = V.picForImage $ render sz editor
-    v <- getVty
-    liftIO $ V.update v pic
+  eState <- use editor
+  sz <- getSize
+  let pic = V.picForImage $ render sz eState
+  v <- getVty
+  liftIO $ V.update v pic
 
 
 type AttrList = [(Offset, V.Attr)]
@@ -53,7 +53,7 @@ plainText :: T.Text -> V.Image
 plainText = V.text' V.currentAttr
 
 applyAttrs' :: AttrList -> [T.Text] -> V.Image
-applyAttrs' attrs lines' = vertCat $ unfoldr attrLines (attrs, lines')
+applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')
   where
     vertCat = foldr (V.<->) V.emptyImage
     attrLines :: (AttrList, [T.Text]) -> Maybe (V.Image, (AttrList, [T.Text]))
@@ -67,8 +67,8 @@ applyAttrs' attrs lines' = vertCat $ unfoldr attrLines (attrs, lines')
 -- of T.lines within each group. Ugly I know.
 attrLine :: AttrList -> T.Text -> (V.Image, AttrList)
 attrLine [] txt = (plainText txt, [])
-attrLine ((0, attr):attrs) txt = first (V.text' attr "" V.<|>) $ attrLine attrs txt
-attrLine attrs "" = (V.emptyImage, attrs)
+attrLine ((0, attr):atts) txt = first (V.text' attr "" V.<|>) $ attrLine atts txt
+attrLine atts "" = (V.emptyImage, atts)
 attrLine allAttrs@((offset, _):_) txt
   -- If the offset is larger, we can add the whole line, then decrement the attr offsets
   | offset > T.length txt = (plainText txt, decr (T.length txt) allAttrs)

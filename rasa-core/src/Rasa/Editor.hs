@@ -1,9 +1,10 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, Rank2Types #-}
 module Rasa.Editor (
     Editor
   , focusedBuf
   , focused
   , buffers
+  , buf
   , exiting
 ) where
 
@@ -22,8 +23,8 @@ makeLenses ''Editor
 
 instance Default Editor where
     def = Editor {
-            _buffers=fmap buffer [ ("Buf0.txt", "Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?")
-                                 , ("Buf1.txt", "Buffer 1\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?") ]
+            _buffers=fmap newBuffer [ "Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?"
+                                 , "Buffer 1\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?" ]
           , _focused=0
           , _exiting=False
              }
@@ -40,3 +41,5 @@ focusedBuf = lens getter (flip setter)
             foc <- view focused
             set (buffers . ix foc) a
 
+buf :: Int -> Traversal' Editor (Buffer Offset)
+buf bufN = buffers.ix bufN

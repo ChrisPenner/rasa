@@ -1,29 +1,35 @@
 {-# language ExistentialQuantification, Rank2Types #-}
 module Rasa.Run (rasa) where
 
+import Rasa.Ext
+import Rasa.State
 import Rasa.Alteration
-import Rasa.Editor
-import Rasa.Event
 
 import Control.Lens
 import Control.Concurrent.Async
 import Control.Monad
 import Data.Default (def)
 
-handleEvent :: Store -> Alteration () -> IO Store
+log' :: String -> IO ()
+log' msg = appendFile "logs.log" (msg ++ "\n")
+
+handleEvent :: Store -> Alteration () -> IO (Either String Store)
 handleEvent = execAlteration
 
 rasa :: [Alteration [Event]] -> Alteration () -> IO ()
 rasa eventListeners extensions = eventLoop eventListeners extensions def
 
-isExiting :: Store -> Bool
-isExiting = view (editor.exiting)
-
 eventLoop ::  [Alteration [Event]] -> Alteration () -> Store -> IO ()
 eventLoop eventListeners extensions store = do
-  newStore <- handleEvent store extensions
-  unless (isExiting newStore) $ do
+  res <- handleEvent store extensions
+  newStore <- case res of
+                Left err -> log' err >> return store
+                Right nStore -> return nStore
+
+  unless (newStore^.exiting) $ do
     asyncEventListeners <- traverse (async.evalAlteration newStore) eventListeners
-    (_, nextEvents) <- waitAny asyncEventListeners
-    let withEvent = newStore & event .~ nextEvents
-    eventLoop eventListeners extensions withEvent
+    (_, asyncRes) <- waitAny asyncEventListeners
+    withEvents <- case asyncRes of
+                    Left err -> log' err >> return newStore
+                    Right nextEvents -> return (newStore & event .~ nextEvents)
+    eventLoop eventListeners extensions withEvents
