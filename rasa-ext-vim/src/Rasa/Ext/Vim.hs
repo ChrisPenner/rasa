@@ -6,6 +6,7 @@ import Rasa.Ext
 -- import Rasa.Ext.Files (saveCurrent)
 import Rasa.Ext.Cursors
 import Rasa.Ext.Directive
+import Control.Monad.IO.Class
 
 import Control.Lens
 import Data.Default
@@ -52,7 +53,7 @@ insert (Keypress 'c' [Ctrl]) = exit
 insert _ = return ()
 
 normal :: Event -> Alteration ()
-normal (Keypress 'i' _) = setMode Insert
+normal (Keypress 'i' _) = setMode Insert >> getVim >>= liftIO . print
 -- normal (Keypress 'I' _) = startOfLine >> setExt Insert
 -- normal (Keypress 'a' _) = moveCursor 1 >> setExt Insert
 -- normal (Keypress 'A' _) = endOfLine >> setExt Insert

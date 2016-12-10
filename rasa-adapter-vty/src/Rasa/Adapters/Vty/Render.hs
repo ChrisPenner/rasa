@@ -24,9 +24,10 @@ instance Renderable Editor V.Image where
 instance Renderable (Buffer Offset) V.Image where
     render (width, _) = do
         txt <- textWrap width . view text
-        curs <- view cursor
-        return $ applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
-            where inverse = V.currentAttr `V.withStyle` V.reverseVideo
+        -- curs <- view cursor
+        -- return $ applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
+        return $ applyAttrs [] txt
+            -- where inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
 applyAttrs :: [(Offset, V.Attr)] -> T.Text -> V.Image
 applyAttrs atts t = applyAttrs' atts (T.lines t)

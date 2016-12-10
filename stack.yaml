@@ -8,6 +8,7 @@ packages:
 - ./rasa-ext
 - ./rasa-ext-files
 - ./rasa-ext-vim
+- ./rasa-ext-logger
 - ./rasa-ext-cursors
 - ./text-lens
 - ./user-config

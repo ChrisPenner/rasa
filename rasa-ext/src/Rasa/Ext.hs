@@ -6,7 +6,9 @@ module Rasa.Ext
   , Mod(..)
   , bufText
   , newBuffer
+  , editor
   , buffers
+  , focused
   , exiting
   , ext
   , bufExt

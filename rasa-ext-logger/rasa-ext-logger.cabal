@@ -1,31 +1,32 @@
-name:                user-config
+name:                rasa-ext-logger
 version:             0.1.0.0
-synopsis:            Sample user config for Rasa
-description:         Sample user config for Rasa
+synopsis:            Rasa Ext for logging state/actions
+description:         Rasa Ext for logging state/actions
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com
 copyright:           2016 Chris Penner
-category:            Config
+category:            Extension
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
-executable my-rasa
-  hs-source-dirs:      app
-  main-is:             Main.hs
+library
+  hs-source-dirs:      src
+  exposed-modules:
+                       Rasa.Ext.Logger
+
   build-depends:       base >= 4.7 && < 5
-                     , rasa
                      , rasa-core
-                     , rasa-ext
-                     , rasa-ext-vim
-                     , rasa-ext-cursors
-                     , rasa-ext-logger
-                     , rasa-ext-files
-                     , rasa-adapter-vty
+                     , lens
+                     , mtl
+                     , lens
   default-language:    Haskell2010
+
+  default-extensions:
+
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
 source-repository head

@@ -17,7 +17,7 @@ data Store = Store
   { _event :: [Event]
   , _editor :: E.Editor
   , _extState :: Map TypeRep Ext
-  }
+  } deriving (Show)
 
 makeLenses ''Store
 
@@ -29,6 +29,8 @@ instance Default Store where
     , _extState = empty
     }
 
+focused :: Lens' Store Int
+focused = editor . E.focused
 
 buffers :: Lens' Store [Buffer Int]
 buffers = editor.E.buffers
@@ -39,7 +41,7 @@ buf bufN = editor. E.buf bufN
 bufText :: Int -> Traversal' Store T.Text
 bufText bufN = buf bufN.text
 
-bufExt ::  forall a. Typeable a => Int -> Traversal' Store (Maybe a)
+bufExt ::  forall a. (Show a, Typeable a) => Int -> Traversal' Store (Maybe a)
 bufExt bufN = buffers.ix bufN.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
@@ -47,7 +49,7 @@ bufExt bufN = buffers.ix bufN.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping 
 exiting :: Lens' Store Bool
 exiting = editor. E.exiting
 
-ext ::  forall a. Typeable a => Lens' Store (Maybe a)
+ext ::  forall a. (Show a, Typeable a) => Lens' Store (Maybe a)
 ext = extState . at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
