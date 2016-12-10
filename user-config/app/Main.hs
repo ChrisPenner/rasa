@@ -20,6 +20,6 @@ eventListeners = [vtyEvent]
 
 main :: IO ()
 main = rasa eventListeners $ do
-  -- vim
-  -- vty
-  logger
+  vim
+  vty
+  -- logger

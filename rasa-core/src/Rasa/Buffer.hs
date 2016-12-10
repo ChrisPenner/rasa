@@ -1,9 +1,10 @@
-{-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings #-}
+{-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings, ExistentialQuantification, ScopedTypeVariables #-}
 
 module Rasa.Buffer
   ( Buffer
   , Offset
   , Coord
+  , Ext(..)
   , cursor
   , bufExts
   , attrs
@@ -19,20 +20,22 @@ import Control.Lens hiding (matching)
 import Control.Lens.Text
 import Data.Default
 import Data.Dynamic
+import Data.Map
 
 import Rasa.Attributes
 
 type Offset = Int
 
 type Coord = (Int, Int)
+data Ext = forall a. Ext a
 
 data Buffer c = Buffer
   { _text :: T.Text
   , _cursor :: c
-  , _bufExts :: [Dynamic]
+  , _bufExts :: Map TypeRep Ext
   -- This list must always remain sorted by offset
   , _attrs :: [IAttr]
-  } deriving (Show)
+  }
 
 makeLenses ''Buffer
 
@@ -41,7 +44,7 @@ newBuffer txt =
   Buffer
   { _text = txt
   , _cursor = 0
-  , _bufExts = []
+  , _bufExts = empty
   , _attrs = def
   }
 

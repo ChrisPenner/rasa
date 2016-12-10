@@ -1,26 +1,27 @@
-module Rasa.Ext.Cursors where
-  -- ( getCursor
+module Rasa.Ext.Cursors
+  ( getCursor
   -- , startOfBuffer
   -- , deleteChar
   -- , insertText
-  -- ) where
+  ) where
 
--- import Rasa.Ext
+import Rasa.Ext
+import Control.Monad
 -- import Rasa.Ext.Directive
 
--- import Control.Lens
+import Control.Lens
 -- import Control.Lens.Text
--- import Data.Typeable
--- import Data.Maybe
+import Data.Typeable
+import Data.Maybe
 -- import Control.Monad.State
 
 -- import qualified Data.Text as T
 
 -- type Coord = (Int, Int)
 
--- newtype Cursor =
---   Cursor Int
---   deriving (Show, Typeable)
+newtype Cursor =
+  Cursor Int
+  deriving (Show, Typeable)
 
 -- focus :: (Int -> (T.Text -> T.Text)) -> Alteration ()
 -- focus f = do
@@ -36,10 +37,10 @@ module Rasa.Ext.Cursors where
 -- embed :: (Editor -> Editor) -> Alteration ()
 -- embed = zoom editor . modify
 
--- getCursor :: Int -> Alteration Int
--- getCursor bufN = do
---   Cursor i <- fromMaybe (Cursor 0) <$> getBufExt bufN
---   return i
+getCursor :: Int -> Alteration Int
+getCursor bufN = do
+  curs <- preuse (bufExt bufN)
+  return $ fromMaybe 0 (join curs)
 
 -- deleteChar :: Alteration ()
 -- deleteChar = focus deleteCharAt

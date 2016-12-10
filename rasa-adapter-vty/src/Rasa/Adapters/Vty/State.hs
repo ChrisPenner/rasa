@@ -10,7 +10,7 @@ initUi :: Alteration V.Vty
 initUi = do
   cfg <- liftIO V.standardIOConfig
   v <- liftIO $ V.mkVty cfg
-  ext <.= Just v
+  ext .= Just v
   return v
 
 getVty :: Alteration V.Vty
@@ -19,4 +19,3 @@ getVty = do
   case v of
     Just v' -> return v'
     Nothing -> initUi
-

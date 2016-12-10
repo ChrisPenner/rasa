@@ -17,7 +17,7 @@ data Editor = Editor {
     _buffers :: [Buffer Offset]
   , _focused :: Int
   , _exiting :: Bool
-} deriving (Show)
+}
 
 makeLenses ''Editor
 
