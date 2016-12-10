@@ -29,6 +29,9 @@ getVim = do
       ext .= Just (def :: VimSt)
       return def
 
+setMode :: VimSt -> Alteration ()
+setMode vimst = ext .= Just vimst
+
 vim :: Alteration ()
 vim = do
   mode <- getVim
@@ -49,7 +52,7 @@ insert (Keypress 'c' [Ctrl]) = exit
 insert _ = return ()
 
 normal :: Event -> Alteration ()
-normal (Keypress 'i' _) = ext .= Just Insert
+normal (Keypress 'i' _) = setMode Insert
 -- normal (Keypress 'I' _) = startOfLine >> setExt Insert
 -- normal (Keypress 'a' _) = moveCursor 1 >> setExt Insert
 -- normal (Keypress 'A' _) = endOfLine >> setExt Insert
@@ -62,7 +65,7 @@ normal (Keypress 'i' _) = ext .= Just Insert
 -- normal (Keypress '+' _) = switchBuf 1
 -- normal (Keypress '-' _) = switchBuf (-1)
 -- normal (Keypress 'h' _) = moveCursor (-1)
--- normal (Keypress 'l' _) = moveCursor 1
+normal (Keypress 'l' _) = moveCursorBy 1
 -- normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
 -- normal (Keypress 'j' _) = moveCursorCoord (1, 0)
 -- normal (Keypress 'f' _) = findNext "f"

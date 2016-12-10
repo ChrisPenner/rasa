@@ -1,5 +1,7 @@
+{-# LANGUAGE DeriveFunctor, TemplateHaskell #-}
 module Rasa.Ext.Cursors
   ( getCursor
+  , moveCursorBy
   -- , startOfBuffer
   -- , deleteChar
   -- , insertText
@@ -19,9 +21,17 @@ import Data.Maybe
 
 -- type Coord = (Int, Int)
 
-newtype Cursor =
-  Cursor Int
-  deriving (Show, Typeable)
+newtype BufCursors = BufCursors {
+  _cursor:: Int
+} deriving (Show, Typeable)
+
+makeLenses ''BufCursors
+
+newtype EditorCursors = EditorCursors {
+  _focused :: Int
+} deriving (Show, Typeable)
+
+makeLenses ''EditorCursors
 
 -- focus :: (Int -> (T.Text -> T.Text)) -> Alteration ()
 -- focus f = do
@@ -42,6 +52,12 @@ getCursor bufN = do
   curs <- preuse (bufExt bufN)
   return $ fromMaybe 0 (join curs)
 
+getFocused :: Alteration Int
+getFocused = do
+  foc <- preuse (ext._Just.focused)
+  return $ fromMaybe 0 foc
+
+
 -- deleteChar :: Alteration ()
 -- deleteChar = focus deleteCharAt
 
@@ -55,7 +71,7 @@ getCursor bufN = do
 -- insertText' bufN txt = onBuf bufN $ flip insertTextAt txt
 
 -- moveCursor :: Int -> Alteration ()
--- moveCursor n = embed $ focusedBuf %~ moveCursorBy n
+-- moveCursor n = moveCursorBy n
 
 -- moveCursorCoord :: Coord -> Alteration ()
 -- moveCursorCoord crd = embed $ focusedBuf %~ moveCursorCoordBy crd
@@ -63,11 +79,10 @@ getCursor bufN = do
 -- startOfBuffer :: Int -> Alteration ()
 -- startOfBuffer bufN = moveCursorTo bufN 0
 
--- moveCursorBy :: Int -> Alteration ()
--- moveCursorBy n = do
---   foc <- use (editor.focused)
---   Cursor c <- getBufExt foc
---   moveCursorTo foc (c + n)
+moveCursorBy :: Int -> Alteration ()
+moveCursorBy n = do
+  foc <- preuse (ext._Just.focused)
+  bufExt (fromMaybe 0 foc)._Just %= (+n)
 
 -- moveCursorBy' :: Int -> Int -> Alteration ()
 -- moveCursorBy' bufN n = do
@@ -131,11 +146,11 @@ getCursor bufN = do
 -- deleteTillEOL :: Alteration ()
 -- deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
 
-clamp :: Int -> Int -> Int -> Int
-clamp mn mx n
-  | n < mn = mn
-  | n > mx = mx
-  | otherwise = n
+-- clamp :: Int -> Int -> Int -> Int
+-- clamp mn mx n
+--   | n < mn = mn
+--   | n > mx = mx
+--   | otherwise = n
 
 -- switchBuf :: Int -> Alteration ()
 -- switchBuf n =
