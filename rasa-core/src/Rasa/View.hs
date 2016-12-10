@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, OverloadedStrings #-}
 module Rasa.View (
     textWrap
   , Size

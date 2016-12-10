@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, Rank2Types #-}
+{-# LANGUAGE TemplateHaskell, Rank2Types, OverloadedStrings #-}
 module Rasa.Editor (
     Editor
   , focusedBuf

@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, TemplateHaskell #-}
+{-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings #-}
 
 module Rasa.Buffer
   ( Buffer
