@@ -85,10 +85,13 @@ decr n = fmap $ first (subtract n)
 plainText :: T.Text -> V.Image
 plainText = V.text' V.currentAttr
 
+reset :: V.Image
+reset = V.text' V.defAttr ""
+
 applyAttrs' :: AttrList -> [T.Text] -> V.Image
 applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')
   where
-    vertCat = foldr (V.<->) V.emptyImage
+    vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
     attrLines :: (AttrList, [T.Text]) -> Maybe (V.Image, (AttrList, [T.Text]))
     attrLines (_, []) = Nothing
     attrLines (as, l:ls) = let (img, restAs) = attrLine as l

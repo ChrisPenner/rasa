@@ -15,10 +15,9 @@ module Rasa.Ext.Cursors
 -- import Debug.Trace
 
 import Rasa.Ext
+import Rasa.Ext.Directive
 
 import Control.Monad
-
-import Rasa.Ext.Directive
 import Control.Lens
 import Control.Monad.State
 

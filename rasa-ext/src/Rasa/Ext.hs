@@ -11,6 +11,7 @@ module Rasa.Ext
   , focused
   , exiting
   , ext
+  , buf
   , bufExt
   , allBufExt
   , bufAttrs

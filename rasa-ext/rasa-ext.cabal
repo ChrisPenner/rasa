@@ -16,8 +16,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Ext.Directive
                        Rasa.Ext
+                       Rasa.Ext.Directive
+                       Rasa.Ext.Attributes
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-core
