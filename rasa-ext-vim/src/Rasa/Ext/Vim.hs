@@ -6,12 +6,11 @@ import Rasa.Ext
 -- import Rasa.Ext.Files (saveCurrent)
 import Rasa.Ext.Cursors
 import Rasa.Ext.Directive
-import Control.Monad.IO.Class
 
 import Control.Lens
 import Data.Default
 import Data.Typeable
--- import qualified Data.Text as T
+import qualified Data.Text as T
 
 data VimSt
   = Normal
@@ -45,15 +44,15 @@ vim = do
 
 insert :: Event -> Alteration ()
 insert Esc = ext ?= Normal
--- insert BS = deleteChar
+insert BS = deleteChar
 -- insert Enter = insertText "\n"
 -- insert (Keypress 'w' [Ctrl]) = killWord
 insert (Keypress 'c' [Ctrl]) = exit
--- insert (Keypress c _) = insertText $ T.singleton c
+insert (Keypress c _) = insertText (T.singleton c) >> moveCursorBy 1
 insert _ = return ()
 
 normal :: Event -> Alteration ()
-normal (Keypress 'i' _) = setMode Insert >> getVim >>= liftIO . print
+normal (Keypress 'i' _) = setMode Insert
 -- normal (Keypress 'I' _) = startOfLine >> setExt Insert
 -- normal (Keypress 'a' _) = moveCursor 1 >> setExt Insert
 -- normal (Keypress 'A' _) = endOfLine >> setExt Insert
@@ -65,14 +64,14 @@ normal (Keypress 'i' _) = setMode Insert >> getVim >>= liftIO . print
 -- normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setExt Insert
 -- normal (Keypress '+' _) = switchBuf 1
 -- normal (Keypress '-' _) = switchBuf (-1)
--- normal (Keypress 'h' _) = moveCursor (-1)
+normal (Keypress 'h' _) = moveCursorBy (-1)
 normal (Keypress 'l' _) = moveCursorBy 1
 -- normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
 -- normal (Keypress 'j' _) = moveCursorCoord (1, 0)
 -- normal (Keypress 'f' _) = findNext "f"
 -- normal (Keypress 'F' _) = findPrev "f"
--- normal (Keypress 'X' _) = deleteChar >> moveCursor (-1)
--- normal (Keypress 'x' _) = moveCursor 1 >> deleteChar >> moveCursor (-1)
+normal (Keypress 'X' _) = deleteChar
+normal (Keypress 'x' _) = moveCursorBy 1 >> deleteChar >> moveCursorBy (-1)
 -- normal (Keypress 'D' _) = deleteTillEOL
 normal (Keypress 'q' _) = exit
 normal (Keypress 'c' [Ctrl]) = exit

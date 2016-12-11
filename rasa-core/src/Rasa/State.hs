@@ -41,6 +41,11 @@ buf bufN = editor. E.buf bufN
 bufText :: Int -> Traversal' Store T.Text
 bufText bufN = buf bufN.text
 
+allBufExt :: forall a. (Show a, Typeable a) => Traversal' Store (Maybe a)
+allBufExt = buffers.traverse.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping coerce
+  where
+    coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
+
 bufExt ::  forall a. (Show a, Typeable a) => Int -> Traversal' Store (Maybe a)
 bufExt bufN = buffers.ix bufN.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where

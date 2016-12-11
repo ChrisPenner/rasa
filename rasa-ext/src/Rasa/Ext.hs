@@ -12,6 +12,7 @@ module Rasa.Ext
   , exiting
   , ext
   , bufExt
+  , allBufExt
   , event
   ) where
 

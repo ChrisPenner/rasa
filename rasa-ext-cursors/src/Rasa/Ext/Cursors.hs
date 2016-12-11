@@ -4,9 +4,12 @@ module Rasa.Ext.Cursors
   ( getCursor
   , moveCursorBy
   , cursors
-   -- , startOfBuffer
-   -- , deleteChar
-   -- , insertText
+  , deleteChar
+  , deleteChar'
+  , withCursor
+  , withCursor'
+  , insertText
+  , insertText'
   ) where
 
 -- import Debug.Trace
@@ -16,14 +19,15 @@ import Rasa.Ext
 import Control.Applicative
 import Control.Monad
 
--- import Rasa.Ext.Directive
+import Rasa.Ext.Directive
 import Control.Lens
+import Control.Monad.State
 
 -- import Control.Lens.Text
 import Data.Typeable
 
 -- import Control.Monad.State
--- import qualified Data.Text as T
+import qualified Data.Text as T
 -- type Coord = (Int, Int)
 newtype Cursor = Cursor
   { _cursor :: Int
@@ -32,61 +36,57 @@ newtype Cursor = Cursor
 makeLenses ''Cursor
 
 cursors :: Alteration ()
-cursors = return ()
+cursors = do
+  evt <- use event
+  -- Initialize all buffers
+  when (Init `elem` evt) $ allBufExt .= (Just $ Cursor 0)
 
--- newtype EditorCursors = EditorCursors {
---   _focused :: Int
--- } deriving (Show, Typeable)
--- makeLenses ''EditorCursors
--- focus :: (Int -> (T.Text -> T.Text)) -> Alteration ()
--- focus f = do
---   foc <- use (editor.focused)
---   curs <- getCursor foc
---   editor.focusedBuf.text %= f curs
--- onBuf :: Int -> (Int -> (T.Text -> T.Text)) -> Alteration ()
--- onBuf bufN f = do
---   curs <- getCursor bufN
---   editor.focusedBuf.text %= f curs
--- embed :: (Editor -> Editor) -> Alteration ()
--- embed = zoom editor . modify
+moveCursorBy :: Int -> Alteration ()
+moveCursorBy n = do
+  foc <- use focused
+  bufExt foc %= liftA (cursor %~ (+n))
+
 getCursor' :: Int -> Alteration Int
-getCursor' bufN = do
-  curs <- preuse (bufExt bufN)
-  case join curs of
-    Just (Cursor i) -> return i
-    Nothing -> bufExt bufN .= (Just $ Cursor 0) >> return 0
+getCursor' bufN = get <&> (^?!bufExt bufN._Just.cursor)
 
 getCursor :: Alteration Int
-getCursor = do
-  foc <- getFocused
-  getCursor' foc
+getCursor = withFocus getCursor'
 
--- getFocused :: Alteration Int
--- getFocused = do
---   foc <- preuse (ext._Just.focused)
---   return $ fromMaybe 0 foc
-getFocused :: Alteration Int
-getFocused = use focused
+withCursor :: (Int -> a) -> Alteration a
+withCursor f = do
+  i <- getCursor
+  return $ f i
 
--- deleteChar :: Alteration ()
--- deleteChar = focus deleteCharAt
--- deleteChar' :: Int ->  Alteration ()
--- deleteChar' bufN = onBuf bufN deleteCharAt
--- insertText :: T.Text -> Alteration ()
--- insertText txt = focus $ flip insertTextAt txt
--- insertText' :: Int -> T.Text -> Alteration ()
--- insertText' bufN txt = onBuf bufN $ flip insertTextAt txt
+withCursor' :: Int -> (Int -> a) -> Alteration a
+withCursor' bufN f = do
+  i <- getCursor' bufN
+  return $ f i
+
+withFocus :: (Int -> Alteration a) -> Alteration a
+withFocus f = use focused >>= f
+
+deleteChar :: Alteration ()
+deleteChar = withFocus deleteChar'
+
+deleteChar' :: Int ->  Alteration ()
+deleteChar' bufN = do
+  f <- withCursor' bufN deleteCharAt
+  bufText bufN %= f
+
+insertText :: T.Text -> Alteration ()
+insertText txt = withFocus $ flip insertText' txt
+
+insertText' :: Int -> T.Text -> Alteration ()
+insertText' bufN txt = do
+  f <- withCursor' bufN $ flip insertTextAt txt
+  bufText bufN %= f
+
 -- moveCursor :: Int -> Alteration ()
 -- moveCursor n = moveCursorBy n
 -- moveCursorCoord :: Coord -> Alteration ()
 -- moveCursorCoord crd = embed $ focusedBuf %~ moveCursorCoordBy crd
 -- startOfBuffer :: Int -> Alteration ()
 -- startOfBuffer bufN = moveCursorTo bufN 0
-moveCursorBy :: Int -> Alteration ()
-moveCursorBy n = do
-  foc <- getFocused
-  _ <- getCursor' foc
-  bufExt foc %= liftA (cursor %~ (+n))
   -- liftIO $ print $ "New: " ++ show (fromMaybe (-1) new)
   -- where trans n' = let f (Cursor i) = Cursor (i + n')
                     -- in (pure f <*>)
