@@ -2,12 +2,14 @@
 module Rasa.Adapters.Vty.Render (render') where
 
 import Rasa.Adapter
+import Rasa.Ext
 import Rasa.Editor
 import Rasa.Buffer
 import Rasa.View
 
 import Rasa.Adapters.Vty.State
 import Control.Monad.IO.Class
+
 
 import Data.List
 import qualified Graphics.Vty as V
@@ -21,16 +23,46 @@ class Renderable a b where
 instance Renderable Editor V.Image where
     render sz = view $ focusedBuf . to (render sz)
 
-instance Renderable (Buffer Offset) V.Image where
+instance Renderable (Buffer Int) V.Image where
     render (width, _) = do
         txt <- textWrap width . view text
         -- curs <- view cursor
         -- return $ applyAttrs [(curs, inverse), (curs + 1, V.defAttr)] txt
-        return $ applyAttrs [] txt
+        atts <- fmap convertIAttr <$> view attrs
+        return $ applyAttrs atts txt
             -- where inverse = V.currentAttr `V.withStyle` V.reverseVideo
 
-applyAttrs :: [(Offset, V.Attr)] -> T.Text -> V.Image
+applyAttrs :: [(Int, V.Attr)] -> T.Text -> V.Image
 applyAttrs atts t = applyAttrs' atts (T.lines t)
+
+convertIAttr :: IAttr -> (Int, V.Attr)
+convertIAttr (IAttr i a)= (i, convertAttr a)
+
+convertAttr :: Attr -> V.Attr
+convertAttr (Attr (fg', bg', style')) = V.Attr
+                                        (maybe V.KeepCurrent convertStyle style')
+                                        (maybe V.KeepCurrent convertColor fg')
+                                        (maybe V.KeepCurrent convertColor bg')
+
+convertStyle :: Style -> V.MaybeDefault V.Style
+convertStyle Standout = V.SetTo V.standout
+convertStyle Underline = V.SetTo V.underline
+convertStyle ReverseVideo = V.SetTo V.reverseVideo
+convertStyle Blink =  V.SetTo V.blink
+convertStyle Dim = V.SetTo  V.dim
+convertStyle Bold = V.SetTo V.bold
+convertStyle DefStyle = V.Default
+
+convertColor :: Color -> V.MaybeDefault V.Color
+convertColor Black = V.SetTo V.black
+convertColor Red = V.SetTo V.red
+convertColor Green = V.SetTo V.green
+convertColor Yellow = V.SetTo V.yellow
+convertColor Blue = V.SetTo V.blue
+convertColor Magenta = V.SetTo V.magenta
+convertColor Cyan = V.SetTo V.cyan
+convertColor White = V.SetTo V.white
+convertColor DefColor = V.Default
 
 getSize :: Alteration (Int, Int)
 getSize = do
@@ -46,7 +78,7 @@ render' = do
   liftIO $ V.update v pic
 
 
-type AttrList = [(Offset, V.Attr)]
+type AttrList = [(Int, V.Attr)]
 decr :: Int -> AttrList -> AttrList
 decr n = fmap $ first (subtract n)
 

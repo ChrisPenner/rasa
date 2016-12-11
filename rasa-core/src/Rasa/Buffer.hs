@@ -40,6 +40,7 @@ makeLenses ''Buffer
 
 instance Show (Buffer a) where
   show b = "<Buffer {text:" ++ show (b^..text.from packed.taking 30 traverse) ++ "...,\n"
+           ++ "attrs: " ++ show (b^.attrs) ++ "\n"
            ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
 
 newBuffer :: T.Text -> Buffer Offset

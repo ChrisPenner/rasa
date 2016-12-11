@@ -1,15 +1,18 @@
-module Rasa.Attributes (fg, bg, style, Color(..), Style(..), Attr, IAttr) where
+module Rasa.Attributes (fg, bg, style, iattr, Color(..), Style(..), IAttr(..), Attr(..)) where
 
 import Data.Default
 import Control.Applicative
 
 -- Attr with an index into the text or buffer
-newtype IAttr =
-  IAttr (Int, Attr)
+data IAttr =
+  IAttr Int Attr
   deriving (Show, Eq)
 
+iattr :: Int -> Attr -> IAttr
+iattr = IAttr
+
 instance Ord IAttr where
-  compare (IAttr (i, _)) (IAttr (i', _)) = compare i i'
+  compare (IAttr i _) (IAttr i' _) = compare i i'
 
 data Color =
     Black
@@ -20,6 +23,7 @@ data Color =
   | Magenta
   | Cyan
   | White
+  | DefColor
   deriving (Show, Eq)
 
 data Style =
@@ -29,46 +33,23 @@ data Style =
   | Blink
   | Dim
   | Bold
+  | DefStyle
   deriving (Show, Eq)
 
-data Attr =
-    FG Color
-  | BG Color
-  | ST Style
-  --Attr (Maybe FG,   Maybe BG,   Maybe ST)
-  | Attr (Maybe Attr, Maybe Attr, Maybe Attr)
+newtype Attr = Attr (Maybe Color, Maybe Color, Maybe Style)
   deriving (Show, Eq)
 
 instance Default Attr where
-  def = Attr (Nothing, Nothing, Nothing)
+  def = Attr (Just DefColor, Just DefColor, Just DefStyle)
 
 instance Monoid Attr where
-  FG _ `mappend` FG fc = FG fc
-  BG _ `mappend` BG bc = BG bc
-  ST _ `mappend` ST s = ST s
-
-  BG bc `mappend` FG fc = Attr (Just $ FG fc, Just $ BG bc, Nothing)
-  FG fc `mappend` BG bc = Attr (Just $ FG fc, Just $ BG bc, Nothing)
-  FG fc `mappend` ST s = Attr (Just $ FG fc, Nothing, Just $ ST s)
-  ST s `mappend` FG fc = Attr (Just $ FG fc, Nothing, Just $ ST s)
-  BG bc `mappend` ST s = Attr (Nothing, Just $ BG bc, Just $ ST s)
-  ST s `mappend` BG bc = Attr (Nothing, Just $ BG bc, Just $ ST s)
-
-  FG fc `mappend` Attr (f, b, s) = Attr (f <|> Just (FG fc), b, s)
-  BG bc `mappend` Attr (f, b, s) = Attr (f, b <|> Just (BG bc), s)
-  ST st `mappend` Attr (f, b, s) = Attr (f, b, s <|> Just (ST st))
-
-  Attr (_, b, s) `mappend` FG fc = Attr (Just (FG fc), b, s)
-  Attr (f, _, s) `mappend` BG bc = Attr (f, Just (BG bc), s)
-  Attr (f, b, _) `mappend` ST s = Attr (f, b, Just (ST s))
-
   Attr (a, b, c) `mappend` Attr (a', b', c') = Attr (a' <|> a, b' <|> b, c' <|> c)
 
   mempty = Attr (Nothing, Nothing, Nothing)
 
 fg, bg :: Color -> Attr
-fg = FG
-bg = BG
+fg a = Attr (Just a, Nothing, Nothing)
+bg a = Attr (Nothing, Just a, Nothing)
 
 style :: Style -> Attr
-style = ST
+style a = Attr (Nothing, Nothing, Just a)

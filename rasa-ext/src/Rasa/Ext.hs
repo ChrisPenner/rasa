@@ -13,9 +13,19 @@ module Rasa.Ext
   , ext
   , bufExt
   , allBufExt
+  , bufAttrs
   , event
+  , iattr
+  , fg
+  , bg
+  , style
+  , Color(..)
+  , Style(..)
+  , IAttr(..)
+  , Attr(..)
   ) where
 
+import Rasa.Attributes
 import Rasa.Alteration
 import Rasa.State
 import Rasa.Event

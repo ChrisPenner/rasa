@@ -3,6 +3,7 @@ module Rasa.State where
 
 import Rasa.Event
 import Rasa.Buffer
+import Rasa.Attributes
 import qualified Rasa.Editor as E
 
 import Unsafe.Coerce
@@ -50,6 +51,9 @@ bufExt ::  forall a. (Show a, Typeable a) => Int -> Traversal' Store (Maybe a)
 bufExt bufN = buffers.ix bufN.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
+
+bufAttrs :: Int -> Traversal' Store ([IAttr])
+bufAttrs bufN = buffers.ix bufN.attrs
 
 exiting :: Lens' Store Bool
 exiting = editor. E.exiting

@@ -16,7 +16,6 @@ module Rasa.Ext.Cursors
 
 import Rasa.Ext
 
-import Control.Applicative
 import Control.Monad
 
 import Rasa.Ext.Directive
@@ -30,24 +29,33 @@ import Data.Typeable
 import qualified Data.Text as T
 -- type Coord = (Int, Int)
 newtype Cursor = Cursor
-  { _cursor :: Int
+  { _curs :: Int
   } deriving (Show, Typeable)
 
 makeLenses ''Cursor
+
+cursor :: Traversal' (Maybe Cursor) Int
+cursor = _Just.curs
+
 
 cursors :: Alteration ()
 cursors = do
   evt <- use event
   -- Initialize all buffers
   when (Init `elem` evt) $ allBufExt .= (Just $ Cursor 0)
+  foc <- use focused
+  c <- getCursor
+  bufAttrs foc .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
+
 
 moveCursorBy :: Int -> Alteration ()
 moveCursorBy n = do
   foc <- use focused
-  bufExt foc %= liftA (cursor %~ (+n))
+  mx <- get <&> (^?!bufText foc.to T.length)
+  bufExt foc.cursor %= clamp 0 mx . (+n)
 
 getCursor' :: Int -> Alteration Int
-getCursor' bufN = get <&> (^?!bufExt bufN._Just.cursor)
+getCursor' bufN = get <&> (^?!bufExt bufN.cursor)
 
 getCursor :: Alteration Int
 getCursor = withFocus getCursor'
@@ -137,14 +145,16 @@ insertText' bufN txt = do
 -- deleteTillEOL' = withInt after . tillNext "\n" .~ ""
 -- deleteTillEOL :: Alteration ()
 -- deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
--- clamp :: Int -> Int -> Int -> Int
--- clamp mn mx n
---   | n < mn = mn
---   | n > mx = mx
---   | otherwise = n
+
 -- switchBuf :: Int -> Alteration ()
 -- switchBuf n =
 --   embed $ execState $
 --   do currentBuffer <- use focused
 --      numBuffers <- use (buffers . to length)
 --      focused .= (n + currentBuffer) `mod` numBuffers
+
+clamp :: Int -> Int -> Int -> Int
+clamp mn mx n
+  | n < mn = mn
+  | n > mx = mx
+  | otherwise = n
