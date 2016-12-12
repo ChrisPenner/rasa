@@ -21,6 +21,7 @@ library
                        Rasa.Adapters.Vty.Render
                        Rasa.Adapters.Vty.Event
                        Rasa.Adapters.Vty.State
+                       Rasa.Adapters.Vty.Attributes
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-core

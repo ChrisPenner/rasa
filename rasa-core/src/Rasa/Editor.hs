@@ -14,7 +14,7 @@ import Data.Default (def, Default(..))
 import Rasa.Buffer
 
 data Editor = Editor {
-    _buffers :: [Buffer Offset]
+    _buffers :: [Buffer]
   , _focused :: Int
   , _exiting :: Bool
 } deriving Show
@@ -30,7 +30,7 @@ instance Default Editor where
              }
 
 
-focusedBuf :: Lens' Editor (Buffer Offset)
+focusedBuf :: Lens' Editor Buffer
 focusedBuf = lens getter (flip setter)
     where getter = do
             foc <- view focused
@@ -41,5 +41,5 @@ focusedBuf = lens getter (flip setter)
             foc <- view focused
             set (buffers . ix foc) a
 
-buf :: Int -> Traversal' Editor (Buffer Offset)
+buf :: Int -> Traversal' Editor Buffer
 buf bufN = buffers.ix bufN

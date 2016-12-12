@@ -1,8 +1,9 @@
-{-# LANGUAGE DeriveFunctor, TemplateHaskell #-}
+{-# LANGUAGE DeriveFunctor, TemplateHaskell, OverloadedStrings, Rank2Types #-}
 
 module Rasa.Ext.Cursors
   ( getCursor
   , moveCursorBy
+  , moveCursorCoord
   , cursors
   , deleteChar
   , deleteChar'
@@ -12,21 +13,20 @@ module Rasa.Ext.Cursors
   , insertText'
   ) where
 
--- import Debug.Trace
-
 import Rasa.Ext
 import Rasa.Ext.Directive
 
 import Control.Monad
 import Control.Lens
 import Control.Monad.State
+import Control.Monad.Reader
 
--- import Control.Lens.Text
+import Control.Lens.Text as TL
 import Data.Typeable
 
 -- import Control.Monad.State
 import qualified Data.Text as T
--- type Coord = (Int, Int)
+type Coord = (Int, Int)
 newtype Cursor = Cursor
   { _curs :: Int
   } deriving (Show, Typeable)
@@ -52,6 +52,14 @@ moveCursorBy n = do
   foc <- use focused
   mx <- get <&> (^?!bufText foc.to T.length)
   bufExt foc.cursor %= clamp 0 mx . (+n)
+
+moveCursorCoord :: Coord -> Alteration ()
+moveCursorCoord coord = do
+  foc <- use focused
+  txt <- use (bufText foc)
+  bufExt foc.cursor.asCoord txt %= addPair coord
+  where
+    addPair (a, b) (a', b') = (a + a', b + b')
 
 getCursor' :: Int -> Alteration Int
 getCursor' bufN = get <&> (^?!bufExt bufN.cursor)
@@ -88,24 +96,13 @@ insertText' bufN txt = do
   f <- withCursor' bufN $ flip insertTextAt txt
   bufText bufN %= f
 
--- moveCursor :: Int -> Alteration ()
--- moveCursor n = moveCursorBy n
--- moveCursorCoord :: Coord -> Alteration ()
--- moveCursorCoord crd = embed $ focusedBuf %~ moveCursorCoordBy crd
+
 -- startOfBuffer :: Int -> Alteration ()
 -- startOfBuffer bufN = moveCursorTo bufN 0
-  -- liftIO $ print $ "New: " ++ show (fromMaybe (-1) new)
-  -- where trans n' = let f (Cursor i) = Cursor (i + n')
-                    -- in (pure f <*>)
+--   liftIO $ print $ "New: " ++ show (fromMaybe (-1) new)
+--   where trans n' = let f (Cursor i) = Cursor (i + n')
+--                     in (pure f <*>)
 
--- moveCursorBy' :: Int -> Int -> Alteration ()
--- moveCursorBy' bufN n = do
---   Cursor c <- getBufExt bufN
---   moveCursorTo bufN (c + n)
--- moveCursorCoordBy :: Coord -> Buffer Int -> Buffer Int
--- moveCursorCoordBy c = asCoord . cursor %~ addPair c
---   where
---     addPair (a, b) (a', b') = (a + a', b + b')
 -- moveCursorTo :: Int -> Int -> Alteration ()
 -- moveCursorTo bufN n = do
 --   txt <- getBufText bufN
@@ -120,9 +117,9 @@ insertText' bufN txt = do
 -- appendText bufN txt = do
 --   n <- getCursor bufN
 --   editor.buffers.ix bufN.text %= insertTextAt n txt
--- findPrev' :: T.Text -> Buffer Int -> Buffer Int
+-- findPrev' :: T.Text -> Buffer -> Buffer 
 -- findPrev' txt = useCountFor (withInt before . tillPrev txt) moveCursorBackBy
--- findNext' :: T.Text -> Buffer Int -> Buffer Int
+-- findNext' :: T.Text -> Buffer -> Buffer 
 -- findNext' txt = useCountFor (withInt after . tillNext txt) moveCursorBy
 -- endOfBuffer :: Alteration ()
 -- endOfBuffer bufN = do
@@ -140,7 +137,7 @@ insertText' bufN txt = do
 -- findNext txt = embed $ focusedBuf %~ findNext' txt
 -- findPrev :: T.Text -> Alteration ()
 -- findPrev txt = embed $ focusedBuf %~ findPrev' txt
--- deleteTillEOL' :: Buffer Int -> Buffer Int
+-- deleteTillEOL' :: Buffer -> Buffer
 -- deleteTillEOL' = withInt after . tillNext "\n" .~ ""
 -- deleteTillEOL :: Alteration ()
 -- deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
@@ -157,3 +154,22 @@ clamp mn mx n
   | n < mn = mn
   | n > mx = mx
   | otherwise = n
+
+asCoord :: T.Text -> Iso' Int Coord
+asCoord txt = iso (toCoord txt) (toOffset txt)
+
+toOffset :: T.Text -> Coord -> Int
+toOffset t (row, col) = clamp 0 (T.length t) $ rowCount + clamp 0 rowLen col
+  where
+    rowCount = t ^. intillNextN row "\n" . to T.length
+    rowLen = T.length $ T.lines t ^. ix row
+
+toCoord :: T.Text -> Int -> Coord
+toCoord txt offset = flip runReader txt $ do
+  row <- view $ before offset . TL.matching "\n" . to T.length
+  col <-
+    case row of
+      0 -> return offset
+      _ -> view $ before offset . tillPrev "\n" . to T.length
+  return (row, col)
+

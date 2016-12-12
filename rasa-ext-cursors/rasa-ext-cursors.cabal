@@ -18,6 +18,7 @@ library
   exposed-modules:     Rasa.Ext.Cursors
   build-depends:       base >= 4.7 && < 5
                      , rasa-ext
+                     , text-lens
                      , lens
                      , mtl
                      , text

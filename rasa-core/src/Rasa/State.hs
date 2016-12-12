@@ -33,10 +33,10 @@ instance Default Store where
 focused :: Lens' Store Int
 focused = editor . E.focused
 
-buffers :: Lens' Store [Buffer Int]
+buffers :: Lens' Store [Buffer]
 buffers = editor.E.buffers
 
-buf :: Int -> Traversal' Store (Buffer Int)
+buf :: Int -> Traversal' Store Buffer
 buf bufN = editor. E.buf bufN
 
 bufText :: Int -> Traversal' Store T.Text
