@@ -23,6 +23,7 @@ library
                      , text
                      , data-default
                      , lens
+                     , mtl
   default-language:    Haskell2010
 
   default-extensions:
