@@ -4,7 +4,7 @@ module Rasa.Ext.Vim
   ) where
 
 import Rasa.Ext
--- import Rasa.Ext.Files (saveCurrent)
+import Rasa.Ext.Files (saveCurrent)
 import Rasa.Ext.Cursors
 import Rasa.Ext.Directive
 
@@ -82,7 +82,7 @@ normal (Keypress 'x' _) = withFocus deleteChar
 -- normal (Keypress 'D' _) = deleteTillEOL
 normal (Keypress 'q' _) = exit
 normal (Keypress 'c' [Ctrl]) = exit
--- -- normal (Keypress 's' [Ctrl]) = saveCurrent
+normal (Keypress 's' [Ctrl]) = saveCurrent
 normal _ = return ()
 
 endOfLine :: Alteration ()
