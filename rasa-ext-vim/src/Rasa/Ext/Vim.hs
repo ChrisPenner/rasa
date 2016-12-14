@@ -37,24 +37,27 @@ setMode vimst = bufExt ?= vimst
 vim :: Alteration ()
 vim = do
   evt <- use event
-  case evt of
-    [Keypress 'c' [Ctrl]] -> exit
-    _ -> return ()
   when (Init `elem` evt) $ bufDo $ bufExt ?= Normal
-  focusDo $ do
+  focMode <- focusDo $ do
     mode <- getVim
-    let modeFunc =
-          case mode of
-            Normal -> normal
-            Insert -> insert
-    mapM_ modeFunc evt
+    case mode of
+      Normal -> mapM_ normal evt
+      Insert -> mapM_ insert evt
+    return mode
+
+  mapM_ (global focMode) evt
+
+global :: VimSt -> Event -> Alteration ()
+global Normal (Keypress '+' _) = nextBuf
+global Normal (Keypress '-' _) = prevBuf
+global _ (Keypress 'c' [Ctrl]) = exit
+global _ _ = return ()
 
 insert :: Event -> BufAction ()
 insert Esc = setMode Normal
 insert BS = moveCursorBy (-1) >> deleteChar
 insert Enter = insertText "\n"
 -- insert (Keypress 'w' [Ctrl]) = killWord
--- insert (Keypress 'c' [Ctrl]) = exit
 insert (Keypress c _) = insertText (T.singleton c) >> moveCursorBy 1
 insert _ = return ()
 
@@ -73,8 +76,6 @@ normal (Keypress 'G' _) = do
 
 normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveCursorBy 1 >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
--- normal (Keypress '+' _) = switchBuf 1
--- normal (Keypress '-' _) = switchBuf (-1)
 normal (Keypress 'h' _) = moveCursorBy (-1)
 normal (Keypress 'l' _) = moveCursorBy 1
 normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
@@ -84,8 +85,6 @@ normal (Keypress 'F' _) = findPrev "f"
 normal (Keypress 'X' _) = moveCursorBy (-1) >> deleteChar
 normal (Keypress 'x' _) = deleteChar
 -- normal (Keypress 'D' _) = deleteTillEOL
--- normal (Keypress 'q' _) = exit
--- normal (Keypress 'c' [Ctrl]) = exit
 normal (Keypress 's' [Ctrl]) = save
 normal _ = return ()
 

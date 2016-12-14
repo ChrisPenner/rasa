@@ -6,6 +6,8 @@ module Rasa.Ext.Directive
   , addBufferThen
   , bufDo
   , focusDo
+  , nextBuf
+  , prevBuf
   ) where
 
 import Rasa.Ext
@@ -44,3 +46,12 @@ insertTextAt i new txt = T.take i txt <> new <> T.drop i txt
 deleteCharAt :: Int -> T.Text -> T.Text
 deleteCharAt i txt = T.take i txt <> T.drop (i + 1) txt
 
+nextBuf :: Alteration ()
+nextBuf = do
+  numBuffers <- use (buffers.to length)
+  focused %= (`mod` numBuffers) . (+1)
+
+prevBuf :: Alteration ()
+prevBuf = do
+  numBuffers <- use (buffers.to length)
+  focused %= (`mod` numBuffers) . subtract 1
