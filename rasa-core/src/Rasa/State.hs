@@ -34,9 +34,6 @@ focused = editor . E.focused
 buffers :: Lens' Store [Buffer]
 buffers = editor.E.buffers
 
-buf :: Int -> Traversal' Store Buffer
-buf bufN = editor. E.buf bufN
-
 allBufExt :: forall a. (Show a, Typeable a) => Traversal' Store (Maybe a)
 allBufExt = buffers.traverse.bufExts.at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where

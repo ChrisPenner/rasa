@@ -40,7 +40,7 @@ vim = do
   case evt of
     [Keypress 'c' [Ctrl]] -> exit
     _ -> return ()
-  when (Init `elem` evt) $ allBufExt ?= Normal
+  when (Init `elem` evt) $ bufDo $ bufExt ?= Normal
   focusDo $ do
     mode <- getVim
     let modeFunc =

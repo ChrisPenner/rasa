@@ -4,10 +4,6 @@
 
 module Rasa.Buffer
   ( Buffer
-  , BufAction
-  , getBufAction
-  , execBufAction
-  , runBufAction
   , Coord
   , Ext(..)
   , bufExts
@@ -20,12 +16,9 @@ module Rasa.Buffer
 import qualified Data.Text as T
 import Control.Lens hiding (matching)
 import Data.Text.Lens (packed)
--- import Control.Lens.Text
 import Data.Default
 import Data.Dynamic
 import Data.Map
-
-import Control.Monad.State
 
 import Rasa.Attributes
 
@@ -47,16 +40,6 @@ instance Show Buffer where
            ++ "attrs: " ++ show (b^.attrs) ++ "\n"
            ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
 
-newtype BufAction a = BufAction
-  { getBufAction::StateT Buffer IO a
-  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadIO)
-
-execBufAction :: Buffer -> BufAction a -> IO Buffer
-execBufAction buf = flip execStateT buf . getBufAction
-
-runBufAction :: Buffer -> BufAction a -> IO (a, Buffer)
-runBufAction buf = flip runStateT buf . getBufAction
-
 newBuffer :: T.Text -> Buffer
 newBuffer txt =
   Buffer
@@ -65,16 +48,6 @@ newBuffer txt =
   , _attrs = def
   }
 
--- withOffset :: (Int -> Lens' T.Text T.Text) -> Lens' (Buffer ) T.Text
--- withOffset l = lens getter setter
---   where
---     getter buf =
---       let curs = buf ^. cursor
---       in buf ^. text . l curs
---     setter old new =
---       let curs = old ^. cursor
---       in old & text . l curs .~ new
-
 useCountFor :: Lens' Buffer  T.Text
             -> (Int -> Buffer  -> Buffer )
             -> Buffer 
@@ -82,9 +55,3 @@ useCountFor :: Lens' Buffer  T.Text
 useCountFor l f buf = f curs buf
   where
     curs = buf ^. l . to T.length
-
--- clamp :: Int -> Int -> Int -> Int
--- clamp mn mx n
---   | n < mn = mn
---   | n > mx = mx
---   | otherwise = n

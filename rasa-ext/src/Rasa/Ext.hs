@@ -7,11 +7,9 @@ module Rasa.Ext
   , Event(..)
   , Mod(..)
   , text
-  , editor
   , exiting
   , ext
   , bufExt
-  , allBufExt
   , event
   , iattr
   , attrs

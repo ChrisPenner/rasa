@@ -49,7 +49,7 @@ cursors :: Alteration ()
 cursors = do
   evt <- use event
   -- Initialize all buffers
-  when (Init `elem` evt) $ allBufExt .= (Just $ Cursor 0)
+  when (Init `elem` evt) $ bufDo $ bufExt .= (Just $ Cursor 0)
   bufDo displayCursor
 
 moveCursorTo :: Int -> BufAction ()
