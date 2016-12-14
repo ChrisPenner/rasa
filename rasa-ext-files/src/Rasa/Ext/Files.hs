@@ -13,17 +13,16 @@ import Data.String (fromString)
 import Data.Typeable
 import Data.Default 
 
-import Control.Monad
 import Control.Monad.IO.Class
 import qualified Data.Text as T
 
-import Rasa.Ext.Directive
 import Rasa.Ext
+import Rasa.Ext.Directive
+import Rasa.Ext.Scheduler
 
 data FileInfo = FileInfo
   { _filename :: Maybe String
   } deriving (Typeable, Show, Eq)
-
 
 makeLenses ''FileInfo
 
@@ -32,10 +31,8 @@ instance Default FileInfo where
   _filename=Nothing
 }
 
-files :: Alteration ()
-files = do
-  evt <- use event
-  when (Init `elem` evt) loadFiles
+files :: Scheduler ()
+files = onInit loadFiles
 
 save :: BufAction ()
 save = do

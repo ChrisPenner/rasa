@@ -7,9 +7,11 @@ import Rasa.Ext
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.Directive
+import Rasa.Ext.StatusBar
+import Rasa.Ext.Scheduler
 
 import Control.Lens
-import Control.Monad.State
+import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
 import qualified Data.Text as T
@@ -28,12 +30,12 @@ getVim = use bufExt
 setMode :: VimSt -> BufAction ()
 setMode vimst = bufExt .= vimst
 
-vim :: Alteration ()
-vim = do
+vim :: Scheduler ()
+vim = onEvent $ do
   evt <- use event
-  when (Init `elem` evt) $ bufDo $ bufExt .= Normal
   focMode <- focusDo $ do
     mode <- getVim
+    leftStatus $ show mode ^. packed
     case mode of
       Normal -> mapM_ normal evt
       Insert -> mapM_ insert evt

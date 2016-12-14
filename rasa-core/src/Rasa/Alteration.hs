@@ -26,3 +26,4 @@ execBufAction buf = flip execStateT buf . getBufAction
 
 runBufAction :: Buffer -> BufAction a -> IO (a, Buffer)
 runBufAction buf = flip runStateT buf . getBufAction
+

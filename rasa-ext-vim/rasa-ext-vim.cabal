@@ -20,6 +20,7 @@ library
                      , rasa-ext
                      , rasa-ext-files
                      , rasa-ext-cursors
+                     , rasa-ext-status-bar
                      , text
                      , data-default
                      , lens

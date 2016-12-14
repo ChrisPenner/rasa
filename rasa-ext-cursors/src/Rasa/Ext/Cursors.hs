@@ -6,25 +6,20 @@ module Rasa.Ext.Cursors
   , moveCursorCoord
   , cursors
   , deleteChar
-  -- , withCursor
   , insertText
   , findNext
   , findPrev
   ) where
 
--- import Debug.Trace
-
 import Rasa.Ext
+import Rasa.Ext.Scheduler
 import Rasa.Ext.Directive
 
-import Control.Monad
 import Control.Lens
-import Control.Monad.State
 import Control.Monad.Reader
 
 import Control.Lens.Text as TL
 import Data.Typeable
-import Data.Monoid
 import Data.Default
 
 import qualified Data.Text as T
@@ -48,12 +43,8 @@ displayCursor = do
   c <- use cursor
   attrs .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
 
-cursors :: Alteration ()
-cursors = do
-  evt <- use event
-  -- Initialize all buffers
-  -- when (Init `elem` evt) $ bufDo $ bufExt .= (Just $ Cursor 0)
-  bufDo displayCursor
+cursors :: Scheduler ()
+cursors = beforeRender $ bufDo displayCursor
 
 moveCursorTo :: Int -> BufAction ()
 moveCursorTo n = do

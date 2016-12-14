@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-module Rasa.Adapters.Vty.Render (render') where
+module Rasa.Adapters.Vty.Render (render) where
 
 import Rasa.Ext
 import Rasa.Ext.Directive
@@ -14,8 +14,8 @@ import qualified Data.Text as T
 import Data.List (unfoldr)
 import Control.Arrow (second)
 
-render :: (Int, Int) -> BufAction V.Image
-render (width, _) = do
+renderBuf :: (Int, Int) -> BufAction V.Image
+renderBuf (width, _) = do
   txt <- textWrap width <$> use text
   atts <- fmap convertIAttr <$> use attrs
   return $ applyAttrs atts txt
@@ -25,10 +25,10 @@ getSize = do
   v <- getVty
   liftIO $ V.displayBounds $ V.outputIface v
 
-render' :: Alteration ()
-render' = do
+render :: Alteration ()
+render = do
   sz <- getSize
-  img <- focusDo $ render sz
+  img <- focusDo $ renderBuf sz
   let pic = V.picForImage img
   v <- getVty
   liftIO $ V.update v pic

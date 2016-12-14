@@ -36,9 +36,7 @@ addBufferThen txt act = do
   return a
 
 exit :: Alteration ()
-exit = do
-  exiting .= True
-  event .= [Exit]
+exit = exiting .= True
 
 insertTextAt :: Int -> T.Text -> T.Text -> T.Text
 insertTextAt i new txt = T.take i txt <> new <> T.drop i txt

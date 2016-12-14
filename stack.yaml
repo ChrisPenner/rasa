@@ -9,6 +9,7 @@ packages:
 - ./rasa-ext-vim
 - ./rasa-ext-logger
 - ./rasa-ext-cursors
+- ./rasa-ext-status-bar
 - ./text-lens
 - ./user-config
 extra-deps:

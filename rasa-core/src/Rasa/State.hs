@@ -24,9 +24,9 @@ makeLenses ''Store
 instance Default Store where
   def =
     Store
-    { _event = [def]
+    { _event = []
     , _editor = def
-    , _extState = empty
+    , _extState = def
     }
 
 focused :: Lens' Store Int

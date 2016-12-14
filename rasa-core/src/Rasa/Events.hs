@@ -1,7 +1,5 @@
 module Rasa.Events where
 
-import Data.Default
-
 data Mod
   = Ctrl
   | Alt
@@ -14,10 +12,5 @@ data Event
   | Esc
   | BS
   | Enter
-  | Init
-  | Exit
   | Unknown
   deriving (Show, Eq)
-
-instance Default Event where
-  def = Init
