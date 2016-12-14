@@ -20,6 +20,7 @@ executable my-rasa
                      , rasa
                      , rasa-ext-vim
                      , rasa-ext-cursors
+                     , rasa-ext-status-bar
                      , rasa-ext-logger
                      , rasa-ext-files
                      , rasa-adapter-vty

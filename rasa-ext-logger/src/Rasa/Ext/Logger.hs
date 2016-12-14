@@ -10,7 +10,7 @@ import Control.Monad.State
 logger :: Scheduler ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
-  onEvent $ do
+  afterRender $ do
     evt <- use event
     bufs <- use buffers
     extensions <- use extState

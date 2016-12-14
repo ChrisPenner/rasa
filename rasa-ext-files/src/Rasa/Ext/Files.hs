@@ -17,6 +17,7 @@ import Control.Monad.IO.Class
 import qualified Data.Text as T
 
 import Rasa.Ext
+import Rasa.Ext.StatusBar
 import Rasa.Ext.Directive
 import Rasa.Ext.Scheduler
 
@@ -32,7 +33,16 @@ instance Default FileInfo where
 }
 
 files :: Scheduler ()
-files = onInit loadFiles
+files = do
+  onInit loadFiles
+  beforeRender showFilename
+
+showFilename :: Alteration ()
+showFilename = focusDo $ do
+  fname <- use $ bufExt.filename
+  case fname of
+    Just fname' -> leftStatus $ T.pack ("<" ++ fname' ++ ">")
+    Nothing -> return ()
 
 save :: BufAction ()
 save = do

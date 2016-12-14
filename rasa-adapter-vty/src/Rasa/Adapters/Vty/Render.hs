@@ -3,6 +3,7 @@ module Rasa.Adapters.Vty.Render (render) where
 
 import Rasa.Ext
 import Rasa.Ext.Directive
+import Rasa.Ext.StatusBar
 import Rasa.Adapters.Vty.State
 import Rasa.Adapters.Vty.Attributes
 import Control.Monad.IO.Class
@@ -13,12 +14,14 @@ import Control.Lens
 import qualified Data.Text as T
 import Data.List (unfoldr)
 import Control.Arrow (second)
+import Data.Monoid
 
 renderBuf :: (Int, Int) -> BufAction V.Image
-renderBuf (width, _) = do
+renderBuf (width, height) = do
   txt <- textWrap width <$> use text
   atts <- fmap convertIAttr <$> use attrs
-  return $ applyAttrs atts txt
+  let img = applyAttrs atts txt
+  return $ V.resize width height img
 
 getSize :: Alteration (Int, Int)
 getSize = do
@@ -27,11 +30,24 @@ getSize = do
 
 render :: Alteration ()
 render = do
-  sz <- getSize
-  img <- focusDo $ renderBuf sz
-  let pic = V.picForImage img
+  (width, height) <- getSize
+  bufImg <- focusDo $ renderBuf (width, height - 1)
+  statusBar <- renderStatus width
+  let img = bufImg V.<-> statusBar
+      pic = V.picForImage img
   v <- getVty
   liftIO $ V.update v pic
+
+renderStatus :: Int -> Alteration V.Image
+renderStatus width = focusDo $ do
+  statuses <- use bufExt
+  let spacer = T.replicate spacerSize " "
+      spacerSize = (width - T.length (T.concat joinedParts)) `div` 2
+      parts = [ statuses^.left, statuses^.center, statuses^.right ]
+      addSpacer = (<> spacer)
+      joinedParts = T.intercalate " | " <$> parts
+      fullLine = foldMap addSpacer joinedParts
+  return $ V.text' V.defAttr fullLine
 
 textWrap :: Int -> T.Text -> T.Text
 textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)

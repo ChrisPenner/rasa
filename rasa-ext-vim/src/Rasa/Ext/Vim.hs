@@ -31,17 +31,26 @@ setMode :: VimSt -> BufAction ()
 setMode vimst = bufExt .= vimst
 
 vim :: Scheduler ()
-vim = onEvent $ do
+vim = do
+  onEvent handleEvent
+  beforeRender setStatus
+
+handleEvent :: Alteration ()
+handleEvent = do
   evt <- use event
   focMode <- focusDo $ do
     mode <- getVim
-    leftStatus $ show mode ^. packed
     case mode of
       Normal -> mapM_ normal evt
       Insert -> mapM_ insert evt
     return mode
 
   mapM_ (global focMode) evt
+
+setStatus :: Alteration ()
+setStatus = focusDo $ do
+  mode <- getVim
+  centerStatus $ show mode^.packed
 
 global :: VimSt -> Event -> Alteration ()
 global Normal (Keypress '+' _) = nextBuf

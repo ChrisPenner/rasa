@@ -1,7 +1,7 @@
-name:                rasa-ext-files
+name:                rasa-ext-status-bar
 version:             0.1.0.0
-synopsis:            Rasa Ext for filesystem actions
-description:         Rasa Ext for filesystem actions
+synopsis:            Rasa Ext for populating status-bar
+description:         Rasa Ext for populating status-status-bar
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -16,17 +16,14 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Ext.Files
+                       Rasa.Ext.StatusBar
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-ext
-                     , rasa-ext-status-bar
                      , data-default
                      , lens
                      , text
   default-language:    Haskell2010
-
-  default-extensions:
 
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 
