@@ -11,6 +11,7 @@ import System.Environment
 
 import Data.String (fromString)
 import Data.Typeable
+import Data.Default 
 
 import Control.Monad
 import Control.Monad.IO.Class
@@ -19,11 +20,17 @@ import qualified Data.Text as T
 import Rasa.Ext.Directive
 import Rasa.Ext
 
-data BufFileInfo = BufFileInfo
-  { _filename :: String
+data FileInfo = FileInfo
+  { _filename :: Maybe String
   } deriving (Typeable, Show, Eq)
 
-makeLenses ''BufFileInfo
+
+makeLenses ''FileInfo
+
+instance Default FileInfo where
+  def = FileInfo {
+  _filename=Nothing
+}
 
 files :: Alteration ()
 files = do
@@ -33,11 +40,11 @@ files = do
 save :: BufAction ()
 save = do
   txt <- use text
-  fname <- preuse $ bufExt . _Just . filename
+  fname <- use $ bufExt.filename
   liftIO $ sequence_ $ TIO.writeFile <$> fname <*> pure txt
 
 setFilename :: String -> BufAction ()
-setFilename fname = bufExt .= (Just $ BufFileInfo fname)
+setFilename fname = bufExt .= FileInfo (Just fname)
 
 addFile :: String -> T.Text -> Alteration ()
 addFile fname txt = addBufferThen txt (setFilename fname)

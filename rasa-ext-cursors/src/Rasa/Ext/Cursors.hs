@@ -25,6 +25,7 @@ import Control.Monad.Reader
 import Control.Lens.Text as TL
 import Data.Typeable
 import Data.Monoid
+import Data.Default
 
 import qualified Data.Text as T
 type Coord = (Int, Int)
@@ -34,22 +35,24 @@ newtype Cursor = Cursor
 
 makeLenses ''Cursor
 
-cursor :: Traversal' Buffer Int
-cursor = bufExt._Just.curs
+instance Default Cursor where
+  def = Cursor {
+  _curs=0
+}
 
-fUse :: MonadState s f => Getting (Data.Monoid.Endo b) s b -> f b
-fUse l = get <&> (^?!l)
+cursor :: Lens' Buffer Int
+cursor = bufExt.curs
 
 displayCursor ::  BufAction ()
 displayCursor = do
-  c <- fUse cursor
+  c <- use cursor
   attrs .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
 
 cursors :: Alteration ()
 cursors = do
   evt <- use event
   -- Initialize all buffers
-  when (Init `elem` evt) $ bufDo $ bufExt .= (Just $ Cursor 0)
+  -- when (Init `elem` evt) $ bufDo $ bufExt .= (Just $ Cursor 0)
   bufDo displayCursor
 
 moveCursorTo :: Int -> BufAction ()
@@ -71,23 +74,23 @@ moveCursorCoord coord = do
 
 deleteChar :: BufAction ()
 deleteChar = do
-  c <- fUse cursor
+  c <- use cursor
   text %= deleteCharAt c
 
 insertText :: T.Text -> BufAction ()
 insertText txt = do
-  c <- fUse cursor
+  c <- use cursor
   text %= insertTextAt c txt
 
 findNext :: T.Text -> BufAction ()
 findNext txt = do
-  c <- fUse cursor
+  c <- use cursor
   n <- use $ text.after c.tillNext txt.to T.length
   moveCursorBy n
 
 findPrev :: T.Text -> BufAction ()
 findPrev txt = do
-  c <- fUse cursor
+  c <- use cursor
   n <- use $ text.before c.tillPrev txt.to T.length
   moveCursorBy (-n)
 

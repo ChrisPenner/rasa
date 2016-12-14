@@ -23,21 +23,15 @@ instance Default VimSt where
   def = Normal
 
 getVim :: BufAction VimSt
-getVim = do
-  mode <- use bufExt
-  case mode of
-    Just m -> return m
-    Nothing -> do 
-      bufExt .= Just (def :: VimSt)
-      return def
+getVim = use bufExt
 
 setMode :: VimSt -> BufAction ()
-setMode vimst = bufExt ?= vimst
+setMode vimst = bufExt .= vimst
 
 vim :: Alteration ()
 vim = do
   evt <- use event
-  when (Init `elem` evt) $ bufDo $ bufExt ?= Normal
+  when (Init `elem` evt) $ bufDo $ bufExt .= Normal
   focMode <- focusDo $ do
     mode <- getVim
     case mode of

@@ -24,7 +24,9 @@ import Rasa.Attributes
 
 type Coord = (Int, Int)
 data Ext = forall a. Show a => Ext a
-deriving instance Show Ext
+
+instance Show Ext where
+  show (Ext a) = show a
 
 data Buffer = Buffer
   { _text :: T.Text
