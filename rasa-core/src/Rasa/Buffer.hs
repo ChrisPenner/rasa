@@ -1,8 +1,13 @@
 {-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings, ExistentialQuantification, ScopedTypeVariables,
+   GeneralizedNewtypeDeriving, FlexibleInstances,
    StandaloneDeriving #-}
 
 module Rasa.Buffer
   ( Buffer
+  , BufAction
+  , getBufAction
+  , execBufAction
+  , runBufAction
   , Coord
   , Ext(..)
   , bufExts
@@ -19,6 +24,8 @@ import Data.Text.Lens (packed)
 import Data.Default
 import Data.Dynamic
 import Data.Map
+
+import Control.Monad.State
 
 import Rasa.Attributes
 
@@ -40,6 +47,16 @@ instance Show Buffer where
            ++ "attrs: " ++ show (b^.attrs) ++ "\n"
            ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
 
+newtype BufAction a = BufAction
+  { getBufAction::StateT Buffer IO a
+  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadIO)
+
+execBufAction :: Buffer -> BufAction a -> IO Buffer
+execBufAction buf = flip execStateT buf . getBufAction
+
+runBufAction :: Buffer -> BufAction a -> IO (a, Buffer)
+runBufAction buf = flip runStateT buf . getBufAction
+
 newBuffer :: T.Text -> Buffer
 newBuffer txt =
   Buffer
@@ -58,7 +75,7 @@ newBuffer txt =
 --       let curs = old ^. cursor
 --       in old & text . l curs .~ new
 
-useCountFor :: Lens' (Buffer ) T.Text
+useCountFor :: Lens' Buffer  T.Text
             -> (Int -> Buffer  -> Buffer )
             -> Buffer 
             -> Buffer 

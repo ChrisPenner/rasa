@@ -1,15 +1,17 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Rasa.Alteration where
 
 import Control.Monad.State
-import Control.Monad.Except
 
 import Rasa.State
 
+newtype Alteration a = Alteration
+  { runAlt :: StateT Store IO a
+  } deriving (Functor, Applicative, Monad, MonadState Store, MonadIO)
 
-type Alteration a = StateT Store (ExceptT String IO) a
+execAlteration :: Store -> Alteration () -> IO Store
+execAlteration store alt = execStateT (runAlt alt) store
 
-execAlteration :: Store -> Alteration () -> IO (Either String Store)
-execAlteration store alt = runExceptT $ execStateT alt store
-
-evalAlteration :: Store -> Alteration a -> IO (Either String a)
-evalAlteration store alt = runExceptT $ evalStateT alt store
+evalAlteration :: Store -> Alteration a -> IO a
+evalAlteration store alt = evalStateT (runAlt alt) store

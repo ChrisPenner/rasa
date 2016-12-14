@@ -3,7 +3,6 @@ module Rasa.Adapters.Vty.Render (render') where
 
 import Rasa.Ext
 import Rasa.Editor
-import Rasa.Buffer
 import Rasa.View
 import Rasa.Adapters.Vty.State
 import Rasa.Adapters.Vty.Attributes

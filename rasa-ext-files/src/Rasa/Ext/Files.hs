@@ -1,9 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Rasa.Ext.Files
   ( files
-  , saveCurrent
-  ) 
-    where
+  , save
+  ) where
 
 import qualified Data.Text.IO as TIO
 import Control.Lens
@@ -14,14 +14,15 @@ import Data.Typeable
 
 import Control.Monad
 import Control.Monad.IO.Class
+import qualified Data.Text as T
 
 import Rasa.Ext.Directive
 import Rasa.Ext
 
-data BufFileInfo = BufFileInfo {
-_filename :: String
-                               }
-                               deriving (Typeable, Show, Eq)
+data BufFileInfo = BufFileInfo
+  { _filename :: String
+  } deriving (Typeable, Show, Eq)
+
 makeLenses ''BufFileInfo
 
 files :: Alteration ()
@@ -29,22 +30,20 @@ files = do
   evt <- use event
   when (Init `elem` evt) loadFiles
 
-saveCurrent :: Alteration ()
-saveCurrent = do
-  foc <- use focused
-  txt <- preuse $ bufText foc
-  fname <- preuse (bufExt foc . _Just . filename)
-  liftIO $ sequence $ TIO.writeFile <$> fname <*> txt 
-  return ()
+save :: BufAction ()
+save = do
+  txt <- use text
+  fname <- preuse $ bufExt . _Just . filename
+  liftIO $ sequence_ $ TIO.writeFile <$> fname <*> pure txt
 
-setFilename :: (Int, String) -> Alteration ()
-setFilename (bufN, fname) =
-  bufExt bufN .= (Just $ BufFileInfo fname)
+setFilename :: String -> BufAction ()
+setFilename fname = bufExt .= (Just $ BufFileInfo fname)
+
+addFile :: String -> T.Text -> Alteration ()
+addFile fname txt = addBufferThen txt (setFilename fname)
 
 loadFiles :: Alteration ()
 loadFiles = do
   fileNames <- liftIO getArgs
   fileTexts <- liftIO $ traverse (TIO.readFile . fromString) fileNames
-  mapM_ addBuffer fileTexts
-  let pairs = zip ([0.. ]:: [Int]) fileNames
-  mapM_ setFilename pairs
+  mapM_ (uncurry addFile) $ zip fileNames fileTexts

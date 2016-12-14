@@ -9,8 +9,8 @@ import Rasa.Adapters.Vty
 
 main :: IO ()
 main = rasa [vtyEvent] $ do
-  files
   vim
+  files
   cursors
   logger
   vty

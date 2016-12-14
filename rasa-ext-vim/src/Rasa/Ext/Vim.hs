@@ -4,7 +4,7 @@ module Rasa.Ext.Vim
   ) where
 
 import Rasa.Ext
-import Rasa.Ext.Files (saveCurrent)
+import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.Directive
 
@@ -22,38 +22,43 @@ data VimSt
 instance Default VimSt where
   def = Normal
 
-getVim :: Alteration VimSt
+getVim :: BufAction VimSt
 getVim = do
-  mode <- use ext
+  mode <- use bufExt
   case mode of
     Just m -> return m
-    Nothing -> do
-      ext .= Just (def :: VimSt)
+    Nothing -> do 
+      bufExt .= Just (def :: VimSt)
       return def
 
-setMode :: VimSt -> Alteration ()
-setMode vimst = ext .= Just vimst
+setMode :: VimSt -> BufAction ()
+setMode vimst = bufExt ?= vimst
 
 vim :: Alteration ()
 vim = do
-  mode <- getVim
-  let modeFunc =
-        case mode of
-          Normal -> normal
-          Insert -> insert
   evt <- use event
-  mapM_ modeFunc evt
+  case evt of
+    [Keypress 'c' [Ctrl]] -> exit
+    _ -> return ()
+  when (Init `elem` evt) $ allBufExt ?= Normal
+  focusDo $ do
+    mode <- getVim
+    let modeFunc =
+          case mode of
+            Normal -> normal
+            Insert -> insert
+    mapM_ modeFunc evt
 
-insert :: Event -> Alteration ()
-insert Esc = ext ?= Normal
+insert :: Event -> BufAction ()
+insert Esc = setMode Normal
 insert BS = moveCursorBy (-1) >> deleteChar
 insert Enter = insertText "\n"
 -- insert (Keypress 'w' [Ctrl]) = killWord
-insert (Keypress 'c' [Ctrl]) = exit
+-- insert (Keypress 'c' [Ctrl]) = exit
 insert (Keypress c _) = insertText (T.singleton c) >> moveCursorBy 1
 insert _ = return ()
 
-normal :: Event -> Alteration ()
+normal :: Event -> BufAction ()
 normal (Keypress 'i' _) = setMode Insert
 normal (Keypress 'I' _) = startOfLine >> setMode Insert
 normal (Keypress 'a' _) = moveCursorBy 1 >> setMode Insert
@@ -63,8 +68,7 @@ normal (Keypress '$' _) = endOfLine
 normal (Keypress 'g' _) = moveCursorTo 0
 
 normal (Keypress 'G' _) = do
-  foc <- use focused
-  txt <- get <&> (^?!bufText foc)
+  txt <- use text
   moveCursorTo $ T.length txt
 
 normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveCursorBy 1 >> setMode Insert
@@ -80,14 +84,14 @@ normal (Keypress 'F' _) = findPrev "f"
 normal (Keypress 'X' _) = moveCursorBy (-1) >> deleteChar
 normal (Keypress 'x' _) = deleteChar
 -- normal (Keypress 'D' _) = deleteTillEOL
-normal (Keypress 'q' _) = exit
-normal (Keypress 'c' [Ctrl]) = exit
-normal (Keypress 's' [Ctrl]) = saveCurrent
+-- normal (Keypress 'q' _) = exit
+-- normal (Keypress 'c' [Ctrl]) = exit
+normal (Keypress 's' [Ctrl]) = save
 normal _ = return ()
 
-endOfLine :: Alteration ()
+endOfLine :: BufAction ()
 endOfLine = findNext "\n"
 
-startOfLine :: Alteration ()
+startOfLine :: BufAction ()
 startOfLine = findPrev "\n"
 

@@ -1,17 +1,15 @@
-{-# LANGUAGE DeriveFunctor, TemplateHaskell, OverloadedStrings, Rank2Types #-}
+{-# LANGUAGE TemplateHaskell, OverloadedStrings, Rank2Types #-}
 
 module Rasa.Ext.Cursors
-  ( getCursor
-  , moveCursorBy
+  ( moveCursorBy
   , moveCursorTo
   , moveCursorCoord
   , cursors
   , deleteChar
-  , withCursor
+  -- , withCursor
   , insertText
   , findNext
   , findPrev
-  , withFocus
   ) where
 
 -- import Debug.Trace
@@ -26,6 +24,7 @@ import Control.Monad.Reader
 
 import Control.Lens.Text as TL
 import Data.Typeable
+import Data.Monoid
 
 import qualified Data.Text as T
 type Coord = (Int, Int)
@@ -35,88 +34,62 @@ newtype Cursor = Cursor
 
 makeLenses ''Cursor
 
-cursor :: Traversal' (Maybe Cursor) Int
-cursor = _Just.curs
+cursor :: Traversal' Buffer Int
+cursor = bufExt._Just.curs
+
+fUse :: MonadState s f => Getting (Data.Monoid.Endo b) s b -> f b
+fUse l = get <&> (^?!l)
+
+displayCursor ::  BufAction ()
+displayCursor = do
+  c <- fUse cursor
+  attrs .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
 
 cursors :: Alteration ()
 cursors = do
   evt <- use event
   -- Initialize all buffers
   when (Init `elem` evt) $ allBufExt .= (Just $ Cursor 0)
-  foc <- use focused
-  c <- withFocus getCursor
-  bufAttrs foc .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
+  bufDo displayCursor
 
-moveCursorTo :: Int -> Alteration ()
-moveCursorTo n = withFocus (moveCursorTo' n)
+moveCursorTo :: Int -> BufAction ()
+moveCursorTo n = do
+  mx <- use (text.to T.length)
+  cursor .= clamp 0 mx n
 
-moveCursorTo' :: Int -> Int -> Alteration ()
-moveCursorTo' n bufN = do
-  mx <- get <&> (^?!bufText bufN.to T.length)
-  bufExt bufN.cursor .= clamp 0 mx n
+moveCursorBy :: Int -> BufAction ()
+moveCursorBy n = do
+  mx <- use $ text.to T.length
+  cursor %= clamp 0 mx . (+n)
 
-moveCursorBy :: Int -> Alteration ()
-moveCursorBy n = withFocus $ moveCursorBy' n
-
-moveCursorBy' :: Int -> Int -> Alteration ()
-moveCursorBy' n bufN = do
-  mx <- get <&> (^?!bufText bufN.to T.length)
-  bufExt bufN.cursor %= clamp 0 mx . (+n)
-
-moveCursorCoord :: Coord ->  Alteration ()
-moveCursorCoord coord = withFocus (moveCursorCoord' coord)
-
-moveCursorCoord' :: Coord -> Int -> Alteration ()
-moveCursorCoord' coord bufN = do
-  txt <- use (bufText bufN)
-  bufExt bufN.cursor.asCoord txt %= addPair coord
+moveCursorCoord :: Coord -> BufAction ()
+moveCursorCoord coord = do
+  txt <- use text
+  cursor.asCoord txt %= addPair coord
   where
     addPair (a, b) (a', b') = (a + a', b + b')
 
-getCursor :: Int -> Alteration Int
-getCursor bufN = get <&> (^?!bufExt bufN.cursor)
+deleteChar :: BufAction ()
+deleteChar = do
+  c <- fUse cursor
+  text %= deleteCharAt c
 
-withCursor :: (Int -> a) -> Int -> Alteration a
-withCursor f bufN = do
-  i <- getCursor bufN
-  return $ f i
+insertText :: T.Text -> BufAction ()
+insertText txt = do
+  c <- fUse cursor
+  text %= insertTextAt c txt
 
-withFocus :: (Int -> Alteration a) -> Alteration a
-withFocus f = use focused >>= f
+findNext :: T.Text -> BufAction ()
+findNext txt = do
+  c <- fUse cursor
+  n <- use $ text.after c.tillNext txt.to T.length
+  moveCursorBy n
 
-deleteChar :: Alteration ()
-deleteChar = withFocus deleteChar'
-
-deleteChar' :: Int ->  Alteration ()
-deleteChar' bufN = do
-  f <- withCursor deleteCharAt bufN
-  bufText bufN %= f
-
-insertText :: T.Text -> Alteration ()
-insertText txt = withFocus $ flip insertText' txt
-
-insertText' :: Int -> T.Text -> Alteration ()
-insertText' bufN txt = do
-  f <- withCursor (`insertTextAt` txt) bufN
-  bufText bufN %= f
-
-findNext :: T.Text ->  Alteration ()
-findNext txt = withFocus (findNext' txt)
-
-findNext' :: T.Text -> Int -> Alteration ()
-findNext' txt bufN = do
-  c <- getCursor bufN
-  n <- get <&> (^?!bufText bufN.after c.tillNext txt.to T.length)
-  moveCursorBy' n bufN
-
-findPrev :: T.Text -> Alteration ()
-findPrev txt = withFocus $ findPrev' txt
-
-findPrev' :: T.Text -> Int -> Alteration ()
-findPrev' txt bufN = do
-  c <- getCursor bufN
-  n <- get <&> (^?!bufText bufN.before c.tillPrev txt.to T.length)
-  moveCursorBy' (-n) bufN
+findPrev :: T.Text -> BufAction ()
+findPrev txt = do
+  c <- fUse cursor
+  n <- use $ text.before c.tillPrev txt.to T.length
+  moveCursorBy (-n)
 
 
 -- startOfBuffer :: Int -> Alteration ()

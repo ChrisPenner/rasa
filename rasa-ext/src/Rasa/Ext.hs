@@ -1,22 +1,20 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, FlexibleContexts #-}
 
 module Rasa.Ext
   ( Alteration
+  , Buffer
+  , BufAction
   , Event(..)
   , Mod(..)
-  , bufText
-  , newBuffer
+  , text
   , editor
-  , buffers
-  , focused
   , exiting
   , ext
-  , buf
   , bufExt
   , allBufExt
-  , bufAttrs
   , event
   , iattr
+  , attrs
   , fg
   , bg
   , style
