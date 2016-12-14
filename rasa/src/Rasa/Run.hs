@@ -1,9 +1,9 @@
 {-# language ExistentialQuantification, Rank2Types #-}
 module Rasa.Run (rasa) where
 
-import Rasa.Ext
 import Rasa.State
 import Rasa.Alteration
+import Rasa.Events
 
 import Control.Lens
 import Control.Concurrent.Async
@@ -23,5 +23,5 @@ eventLoop eventListeners extensions store = do
   unless (newStore^.exiting) $ do
     asyncEventListeners <- traverse (async.evalAlteration newStore) eventListeners
     (_, nextEvents) <- waitAny asyncEventListeners
-    let withEvents = (newStore & event .~ nextEvents)
+    let withEvents = newStore & event .~ nextEvents
     eventLoop eventListeners extensions withEvents

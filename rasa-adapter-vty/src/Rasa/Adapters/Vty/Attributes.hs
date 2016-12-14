@@ -10,7 +10,7 @@ import Control.Arrow (first)
 type AttrList = [(Int, V.Attr)]
 
 convertIAttr :: IAttr -> (Int, V.Attr)
-convertIAttr (IAttr i a)= (i, convertAttr a)
+convertIAttr (IAttr i a) = (i, convertAttr a)
 
 convertAttr :: Attr -> V.Attr
 convertAttr (Attr (fg', bg', style')) = V.Attr
