@@ -18,8 +18,7 @@ library
   exposed-modules:
                        Rasa.Alteration
                        Rasa.Buffer
-                       Rasa.Event
-                       Rasa.View
+                       Rasa.Events
                        Rasa.Editor
                        Rasa.Attributes
                        Rasa.State

@@ -1,8 +1,7 @@
 module Rasa.Ext.Logger (logger) where
 
+import Rasa.Ext
 import Rasa.State
-import Rasa.Alteration
-import Rasa.Event
 
 import Control.Lens
 import Control.Monad

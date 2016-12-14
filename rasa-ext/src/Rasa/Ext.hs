@@ -27,5 +27,5 @@ module Rasa.Ext
 import Rasa.Attributes
 import Rasa.Alteration
 import Rasa.State
-import Rasa.Event
+import Rasa.Events
 import Rasa.Buffer

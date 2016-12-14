@@ -24,8 +24,6 @@ library
                        Rasa.Adapters.Vty.Attributes
 
   build-depends:       base >= 4.7 && < 5
-                     , rasa-core
-                     , rasa-adapter
                      , rasa-ext
                      , text
                      , lens

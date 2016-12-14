@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell, Rank2Types, ExistentialQuantification, ScopedTypeVariables  #-}
 module Rasa.State where
 
-import Rasa.Event
+import Rasa.Events
 import Rasa.Buffer
 import qualified Rasa.Editor as E
 

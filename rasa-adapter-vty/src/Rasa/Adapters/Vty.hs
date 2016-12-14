@@ -1,6 +1,6 @@
 module Rasa.Adapters.Vty (vty, vtyEvent) where
 
-import Rasa.Adapter
+import Rasa.Ext
 import Rasa.Adapters.Vty.Render (render')
 import Rasa.Adapters.Vty.Event (vtyEvent)
 import Rasa.Adapters.Vty.State (getVty)

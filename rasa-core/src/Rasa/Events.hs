@@ -1,4 +1,4 @@
-module Rasa.Event where
+module Rasa.Events where
 
 import Data.Default
 

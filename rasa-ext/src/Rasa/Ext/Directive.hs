@@ -18,10 +18,10 @@ import Control.Lens
 import qualified Data.Text as T
 import Data.Monoid
 
-bufDo :: BufAction () -> Alteration ()
+bufDo :: Monoid a => BufAction a -> Alteration a
 bufDo = Alteration . zoom (buffers . traverse) . getBufAction
 
-focusDo :: BufAction () -> Alteration ()
+focusDo :: BufAction a -> Alteration a
 focusDo = Alteration . zoom focusedBuf . getBufAction
 
 addBuffer :: T.Text -> Alteration ()

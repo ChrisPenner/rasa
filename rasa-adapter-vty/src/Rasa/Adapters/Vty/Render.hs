@@ -2,8 +2,7 @@
 module Rasa.Adapters.Vty.Render (render') where
 
 import Rasa.Ext
-import Rasa.Editor
-import Rasa.View
+import Rasa.Ext.Directive
 import Rasa.Adapters.Vty.State
 import Rasa.Adapters.Vty.Attributes
 import Control.Monad.IO.Class
@@ -11,17 +10,15 @@ import Control.Monad.IO.Class
 import qualified Graphics.Vty as V
 import Control.Lens
 
-class Renderable a b where
-    render :: Size -> a -> b
+import qualified Data.Text as T
+import Data.List (unfoldr)
+import Control.Arrow (second)
 
-instance Renderable Editor V.Image where
-    render sz = view $ focusedBuf . to (render sz)
-
-instance Renderable Buffer V.Image where
-    render (width, _) = do
-        txt <- textWrap width . view text
-        atts <- fmap convertIAttr <$> view attrs
-        return $ applyAttrs atts txt
+render :: (Int, Int) -> BufAction V.Image
+render (width, _) = do
+  txt <- textWrap width <$> use text
+  atts <- fmap convertIAttr <$> use attrs
+  return $ applyAttrs atts txt
 
 getSize :: Alteration (Int, Int)
 getSize = do
@@ -30,8 +27,20 @@ getSize = do
 
 render' :: Alteration ()
 render' = do
-  eState <- use editor
   sz <- getSize
-  let pic = V.picForImage $ render sz eState
+  img <- focusDo $ render sz
+  let pic = V.picForImage img
   v <- getVty
   liftIO $ V.update v pic
+
+textWrap :: Int -> T.Text -> T.Text
+textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)
+
+splitLine :: Int -> (T.Text -> Maybe (T.Text, T.Text))
+splitLine n t
+  | T.null t = Nothing
+  | T.compareLength (fst . splitAtNewline $ t) n == LT = Just $ splitAtNewline t
+  | otherwise = Just $ second (T.append "-> ") $ T.splitAt n t
+
+splitAtNewline :: T.Text -> (T.Text, T.Text)
+splitAtNewline = second (T.drop 1) . T.span (/= '\n')

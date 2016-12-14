@@ -4,7 +4,6 @@ packages:
 - ./rasa
 - ./rasa-core
 - ./rasa-adapter-vty
-- ./rasa-adapter
 - ./rasa-ext
 - ./rasa-ext-files
 - ./rasa-ext-vim
