@@ -1,21 +1,21 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Rasa.Alteration where
+module Rasa.Action where
 
 import Control.Monad.State
 
 import Rasa.Buffer
 import Rasa.State
 
-newtype Alteration a = Alteration
+newtype Action a = Action
   { runAlt :: StateT Store IO a
   } deriving (Functor, Applicative, Monad, MonadState Store, MonadIO)
 
-execAlteration :: Store -> Alteration () -> IO Store
-execAlteration store alt = execStateT (runAlt alt) store
+execAction :: Store -> Action () -> IO Store
+execAction store alt = execStateT (runAlt alt) store
 
-evalAlteration :: Store -> Alteration a -> IO a
-evalAlteration store alt = evalStateT (runAlt alt) store
+evalAction :: Store -> Action a -> IO a
+evalAction store alt = evalStateT (runAlt alt) store
 
 newtype BufAction a = BufAction
   { getBufAction::StateT Buffer IO a

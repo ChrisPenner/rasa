@@ -1,7 +1,7 @@
 Rasa (Rah-zah)
 ==============
 
-Exessively modular customizable text editor built in Haskell using Lens
+Embarrassingly modular customizable text editor built in Haskell using Lens
 combinators
 
 What people are saying
@@ -11,12 +11,12 @@ What people are saying
 
 > I'm glad I'm unemployed so I have time to configure it! - my mate Steve
 
-> Get that camera out of my face. - Mother
+> Go outside already - Mother
 
 Core Principles
 ---------------
 
-Rasa is meant to be about as modular as an editor can be, I mean it. the goal
+Rasa is meant to be about as modular as an editor can be, I mean it. The goal
 is for as much code as possible to be extracted into composable extensions. If
 the core editing facilities can't be implemented as extensions, then the
 extension interface isn't powerful enough. I've taken this to its extreme, for
@@ -24,12 +24,12 @@ instance all the following tasks are simply extensions just like anyone could
 write.
 
 - Loading and saving files 
-- Keybindings
+- Key bindings
 - Syntax Highlighting
 - Even the regular everyday cursor is just an extension!
 
 This of course can result in a fractured eco-system really quickly so I'll
-likely define a few standard typeclasses for things like cursor support so we
+likely define a few standard type-classes for things like cursor support so we
 can all work on the same page.
 
 Note that extensions can be dependent on (and import) other extensions, this
@@ -43,8 +43,8 @@ own independent library soon. A sampling of some operations it allows are:
 
 - Perform function over text after the cursor
 - Edit the text after index 10 and before index 20
-- Alter every occurance of the string "Hello"
-- Move the cursor to the next occurance of "World"
+- Alter every occurrence of the string "Hello"
+- Move the cursor to the next occurrence of "World"
 
 These base level operations can be combined in interesting ways, for example I've
 built a small extension which emulates many of the basic Vim commands. The
@@ -117,7 +117,7 @@ practice they work just fine.
 Installation
 ------------
 
-At the moment you must build rasa from source, 
+At the moment you must build Rasa from source, 
 
 1. Install [stack](https://docs.haskellstack.org/en/stable/README/)
 2. Clone this repo as the `rasa` directory

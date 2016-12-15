@@ -35,7 +35,7 @@ vim = do
   onEvent handleEvent
   beforeRender setStatus
 
-handleEvent :: Alteration ()
+handleEvent :: Action ()
 handleEvent = do
   evt <- use event
   focMode <- focusDo $ do
@@ -47,12 +47,12 @@ handleEvent = do
 
   mapM_ (global focMode) evt
 
-setStatus :: Alteration ()
+setStatus :: Action ()
 setStatus = focusDo $ do
   mode <- getVim
   centerStatus $ show mode^.packed
 
-global :: VimSt -> Event -> Alteration ()
+global :: VimSt -> Event -> Action ()
 global Normal (Keypress '+' _) = nextBuf
 global Normal (Keypress '-' _) = prevBuf
 global _ (Keypress 'c' [Ctrl]) = exit
@@ -85,6 +85,8 @@ normal (Keypress 'h' _) = moveCursorBy (-1)
 normal (Keypress 'l' _) = moveCursorBy 1
 normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
 normal (Keypress 'j' _) = moveCursorCoord (1, 0)
+normal (Keypress 'w' _) = findNext " " >> moveCursorBy 1
+normal (Keypress 'b' _) = moveCursorBy (-1) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
 normal (Keypress 'F' _) = findPrev "f"
 normal (Keypress 'X' _) = moveCursorBy (-1) >> deleteChar

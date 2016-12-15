@@ -16,11 +16,10 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Alteration
+                       Rasa.Action
                        Rasa.Buffer
                        Rasa.Events
                        Rasa.Editor
-                       Rasa.Attributes
                        Rasa.State
                        Rasa.Scheduler
 

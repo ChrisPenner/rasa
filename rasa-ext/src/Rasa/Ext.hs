@@ -1,29 +1,39 @@
 {-# LANGUAGE Rank2Types, FlexibleContexts #-}
-
+----------------------------------------------------------------------------
+-- |
+-- Module      :  Rasa.Ext
+-- Copyright   :  (C) 2016 Chris Penner
+-- License     :  MIT
+-- Maintainer  :  Chris Penner <christopher.penner@gmail.com>
+--
+-- This module and its descendents contain the public API for building an extension
+-- for Rasa. It mostly just re-exports the parts of rasa-core that are considered 
+-- public API.
+-- 
+-- Also see 'Rasa.Ext.Scheduler', 'Rasa.Ext.Directive'
+----------------------------------------------------------------------------
 module Rasa.Ext
-  ( Alteration
-  , Buffer
+  ( 
+  -- * Performing Actions
+  Action
   , BufAction
-  , Event(..)
-  , Mod(..)
-  , text
-  , exiting
+
+  -- * Storing Extension State
   , ext
   , bufExt
+
+  -- * Accessing/Editing Context
+  , text
   , event
-  , iattr
-  , attrs
-  , fg
-  , bg
-  , style
-  , Color(..)
-  , Style(..)
-  , IAttr(..)
-  , Attr(..)
+  , exiting
+
+  -- * Useful Types
+  , Event(..)
+  , Mod(..)
+  , Buffer
   ) where
 
-import Rasa.Attributes
-import Rasa.Alteration
+import Rasa.Action
 import Rasa.State
 import Rasa.Events
 import Rasa.Buffer

@@ -15,18 +15,18 @@ module Rasa.Scheduler
 
 import Control.Monad.Writer
 
-import Rasa.Alteration
+import Rasa.Action
 import Data.Default
 import Control.Lens
 
 data Schedule = Schedule
-  { _onInit :: [Alteration ()]
-  , _beforeEvent :: [Alteration ()]
-  , _onEvent :: [Alteration ()]
-  , _beforeRender :: [Alteration ()]
-  , _onRender :: [Alteration ()]
-  , _afterRender :: [Alteration ()]
-  , _onExit :: [Alteration ()]
+  { _onInit :: [Action ()]
+  , _beforeEvent :: [Action ()]
+  , _onEvent :: [Action ()]
+  , _beforeRender :: [Action ()]
+  , _onRender :: [Action ()]
+  , _afterRender :: [Action ()]
+  , _onExit :: [Action ()]
   }
 
 makeLenses ''Schedule
@@ -46,7 +46,7 @@ newtype Scheduler a = Scheduler
 getSchedule :: Scheduler () -> Schedule
 getSchedule = execWriter . runSched
 
-runSchedule :: Schedule -> Alteration ()
+runSchedule :: Schedule -> Action ()
 runSchedule s = do
   sequence_ $ s ^. beforeEvent
   sequence_ $ s ^. onEvent

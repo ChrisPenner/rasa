@@ -11,13 +11,13 @@ module Rasa.Ext.Scheduler
     where
 
 import qualified Rasa.Scheduler as S
-import Rasa.Alteration
+import Rasa.Action
 
 import Control.Lens
 import Control.Monad.Writer
 import Data.Default
 
-onInit, beforeEvent, onEvent, beforeRender, onRender, afterRender, onExit :: Alteration () -> S.Scheduler ()
+onInit, beforeEvent, onEvent, beforeRender, onRender, afterRender, onExit :: Action () -> S.Scheduler ()
 
 onInit alt = tell (def & S.onInit .~ [alt])
 beforeEvent alt = tell (def & S.beforeEvent .~ [alt])

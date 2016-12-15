@@ -14,7 +14,7 @@ vty = do
   onRender render
   onExit shutdown
 
-shutdown :: Alteration ()
+shutdown :: Action ()
 shutdown = do
   v <- getVty
   liftIO $ V.shutdown v

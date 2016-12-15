@@ -10,14 +10,14 @@ newtype VtyState = VtyState V.Vty
 instance Show VtyState where
   show _ = "VtyState"
 
-initUi :: Alteration V.Vty
+initUi :: Action V.Vty
 initUi = do
   cfg <- liftIO V.standardIOConfig
   v <- liftIO $ V.mkVty cfg
   ext .= Just (VtyState v)
   return v
 
-getVty :: Alteration V.Vty
+getVty :: Action V.Vty
 getVty = do
   v <- use ext
   case v of

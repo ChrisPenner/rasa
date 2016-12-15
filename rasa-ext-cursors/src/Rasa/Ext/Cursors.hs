@@ -14,6 +14,7 @@ module Rasa.Ext.Cursors
 import Rasa.Ext
 import Rasa.Ext.Scheduler
 import Rasa.Ext.Directive
+import Rasa.Ext.Style
 
 import Control.Lens
 import Control.Monad.Reader
@@ -41,7 +42,7 @@ cursor = bufExt.curs
 displayCursor ::  BufAction ()
 displayCursor = do
   c <- use cursor
-  attrs .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
+  styles .= [IStyle c (flair ReverseVideo), IStyle (c+1) (flair DefFlair)]
 
 cursors :: Scheduler ()
 cursors = beforeRender $ bufDo displayCursor
@@ -84,46 +85,6 @@ findPrev txt = do
   c <- use cursor
   n <- use $ text.before c.tillPrev txt.to T.length
   moveCursorBy (-n)
-
-
--- startOfBuffer :: Int -> Alteration ()
--- startOfBuffer bufN = moveCursorTo bufN 0
---   liftIO $ print $ "New: " ++ show (fromMaybe (-1) new)
---   where trans n' = let f (Cursor i) = Cursor (i + n')
---                     in (pure f <*>)
-
--- moveCursorBackBy :: Int -> Alteration ()
--- moveCursorBackBy n = moveCursorBy (-n)
--- moveCursorBackBy' :: Int -> Int -> Alteration ()
--- moveCursorBackBy' bufN n = moveCursorBy' bufN (-n)
--- appendText :: Int -> T.Text -> Alteration()
--- appendText bufN txt = do
---   n <- getCursor bufN
---   editor.buffers.ix bufN.text %= insertTextAt n txt
--- findPrev' :: T.Text -> Buffer -> Buffer 
--- findPrev' txt = useCountFor (withInt before . tillPrev txt) moveCursorBackBy
--- findNext' :: T.Text -> Buffer -> Buffer 
--- findNext' txt = useCountFor (withInt after . tillNext txt) moveCursorBy
--- endOfBuffer :: Alteration ()
--- endOfBuffer bufN = do
---   mTxt <- getBufText bufN 
---   length' <- mTxt^?.to T.length
---   moveCursorTo bufN length'
--- findNext :: T.Text -> Alteration ()
--- findNext txt = embed $ focusedBuf %~ findNext' txt
--- findPrev :: T.Text -> Alteration ()
--- findPrev txt = embed $ focusedBuf %~ findPrev' txt
--- deleteTillEOL' :: Buffer -> Buffer
--- deleteTillEOL' = withInt after . tillNext "\n" .~ ""
--- deleteTillEOL :: Alteration ()
--- deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
-
--- switchBuf :: Int -> Alteration ()
--- switchBuf n =
---   embed $ execState $
---   do currentBuffer <- use focused
---      numBuffers <- use (buffers . to length)
---      focused .= (n + currentBuffer) `mod` numBuffers
 
 clamp :: Int -> Int -> Int -> Int
 clamp mn mx n

@@ -18,7 +18,6 @@ library
   exposed-modules:
                        Rasa.Ext
                        Rasa.Ext.Directive
-                       Rasa.Ext.Attributes
                        Rasa.Ext.Scheduler
 
   build-depends:       base >= 4.7 && < 5

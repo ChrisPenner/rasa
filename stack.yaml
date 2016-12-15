@@ -2,14 +2,15 @@ flags: {}
 extra-package-dbs: []
 packages:
 - ./rasa
-- ./rasa-core
 - ./rasa-adapter-vty
+- ./rasa-core
 - ./rasa-ext
-- ./rasa-ext-files
-- ./rasa-ext-vim
-- ./rasa-ext-logger
 - ./rasa-ext-cursors
+- ./rasa-ext-files
+- ./rasa-ext-logger
 - ./rasa-ext-status-bar
+- ./rasa-ext-style
+- ./rasa-ext-vim
 - ./text-lens
 - ./user-config
 extra-deps:

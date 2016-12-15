@@ -7,7 +7,7 @@ import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V
 
-vtyEvent :: Alteration [Event]
+vtyEvent :: Action [Event]
 vtyEvent = do
     v <- getVty
     liftIO $ ((:[]).convertEvent) <$> V.nextEvent v

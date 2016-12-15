@@ -37,7 +37,7 @@ files = do
   onInit loadFiles
   beforeRender showFilename
 
-showFilename :: Alteration ()
+showFilename :: Action ()
 showFilename = focusDo $ do
   fname <- use $ bufExt.filename
   case fname of
@@ -53,10 +53,10 @@ save = do
 setFilename :: String -> BufAction ()
 setFilename fname = bufExt .= FileInfo (Just fname)
 
-addFile :: String -> T.Text -> Alteration ()
+addFile :: String -> T.Text -> Action ()
 addFile fname txt = addBufferThen txt (setFilename fname)
 
-loadFiles :: Alteration ()
+loadFiles :: Action ()
 loadFiles = do
   fileNames <- liftIO getArgs
   fileTexts <- liftIO $ traverse (TIO.readFile . fromString) fileNames

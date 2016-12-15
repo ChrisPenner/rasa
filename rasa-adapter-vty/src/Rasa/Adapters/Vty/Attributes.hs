@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Rasa.Adapters.Vty.Attributes where
 
-import Rasa.Ext
+import Rasa.Ext.Style
 import qualified Data.Text as T
 import qualified Graphics.Vty as V
 import Data.List (unfoldr)
@@ -9,23 +9,23 @@ import Control.Arrow (first)
 
 type AttrList = [(Int, V.Attr)]
 
-convertIAttr :: IAttr -> (Int, V.Attr)
-convertIAttr (IAttr i a) = (i, convertAttr a)
+convertIStyle :: IStyle -> (Int, V.Attr)
+convertIStyle (IStyle i a) = (i, convertAttr a)
 
-convertAttr :: Attr -> V.Attr
-convertAttr (Attr (fg', bg', style')) = V.Attr
-                                        (maybe V.KeepCurrent convertStyle style')
+convertAttr :: Style -> V.Attr
+convertAttr (Style (fg', bg', flair')) = V.Attr
+                                        (maybe V.KeepCurrent convertFlair flair')
                                         (maybe V.KeepCurrent convertColor fg')
                                         (maybe V.KeepCurrent convertColor bg')
 
-convertStyle :: Style -> V.MaybeDefault V.Style
-convertStyle Standout = V.SetTo V.standout
-convertStyle Underline = V.SetTo V.underline
-convertStyle ReverseVideo = V.SetTo V.reverseVideo
-convertStyle Blink =  V.SetTo V.blink
-convertStyle Dim = V.SetTo  V.dim
-convertStyle Bold = V.SetTo V.bold
-convertStyle DefStyle = V.Default
+convertFlair :: Flair -> V.MaybeDefault V.Style
+convertFlair Standout = V.SetTo V.standout
+convertFlair Underline = V.SetTo V.underline
+convertFlair ReverseVideo = V.SetTo V.reverseVideo
+convertFlair Blink =  V.SetTo V.blink
+convertFlair Dim = V.SetTo  V.dim
+convertFlair Bold = V.SetTo V.bold
+convertFlair DefFlair = V.Default
 
 convertColor :: Color -> V.MaybeDefault V.Color
 convertColor Black = V.SetTo V.black

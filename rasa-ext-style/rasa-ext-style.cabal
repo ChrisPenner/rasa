@@ -1,7 +1,7 @@
-name:                rasa-ext-cursors
+name:                rasa-ext-style
 version:             0.1.0.0
-synopsis:            Rasa Ext adding cursor(s)
-description:         Rasa Ext adding cursor(s)
+synopsis:            Rasa Ext managing rendering styles
+description:         Rasa Ext managing rendering styles
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -10,19 +10,14 @@ maintainer:          christopher.penner@gmail.com
 copyright:           2016 Chris Penner
 category:            Extension
 build-type:          Simple
--- extra-source-files:
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Rasa.Ext.Cursors
+  exposed-modules:     Rasa.Ext.Style
   build-depends:       base >= 4.7 && < 5
                      , rasa-ext
-                     , rasa-ext-style
-                     , text-lens
                      , lens
-                     , mtl
-                     , text
                      , data-default
   default-language:    Haskell2010
 
