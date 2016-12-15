@@ -37,15 +37,15 @@ vim = do
 
 handleEvent :: Action ()
 handleEvent = do
-  evt <- use event
+  evts <- use events
   focMode <- focusDo $ do
     mode <- getVim
     case mode of
-      Normal -> mapM_ normal evt
-      Insert -> mapM_ insert evt
+      Normal -> mapM_ normal evts
+      Insert -> mapM_ insert evts
     return mode
 
-  mapM_ (global focMode) evt
+  mapM_ (global focMode) evts
 
 setStatus :: Action ()
 setStatus = focusDo $ do

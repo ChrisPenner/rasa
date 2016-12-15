@@ -1,7 +1,7 @@
-name:                rasa-adapter-vty
+name:                rasa-renderer-slate
 version:             0.1.0.0
-synopsis:            Rasa adapter for rendering to terminal with vty
-description:         Rasa adapter for rendering to terminal with vty
+synopsis:            Rasa extension for rendering to terminal with vty
+description:         Rasa extension for rendering to terminal with vty
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -16,12 +16,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Adapters.Vty
+                       Rasa.Renderer.Slate
   other-modules:
-                       Rasa.Adapters.Vty.Render
-                       Rasa.Adapters.Vty.Event
-                       Rasa.Adapters.Vty.State
-                       Rasa.Adapters.Vty.Attributes
+                       Rasa.Renderer.Slate.Render
+                       Rasa.Renderer.Slate.Event
+                       Rasa.Renderer.Slate.State
+                       Rasa.Renderer.Slate.Attributes
 
   build-depends:       base >= 4.7 && < 5
                      , rasa-ext

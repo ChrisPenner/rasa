@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Rasa.Adapters.Vty.Attributes where
+module Rasa.Renderer.Slate.Attributes where
 
 import Rasa.Ext.Style
 import qualified Data.Text as T

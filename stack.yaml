@@ -2,7 +2,6 @@ flags: {}
 extra-package-dbs: []
 packages:
 - ./rasa
-- ./rasa-adapter-vty
 - ./rasa-core
 - ./rasa-ext
 - ./rasa-ext-cursors
@@ -11,6 +10,7 @@ packages:
 - ./rasa-ext-status-bar
 - ./rasa-ext-style
 - ./rasa-ext-vim
+- ./rasa-renderer-slate
 - ./text-lens
 - ./user-config
 extra-deps:

@@ -11,11 +11,11 @@ logger :: Scheduler ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
   afterRender $ do
-    evt <- use event
+    evts <- use events
     bufs <- use buffers
     extensions <- use extState
 
-    liftIO $ appendFile "logs.log" ("Events==============\n" ++ show evt ++ "\n\n")
+    liftIO $ appendFile "logs.log" ("Events==============\n" ++ show evts ++ "\n\n")
     liftIO $ appendFile "logs.log" ("Buffers==============\n" ++ show bufs ++ "\n\n")
     liftIO $ appendFile "logs.log" ("Editor Extensions==============\n" ++ show extensions ++ "\n\n")
     liftIO $ appendFile "logs.log" "---\n\n"

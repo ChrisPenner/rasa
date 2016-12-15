@@ -67,12 +67,12 @@ moveCursorCoord coord = do
 deleteChar :: BufAction ()
 deleteChar = do
   c <- use cursor
-  text %= deleteCharAt c
+  deleteCharAt c
 
 insertText :: T.Text -> BufAction ()
 insertText txt = do
   c <- use cursor
-  text %= insertTextAt c txt
+  insertTextAt c txt
 
 findNext :: T.Text -> BufAction ()
 findNext txt = do

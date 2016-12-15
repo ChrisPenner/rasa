@@ -1,16 +1,16 @@
-module Rasa.Adapters.Vty (vty, vtyEvent) where
+module Rasa.Renderer.Slate (slate, slateEvent) where
 
 import Rasa.Ext
 import Rasa.Ext.Scheduler
-import Rasa.Adapters.Vty.Render (render)
-import Rasa.Adapters.Vty.Event (vtyEvent)
-import Rasa.Adapters.Vty.State (getVty)
+import Rasa.Renderer.Slate.Render (render)
+import Rasa.Renderer.Slate.Event (slateEvent)
+import Rasa.Renderer.Slate.State (getVty)
 
 import qualified Graphics.Vty as V
 import Control.Monad.IO.Class
 
-vty :: Scheduler ()
-vty = do
+slate :: Scheduler ()
+slate = do
   onRender render
   onExit shutdown
 

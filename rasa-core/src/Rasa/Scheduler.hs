@@ -7,8 +7,8 @@ module Rasa.Scheduler
   , onEvent
   , beforeRender
   , onRender
-  , onExit
   , afterRender
+  , onExit
   , getSchedule
   , runSchedule
   ) where
@@ -39,6 +39,8 @@ instance Monoid Schedule where
 instance Default Schedule where
   def = Schedule mempty mempty mempty mempty mempty mempty mempty
 
+-- | This is just a writer monad that allows registering Actions into
+-- specific lifecycle hooks.
 newtype Scheduler a = Scheduler
   { runSched :: Writer Schedule a
   } deriving (Functor, Applicative, Monad, MonadWriter Schedule)

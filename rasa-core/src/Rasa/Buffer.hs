@@ -10,6 +10,7 @@ module Rasa.Buffer
   , text
   , newBuffer
   , useCountFor
+  , newBuffer
   ) where
 
 import qualified Data.Text as T
@@ -25,6 +26,9 @@ data Ext = forall a. Show a => Ext a
 instance Show Ext where
   show (Ext a) = show a
 
+-- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
+-- A buffer is the State of the 'Rasa.Action.BufAction' monad transformer stack, 
+-- so the type may be useful in defining lenses over your extension states.
 data Buffer = Buffer
   { _text :: T.Text
   , _bufExts :: Map TypeRep Ext

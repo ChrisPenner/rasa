@@ -1,14 +1,14 @@
-module Rasa.Adapters.Vty.Event (vtyEvent) where
+module Rasa.Renderer.Slate.Event (slateEvent) where
 
 import Rasa.Ext
 
-import Rasa.Adapters.Vty.State
+import Rasa.Renderer.Slate.State
 import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V
 
-vtyEvent :: Action [Event]
-vtyEvent = do
+slateEvent :: Action [Event]
+slateEvent = do
     v <- getVty
     liftIO $ ((:[]).convertEvent) <$> V.nextEvent v
 

@@ -1,4 +1,4 @@
-module Rasa.Adapters.Vty.State (getVty) where
+module Rasa.Renderer.Slate.State (getVty) where
 
 import Rasa.Ext
 import Control.Lens
@@ -6,20 +6,20 @@ import Control.Lens
 import Control.Monad.IO.Class
 import qualified Graphics.Vty as V
 
-newtype VtyState = VtyState V.Vty
-instance Show VtyState where
-  show _ = "VtyState"
+newtype Slate = Slate V.Vty
+instance Show Slate where
+  show _ = "Slate"
 
 initUi :: Action V.Vty
 initUi = do
   cfg <- liftIO V.standardIOConfig
   v <- liftIO $ V.mkVty cfg
-  ext .= Just (VtyState v)
+  ext .= Just (Slate v)
   return v
 
 getVty :: Action V.Vty
 getVty = do
   v <- use ext
   case v of
-    Just (VtyState v') -> return v'
+    Just (Slate v') -> return v'
     Nothing -> initUi

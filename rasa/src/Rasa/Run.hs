@@ -29,5 +29,5 @@ eventLoop eventListeners actions store = do
      else do
        asyncEventListeners <- traverse (async.evalAction newStore) eventListeners
        (_, nextEvents) <- waitAny asyncEventListeners
-       let withEvents = newStore & event .~ nextEvents
+       let withEvents = newStore & events .~ nextEvents
        eventLoop eventListeners actions withEvents
