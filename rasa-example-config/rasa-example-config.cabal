@@ -1,7 +1,7 @@
-name:                user-config
+name:                rasa-example-config
 version:             0.1.0.0
-synopsis:            Sample user config for Rasa
-description:         Sample user config for Rasa
+synopsis:            Example user config for Rasa
+description:         Example user config for Rasa
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -13,7 +13,7 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
-executable my-rasa
+executable rasa
   hs-source-dirs:      app
   main-is:             Main.hs
   build-depends:       base >= 4.7 && < 5

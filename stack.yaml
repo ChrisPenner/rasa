@@ -12,7 +12,7 @@ packages:
 - ./rasa-ext-vim
 - ./rasa-renderer-slate
 - ./text-lens
-- ./user-config
+- ./rasa-example-config
 extra-deps:
 - vty-5.14
 resolver: lts-7.11
