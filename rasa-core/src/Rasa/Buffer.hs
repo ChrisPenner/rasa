@@ -4,7 +4,6 @@
 
 module Rasa.Buffer
   ( Buffer
-  , Coord
   , Ext(..)
   , bufExts
   , text
@@ -18,7 +17,6 @@ import Data.Text.Lens (packed)
 import Data.Dynamic
 import Data.Map
 
-type Coord = (Int, Int)
 data Ext = forall a. Show a => Ext a
 
 instance Show Ext where

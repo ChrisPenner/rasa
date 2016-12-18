@@ -1,19 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Rasa.Renderer.Slate.Attributes where
 
+import Rasa.Ext
 import Rasa.Ext.Style
 import qualified Data.Text as T
 import qualified Graphics.Vty as V
 import Data.List (unfoldr)
 import Control.Arrow (first)
+import Control.Lens
 
-type AttrList = [(Int, V.Attr)]
-
-convertIStyle :: IStyle -> (Int, V.Attr)
-convertIStyle (IStyle i a) = (i, convertAttr a)
-
-convertAttr :: Style -> V.Attr
-convertAttr (Style (fg', bg', flair')) = V.Attr
+convertStyle :: Style -> V.Attr
+convertStyle (Style (fg', bg', flair')) = V.Attr
                                         (maybe V.KeepCurrent convertFlair flair')
                                         (maybe V.KeepCurrent convertColor fg')
                                         (maybe V.KeepCurrent convertColor bg')
@@ -41,14 +38,16 @@ convertColor DefColor = V.Default
 reset :: V.Image
 reset = V.text' V.defAttr ""
 
-applyAttrs :: [(Int, V.Attr)] -> T.Text -> V.Image
-applyAttrs atts t = applyAttrs' atts (T.lines t)
+applyAttrs :: [Span V.Attr] -> T.Text -> V.Image
+applyAttrs atts txt = applyAttrs' asOffsets (T.lines txt)
+  where combined = combineSpans V.defAttr atts
+        asOffsets = combined & traverse._1 %~ toOffset txt
 
-applyAttrs' :: AttrList -> [T.Text] -> V.Image
+applyAttrs' :: [(Int, V.Attr)] -> [T.Text] -> V.Image
 applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')
   where
     vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
-    attrLines :: (AttrList, [T.Text]) -> Maybe (V.Image, (AttrList, [T.Text]))
+    attrLines :: ([(Int, V.Attr)], [T.Text]) -> Maybe (V.Image, ([(Int, V.Attr)], [T.Text]))
     attrLines (_, []) = Nothing
     attrLines (as, l:ls) = let (img, restAs) = attrLine as l
                      in Just (img, (decr 1 restAs, ls))
@@ -57,7 +56,7 @@ applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')
 -- over attrs and get each successive mappend of them, then do T.splitAt for
 -- each offset, then apply the attr for each section at the begining of each
 -- of T.lines within each group. Ugly I know.
-attrLine :: AttrList -> T.Text -> (V.Image, AttrList)
+attrLine :: [(Int, V.Attr)] -> T.Text -> (V.Image, [(Int, V.Attr)])
 attrLine [] txt = (plainText txt, [])
 attrLine ((0, attr):atts) txt = first (V.text' attr "" V.<|>) $ attrLine atts txt
 attrLine atts "" = (V.emptyImage, atts)
@@ -69,7 +68,7 @@ attrLine allAttrs@((offset, _):_) txt
   where prefix = plainText (T.take offset txt)
         suffix = attrLine (decr offset allAttrs) (T.drop offset txt)
 
-decr :: Int -> AttrList -> AttrList
+decr :: Int -> [(Int, V.Attr)] -> [(Int, V.Attr)]
 decr n = fmap $ first (subtract n)
 
 plainText :: T.Text -> V.Image

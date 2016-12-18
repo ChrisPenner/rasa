@@ -1,4 +1,5 @@
 {-# LANGUAGE Rank2Types, FlexibleContexts #-}
+
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Rasa.Ext
@@ -37,52 +38,53 @@
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 ----------------------------------------------------------------------------
 module Rasa.Ext
-  (
-  -- * Performing Actions
-  Action
+  ( Action
   , BufAction
-
-  -- * Persisting Extension State
-  -- #extstate#
-  -- $extensionstate
-  -- $accessingextensions
+   -- * Persisting Extension State
+   -- #extstate#
+   -- $extensionstate
+   -- $accessingextensions
   , ext
   , bufExt
-
-  -- * Accessing/Editing Context
+   -- * Accessing/Editing Context
   , text
-  -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
-  --
-  -- > txt <- use text
-
+   -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
+   --
+   -- > txt <- use text
   , events
-  -- | A lens over the currently events that triggered the action.
-  -- Use within an 'Action'
-  --
-  -- > evts <- use events
-  -- > -- or
-  -- > events .= []
-
+   -- | A lens over the currently events that triggered the action.
+   -- Use within an 'Action'
+   --
+   -- > evts <- use events
+   -- > -- or
+   -- > events .= []
   , exiting
-  -- | A lens over the current 'exit' status of the editor, allows an extension to
-  -- signal the editor to shutdown. If this is set the current events will finish processing, then the
-  -- 'Rasa.Ext.Scheduler.onExit' hook will run, then the editor will exit.
-  -- Use within an 'Action'
-  --
-  -- > exiting .= True
-
-  -- * Useful Types
+   -- | A lens over the current 'exit' status of the editor, allows an extension to
+   -- signal the editor to shutdown. If this is set the current events will finish processing, then the
+   -- 'Rasa.Ext.Scheduler.onExit' hook will run, then the editor will exit.
+   -- Use within an 'Action'
+   --
+   -- > exiting .= True
+   -- * Useful Types
   , Event(..)
   , Mod(..)
   , Buffer
+  , Span(..)
+  , combineSpans
+  , Coord(..)
+  , asCoord
+  , toOffset
+  , toCoord
+  , clamp
+  , addCoord
   ) where
 
+-- * Performing Actions
 import Rasa.Action
 import Rasa.State
 import Rasa.Events
 import Rasa.Buffer
-
-
+import Rasa.Utils
 -- $extensionstate
 --
 -- Extension states for ALL the extensions installed are stored in the same
@@ -103,7 +105,6 @@ import Rasa.Buffer
 -- If there's no default value that makes sense for your type, you can define
 -- a default of 'Data.Maybe.Nothing' and pattern match on its value when you
 -- access it.
-
 -- $accessingextensions
 --
 -- Extensions may store state persistently for later access or for other

@@ -19,7 +19,7 @@ renderBuf :: (Int, Int) -> BufAction V.Image
 renderBuf (width, height) = do
   -- txt <- textWrap width <$> use text
   txt <- use text
-  atts <- fmap convertIStyle <$> use styles
+  atts <- fmap (fmap convertStyle) <$> use styles
   let img = applyAttrs atts txt
   return $ V.resize width height img
 

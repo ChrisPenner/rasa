@@ -1,13 +1,13 @@
 {-# language TemplateHaskell #-}
-module Rasa.Ext.Style (styles, addStyle, fg, bg, flair, Color(..), Flair(..), IStyle(..), Style(..)) where
+module Rasa.Ext.Style (styleMain, styles, addStyle, fg, bg, flair, Color(..), Flair(..),  Style(..)) where
 
 import Rasa.Ext
+import Rasa.Ext.Directive
+import Rasa.Ext.Scheduler
 import Control.Lens
 
 import Data.Default
 import Control.Applicative
-
-import Data.List (insert)
 
 data Color =
     Black
@@ -42,28 +42,19 @@ instance Monoid Style where
 
   mempty = Style (Nothing, Nothing, Nothing)
 
--- Style with an index into the text or buffer
-data IStyle =
-  IStyle Int Style
-  deriving (Show, Eq)
-
 newtype Styles =
   Styles {
   -- This list must always stay sorted by the index of the styles
-    _styles' :: [IStyle]
+  _styles' :: [Span Style]
          } deriving (Show, Eq)
 
 makeLenses ''Styles
 
-styles :: Lens' Buffer [IStyle]
+styles :: Lens' Buffer [Span Style]
 styles = bufExt.styles'
 
 instance Default Styles where
   def = Styles []
-
-instance Ord IStyle where
-  compare (IStyle i _) (IStyle i' _) = compare i i'
-
 
 fg, bg :: Color -> Style
 fg a = Style (Just a, Nothing, Nothing)
@@ -73,5 +64,9 @@ flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
 -- Inserts a style into a buffer's style list in sorted order
-addStyle :: IStyle -> Buffer -> Buffer
-addStyle style = styles %~ insert style
+addStyle :: Span Style -> BufAction ()
+addStyle style = styles %= (style:)
+
+styleMain :: Scheduler ()
+styleMain = afterRender $ bufDo $ do
+  styles .= []

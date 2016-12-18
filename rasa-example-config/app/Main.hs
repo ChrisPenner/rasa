@@ -1,6 +1,7 @@
 module Main where
 
 import Rasa.Run (rasa)
+import Rasa.Ext.Style
 import Rasa.Ext.Vim
 import Rasa.Ext.Files
 import Rasa.Ext.StatusBar
@@ -16,3 +17,4 @@ main = rasa [slateEvent] $ do
   cursors
   logger
   slate
+  styleMain

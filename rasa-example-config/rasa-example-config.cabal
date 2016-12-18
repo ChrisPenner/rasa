@@ -20,6 +20,7 @@ executable rasa
                      , rasa
                      , rasa-ext
                      , rasa-ext-vim
+                     , rasa-ext-style
                      , rasa-ext-cursors
                      , rasa-ext-status-bar
                      , rasa-ext-logger

@@ -17,14 +17,12 @@ import Rasa.Ext.Directive
 import Rasa.Ext.Style
 
 import Control.Lens
-import Control.Monad.Reader
 
 import Control.Lens.Text as TL
 import Data.Typeable
 import Data.Default
 
 import qualified Data.Text as T
-type Coord = (Int, Int)
 newtype Cursor = Cursor
   { _curs :: Int
   } deriving (Show, Typeable)
@@ -42,7 +40,8 @@ cursor = bufExt.curs
 displayCursor ::  BufAction ()
 displayCursor = do
   c <- use cursor
-  styles .= [IStyle c (flair ReverseVideo), IStyle (c+1) (flair DefFlair)]
+  txt <- use text
+  addStyle (Span (c^.asCoord txt) ((c+1)^.asCoord txt) (flair ReverseVideo))
 
 cursors :: Scheduler ()
 cursors = beforeRender $ bufDo displayCursor
@@ -60,9 +59,7 @@ moveCursorBy n = do
 moveCursorCoord :: Coord -> BufAction ()
 moveCursorCoord coord = do
   txt <- use text
-  cursor.asCoord txt %= addPair coord
-  where
-    addPair (a, b) (a', b') = (a + a', b + b')
+  cursor.asCoord txt %= addCoord coord
 
 deleteChar :: BufAction ()
 deleteChar = do
@@ -85,28 +82,4 @@ findPrev txt = do
   c <- use cursor
   n <- use $ text.before c.tillPrev txt.to T.length
   moveCursorBy (-n)
-
-clamp :: Int -> Int -> Int -> Int
-clamp mn mx n
-  | n < mn = mn
-  | n > mx = mx
-  | otherwise = n
-
-asCoord :: T.Text -> Iso' Int Coord
-asCoord txt = iso (toCoord txt) (toOffset txt)
-
-toOffset :: T.Text -> Coord -> Int
-toOffset t (row, col) = clamp 0 (T.length t) $ rowCount + clamp 0 rowLen col
-  where
-    rowCount = t ^. intillNextN row "\n" . to T.length
-    rowLen = T.length $ T.lines t ^. ix row
-
-toCoord :: T.Text -> Int -> Coord
-toCoord txt offset = flip runReader txt $ do
-  row <- view $ before offset . TL.matching "\n" . to T.length
-  col <-
-    case row of
-      0 -> return offset
-      _ -> view $ before offset . tillPrev "\n" . to T.length
-  return (row, col)
 
