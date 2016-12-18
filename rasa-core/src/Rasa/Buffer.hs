@@ -10,13 +10,11 @@ module Rasa.Buffer
   , text
   , newBuffer
   , useCountFor
-  , newBuffer
   ) where
 
 import qualified Data.Text as T
 import Control.Lens hiding (matching)
 import Data.Text.Lens (packed)
-import Data.Default
 import Data.Dynamic
 import Data.Map
 

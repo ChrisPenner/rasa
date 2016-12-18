@@ -22,6 +22,7 @@ library
                        Rasa.Editor
                        Rasa.State
                        Rasa.Scheduler
+                       Rasa.Utils
 
   build-depends:       base >= 4.7 && < 5
                      , text
