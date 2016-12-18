@@ -38,10 +38,19 @@ convertColor DefColor = V.Default
 reset :: V.Image
 reset = V.text' V.defAttr ""
 
+newtype AttrMonoid = AttrMonoid {
+  attr' :: V.Attr
+}
+
+instance Monoid AttrMonoid where
+  mempty = AttrMonoid V.defAttr
+  AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
+
 applyAttrs :: [Span V.Attr] -> T.Text -> V.Image
-applyAttrs atts txt = applyAttrs' asOffsets (T.lines txt)
-  where combined = combineSpans V.defAttr atts
-        asOffsets = combined & traverse._1 %~ toOffset txt
+applyAttrs atts txt = applyAttrs' converted (T.lines txt)
+  where combined = combineSpans (fmap AttrMonoid <$> atts)
+        converted = combined & traverse._1 %~ toOffset txt
+                             & traverse._2 %~ attr'
 
 applyAttrs' :: [(Int, V.Attr)] -> [T.Text] -> V.Image
 applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')

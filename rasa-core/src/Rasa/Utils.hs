@@ -36,8 +36,8 @@ data Marker =
 
 -- | Combines a list of spans containing some monoidal data into a list of coords with
 -- with the data that applies from each Coord forwards
-combineSpans :: forall a. Monoid a =>  a -> [Span a] -> [(Coord, a)]
-combineSpans base spans = combiner [(0, base)] $ sortOn (view _3) (splitStartEnd idSpans)
+combineSpans :: forall a. Monoid a =>  [Span a] -> [(Coord, a)]
+combineSpans spans = combiner [] $ sortOn (view _3) (splitStartEnd idSpans)
   where
     idSpans :: [(Int, Span a)]
     idSpans = zip [1..] spans
