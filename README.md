@@ -1,6 +1,8 @@
 Rasa (Rah-zah)
 ==============
 
+[![Join the chat at https://gitter.im/rasa-editor/Lobby](https://badges.gitter.im/rasa-editor/Lobby.svg)](https://gitter.im/rasa-editor/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Embarrassingly modular customizable text editor built in Haskell using Lens
 combinators
 
