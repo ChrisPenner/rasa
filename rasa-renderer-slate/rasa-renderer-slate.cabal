@@ -30,7 +30,6 @@ library
                      , text
                      , lens
                      , vty >= 5.14
-                     , transformers
   default-language:    Haskell2010
 
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N

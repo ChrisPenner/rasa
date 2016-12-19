@@ -21,7 +21,7 @@ import Rasa.Ext.Style
 
 import Control.Lens
 
-import Control.Lens.Text as TL
+import Control.Lens.Text
 import Data.Typeable
 import Data.Default
 

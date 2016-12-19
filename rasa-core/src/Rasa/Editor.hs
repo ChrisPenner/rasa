@@ -1,10 +1,8 @@
 {-# LANGUAGE TemplateHaskell, Rank2Types, OverloadedStrings, GADTs #-}
 module Rasa.Editor (
     Editor
-  , focusedBuf
   , focused
   , buffers
-  , buf
   , exiting
 ) where
 
@@ -28,18 +26,3 @@ instance Default Editor where
           , _focused=0
           , _exiting=False
              }
-
-
-focusedBuf :: Lens' Editor Buffer
-focusedBuf = lens getter (flip setter)
-    where getter = do
-            foc <- view focused
-            -- TODO use ix here and make it safe??
-            view (buffers.to (!! foc))
-
-          setter a = do
-            foc <- view focused
-            set (buffers . ix foc) a
-
-buf :: Int -> Traversal' Editor Buffer
-buf bufN = buffers.ix bufN
