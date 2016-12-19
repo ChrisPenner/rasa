@@ -71,12 +71,9 @@ module Rasa.Ext
   , Buffer
   , Span(..)
   , combineSpans
-  , Coord(..)
-  , asCoord
-  , toOffset
-  , toCoord
+  , asText
+  , rope
   , clamp
-  , addCoord
   ) where
 
 -- * Performing Actions
@@ -85,6 +82,7 @@ import Rasa.State
 import Rasa.Events
 import Rasa.Buffer
 import Rasa.Utils
+import Rasa.Text
 -- $extensionstate
 --
 -- Extension states for ALL the extensions installed are stored in the same

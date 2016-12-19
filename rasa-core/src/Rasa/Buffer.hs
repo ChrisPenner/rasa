@@ -7,13 +7,16 @@ module Rasa.Buffer
   , Ext(..)
   , bufExts
   , text
+  , rope
   , newBuffer
   , useCountFor
   ) where
 
+import Rasa.Text
+
 import qualified Data.Text as T
+import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
-import Data.Text.Lens (packed)
 import Data.Dynamic
 import Data.Map
 
@@ -26,27 +29,30 @@ instance Show Ext where
 -- A buffer is the State of the 'Rasa.Action.BufAction' monad transformer stack, 
 -- so the type may be useful in defining lenses over your extension states.
 data Buffer = Buffer
-  { _text :: T.Text
+  { _rope :: Y.YiString
   , _bufExts :: Map TypeRep Ext
   }
 
 makeLenses ''Buffer
 
+text :: Lens' Buffer T.Text
+text = rope.asText
+
 instance Show Buffer where
-  show b = "<Buffer {text:" ++ show (b^..text.from packed.taking 30 traverse) ++ "...,\n"
+  show b = "<Buffer {text:" ++ show (b^..text . to (T.take 30)) ++ "...,\n"
            ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
 
 newBuffer :: T.Text -> Buffer
 newBuffer txt =
   Buffer
-  { _text = txt
-  , _bufExts = empty
-  }
+    { _rope = Y.fromText txt
+    , _bufExts = empty
+    }
 
 useCountFor :: Lens' Buffer  T.Text
-            -> (Int -> Buffer  -> Buffer )
-            -> Buffer 
-            -> Buffer 
+            -> (Int -> Buffer -> Buffer)
+            -> Buffer
+            -> Buffer
 useCountFor l f buf = f curs buf
   where
     curs = buf ^. l . to T.length

@@ -24,6 +24,7 @@ library
                      , rasa-core
                      , data-default
                      , lens
+                     , yi-rope
                      , text
                      , text-lens
                      , mtl

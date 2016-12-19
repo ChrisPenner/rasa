@@ -3,15 +3,18 @@
 module Rasa.Ext.Cursors
   ( moveCursorBy
   , moveCursorTo
-  , moveCursorCoord
+  , moveCursorOffsetBy
+  , moveCursorOffsetTo
   , cursors
   , deleteChar
   , insertText
   , findNext
   , findPrev
+  , Coord(..)
   ) where
 
 import Rasa.Ext
+import Rasa.Ext.Cursors.Types
 import Rasa.Ext.Scheduler
 import Rasa.Ext.Directive
 import Rasa.Ext.Style
@@ -24,62 +27,67 @@ import Data.Default
 
 import qualified Data.Text as T
 newtype Cursor = Cursor
-  { _curs :: Int
+  { _curs :: Coord
   } deriving (Show, Typeable)
 
 makeLenses ''Cursor
 
 instance Default Cursor where
   def = Cursor {
-  _curs=0
+  _curs=Coord 0 0
 }
 
-cursor :: Lens' Buffer Int
-cursor = bufExt.curs
+coord :: Lens' Buffer Coord
+coord = lens getter setter
+  where getter buf = buf^.bufExt.curs
+        setter buf new = let txt = buf^.rope
+                          in buf & bufExt.curs .~ clampCoord txt new
+
+offset :: Lens' Buffer Int
+offset = lens getter setter
+  where getter buf = let txt = buf^.rope
+                      in buf^.coord.from (asCoord txt)
+        setter buf new = let txt = buf^.rope
+                          in buf & coord.from (asCoord txt) .~ new
 
 displayCursor ::  BufAction ()
 displayCursor = do
-  c <- use cursor
-  txt <- use text
-  addStyle (Span (c^.asCoord txt) ((c+1)^.asCoord txt) (flair ReverseVideo))
+  o <- use offset
+  addStyle $ Span o (o+1) (flair ReverseVideo)
 
 cursors :: Scheduler ()
 cursors = beforeRender $ bufDo displayCursor
 
-moveCursorTo :: Int -> BufAction ()
-moveCursorTo n = do
-  mx <- use (text.to T.length)
-  cursor .= clamp 0 mx n
+moveCursorTo :: Coord -> BufAction ()
+moveCursorTo c = coord .= c
 
-moveCursorBy :: Int -> BufAction ()
-moveCursorBy n = do
-  mx <- use $ text.to T.length
-  cursor %= clamp 0 mx . (+n)
+moveCursorBy :: Coord -> BufAction ()
+moveCursorBy c = coord %= addCoord c
 
-moveCursorCoord :: Coord -> BufAction ()
-moveCursorCoord coord = do
-  txt <- use text
-  cursor.asCoord txt %= addCoord coord
+moveCursorOffsetBy :: Int -> BufAction ()
+moveCursorOffsetBy i = offset %= (+i)
+
+moveCursorOffsetTo :: Int -> BufAction ()
+moveCursorOffsetTo i = offset .= i
 
 deleteChar :: BufAction ()
 deleteChar = do
-  c <- use cursor
-  deleteCharAt c
+  o <- use offset
+  deleteCharAt o
 
 insertText :: T.Text -> BufAction ()
 insertText txt = do
-  c <- use cursor
-  insertTextAt c txt
+  o <- use offset
+  insertTextAt o txt
 
 findNext :: T.Text -> BufAction ()
 findNext txt = do
-  c <- use cursor
-  n <- use $ text.after c.tillNext txt.to T.length
-  moveCursorBy n
+  o <- use offset
+  n <- use $ text.to (T.drop o).tillNext txt.to T.length
+  moveCursorOffsetBy n
 
 findPrev :: T.Text -> BufAction ()
 findPrev txt = do
-  c <- use cursor
+  c <- use offset
   n <- use $ text.before c.tillPrev txt.to T.length
-  moveCursorBy (-n)
-
+  moveCursorOffsetBy (-n)

@@ -23,12 +23,14 @@ library
                        Rasa.State
                        Rasa.Scheduler
                        Rasa.Utils
+                       Rasa.Text
 
   build-depends:       base >= 4.7 && < 5
                      , text
                      , text-lens
                      , lens
                      , mtl
+                     , yi-rope
                      , containers
                      , transformers
                      , data-default

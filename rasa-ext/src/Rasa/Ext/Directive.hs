@@ -1,5 +1,5 @@
 module Rasa.Ext.Directive
-  ( 
+  (
   -- * Performing Actions on Buffers
     bufDo
   , focusDo
@@ -23,6 +23,7 @@ import Rasa.Buffer as B
 import Control.Monad.IO.Class
 
 import Control.Lens
+import qualified Yi.Rope as Y
 import qualified Data.Text as T
 import Data.Monoid
 
@@ -62,15 +63,14 @@ exit = exiting .= True
 
 -- | Inserts text at the specified index into the buffer's text.
 insertTextAt :: Int -> T.Text -> BufAction ()
-insertTextAt i new =
-  let insertTxt txt = T.take i txt <> new <> T.drop i txt
-   in text %= insertTxt
+insertTextAt o new =
+  let insertTxt txt = Y.take o txt <> Y.fromText new <> Y.drop o txt
+   in rope %= insertTxt
 
 -- | Inserts text at the specified index into the buffer's text.
 deleteCharAt :: Int -> BufAction ()
-deleteCharAt i =
-  let deleteChar txt =  T.take i txt <> T.drop (i + 1) txt
-   in B.text %= deleteChar
+deleteCharAt o = B.rope %= deleteChar
+  where deleteChar txt = Y.take o txt <> Y.drop (o + 1) txt
 
 -- | Switches focus to the next buffer
 nextBuf :: Action ()

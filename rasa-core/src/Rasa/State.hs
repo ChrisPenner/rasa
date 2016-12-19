@@ -73,7 +73,7 @@ allBufExt =
 bufExt
   :: forall a.
      (Show a, Typeable a, Default a)
-  => Lens' Buffer a
+    => Lens' Buffer a
 bufExt = lens getter setter
   where
     getter buf =

@@ -13,6 +13,13 @@ packages:
 - ./rasa-renderer-slate
 - ./text-lens
 - ./rasa-example-config
+
 extra-deps:
 - vty-5.14
+
+extra-lib-dirs:
+- /usr/local/opt/icu4c/lib 
+extra-include-dirs:
+- /usr/local/opt/icu4c/include
+
 resolver: lts-7.11
