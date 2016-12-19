@@ -48,7 +48,7 @@ instance Monoid AttrMonoid where
 
 applyAttrs :: [Span V.Attr] -> T.Text -> V.Image
 applyAttrs atts txt = applyAttrs' converted (T.lines txt)
-  where combined = combineSpans (fmap AttrMonoid <$> atts)
+  where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
         converted = combined & traverse._2 %~ attr'
 
 applyAttrs' :: [(Int, V.Attr)] -> [T.Text] -> V.Image

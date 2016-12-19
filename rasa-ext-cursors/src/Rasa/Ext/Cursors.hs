@@ -21,7 +21,7 @@ import Rasa.Ext.Style
 
 import Control.Lens
 
-import Control.Lens.Text as TL
+import Control.Lens.Text
 import Data.Typeable
 import Data.Default
 
@@ -71,14 +71,10 @@ moveCursorOffsetTo :: Int -> BufAction ()
 moveCursorOffsetTo i = offset .= i
 
 deleteChar :: BufAction ()
-deleteChar = do
-  o <- use offset
-  deleteCharAt o
+deleteChar = use offset >>= deleteCharAt
 
 insertText :: T.Text -> BufAction ()
-insertText txt = do
-  o <- use offset
-  insertTextAt o txt
+insertText txt = use offset >>= insertTextAt txt
 
 findNext :: T.Text -> BufAction ()
 findNext txt = do

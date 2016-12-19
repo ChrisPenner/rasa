@@ -44,14 +44,14 @@ bufDo = Action . zoom (buffers . traverse) . getBufAction
 -- | This adds a new buffer with the given text.
 
 addBuffer :: T.Text -> Action ()
-addBuffer txt = buffers %= (++[newBuffer txt])
+addBuffer txt = buffers <>= [newBuffer txt]
 
 -- | This adds a new buffer with the given text then performs the given
 -- 'Rasa.Action.BufAction' agains that buffer.
 addBufferThen :: T.Text -> BufAction a -> Action a
 addBufferThen txt act = do
   (a, newBuf) <- liftIO $ runBufAction (newBuffer txt) act
-  buffers %= (++[newBuf])
+  buffers <>= [newBuf]
   return a
 
 -- | This signals to the editor that you'd like to shutdown. The current events
@@ -62,8 +62,8 @@ exit :: Action ()
 exit = exiting .= True
 
 -- | Inserts text at the specified index into the buffer's text.
-insertTextAt :: Int -> T.Text -> BufAction ()
-insertTextAt o new =
+insertTextAt ::  T.Text -> Int -> BufAction ()
+insertTextAt new o =
   let insertTxt txt = Y.take o txt <> Y.fromText new <> Y.drop o txt
    in rope %= insertTxt
 

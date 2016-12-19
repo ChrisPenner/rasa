@@ -10,6 +10,7 @@ import Control.Lens
 import System.Environment
 
 import Data.String (fromString)
+import Data.Foldable
 import Data.Typeable
 import Data.Default 
 
@@ -39,19 +40,18 @@ files = do
 
 showFilename :: Action ()
 showFilename = focusDo $ do
-  fname <- use $ bufExt.filename
-  case fname of
-    Just fname' -> leftStatus $ T.pack ("<" ++ fname' ++ ">")
-    Nothing -> return ()
+  mName <- use $ bufExt.filename
+  traverse_ (leftStatus . disp) mName
+      where disp name = T.pack ("<" ++ name ++ ">")
 
 save :: BufAction ()
 save = do
   txt <- use text
-  fname <- use $ bufExt.filename
-  liftIO $ sequence_ $ TIO.writeFile <$> fname <*> pure txt
+  mName <- use $ bufExt.filename
+  liftIO $ sequence_ $ TIO.writeFile <$> mName <*> pure txt
 
 setFilename :: String -> BufAction ()
-setFilename fname = bufExt .= FileInfo (Just fname)
+setFilename fname = bufExt.filename ?= fname
 
 addFile :: String -> T.Text -> Action ()
 addFile fname txt = addBufferThen txt (setFilename fname)
