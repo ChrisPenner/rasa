@@ -11,6 +11,7 @@ import Rasa.Ext.StatusBar
 import Rasa.Ext.Scheduler
 
 import Control.Lens
+import Control.Monad
 import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
@@ -84,8 +85,11 @@ normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
 normal (Keypress 'h' _) = moveOffsetsBy' (-1)
 normal (Keypress 'l' _) = moveOffsetsBy' 1
 normal (Keypress 'k' _) = moveCoordsBy' $ Coord (-1) 0
+normal (Keypress 'K' _) = coordsDo_ $ addCursorCoordAt . addCoord (Coord (-1) 0)
 normal (Keypress 'j' _) = moveCoordsBy' $ Coord 1 0
+normal (Keypress 'J' _) = coordsDo_ $ addCursorCoordAt . addCoord (Coord 1 0)
 normal (Keypress 'w' _) = findNext " " >> moveOffsetsBy' 1
+-- normal (Keypress 'W' _) = offsetsDo_ $ findNextAt " " >=> addCursorOffsetAt
 normal (Keypress 'b' _) = moveOffsetsBy' (-1) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
 normal (Keypress 'F' _) = findPrev "f"

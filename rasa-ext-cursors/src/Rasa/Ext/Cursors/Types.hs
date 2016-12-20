@@ -2,6 +2,7 @@
 
 module Rasa.Ext.Cursors.Types
   ( Coord(..)
+  , Offset
   , asCoord
   , addCoord
   , clampCoord
@@ -11,6 +12,8 @@ import Rasa.Ext
 import Control.Lens
 import Data.Maybe
 import qualified Yi.Rope as Y
+
+type Offset = Int
 
 -- | (Coord Row Column) represents a char in a block of text. (zero indexed)
 -- e.g. Coord 0 0 is the first character in the text,

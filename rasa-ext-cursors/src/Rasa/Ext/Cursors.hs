@@ -11,11 +11,18 @@ module Rasa.Ext.Cursors
   , deleteChar
   , insertText
   , findNext
+  , findNextAt
   , findPrev
+  , findPrevAt
   , coordsDo
   , coordsDo_
   , offsetsDo
   , offsetsDo_
+  , addCursorCoordAt
+  , addCursorOffsetAt
+  , offsets
+  , coords
+  , addCoord
   , Coord(..)
   ) where
 

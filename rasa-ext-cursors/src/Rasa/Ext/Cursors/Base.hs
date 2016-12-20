@@ -14,6 +14,10 @@ module Rasa.Ext.Cursors.Base
   , offsetsDo
   , offsetsDo_
   , displayCursor
+  , offsets
+  , coords
+  , addCursorCoordAt
+  , addCursorOffsetAt
   ) where
 
 
@@ -52,7 +56,7 @@ coords = lens getter setter
                           in buf & bufExt.cursors .~ cleanCursors txt new
 
 
-offsets :: Lens' Buffer [Int]
+offsets :: Lens' Buffer [Offset]
 offsets = lens getter setter
   where getter buf = let txt = buf^.rope
                       in buf^..bufExt.cursors.to sort.to nub.reversed.traverse.from (asCoord txt)
@@ -62,13 +66,13 @@ offsets = lens getter setter
 eachCoord :: Traversal' Buffer Coord
 eachCoord = coords.traverse
 
-eachOffset :: Traversal' Buffer Int
+eachOffset :: Traversal' Buffer Offset
 eachOffset = offsets.traverse
 
-offsetsDo :: (Int -> BufAction a) -> BufAction [a]
+offsetsDo :: (Offset -> BufAction a) -> BufAction [a]
 offsetsDo f = use offsets >>= mapM f
 
-offsetsDo_ :: (Int -> BufAction a) -> BufAction ()
+offsetsDo_ :: (Offset -> BufAction a) -> BufAction ()
 offsetsDo_ = void . offsetsDo
 
 coordsDo :: (Coord -> BufAction a) -> BufAction [a]
@@ -91,22 +95,28 @@ moveCoordsBy f = do
 moveCoordsBy' :: Coord -> BufAction ()
 moveCoordsBy' c = eachCoord %= addCoord c
 
-moveOffsetsBy :: (Int -> BufAction Int) -> BufAction ()
+moveOffsetsBy :: (Offset -> BufAction Offset) -> BufAction ()
 moveOffsetsBy f = do
   newOffsets <- offsetsDo f
   offsets.partsOf each %= zipWith (+) newOffsets
 
-moveOffsetsBy' :: Int -> BufAction ()
+moveOffsetsBy' :: Offset -> BufAction ()
 moveOffsetsBy' o = eachOffset %= (+o)
 
-moveOffsetsTo :: (Int -> BufAction Int) -> BufAction ()
+moveOffsetsTo :: (Offset -> BufAction Offset) -> BufAction ()
 moveOffsetsTo f = offsetsDo f >>= assign offsets
 
-moveOffsetsTo' :: Int -> BufAction ()
+moveOffsetsTo' :: Offset -> BufAction ()
 moveOffsetsTo' o = offsets .= [o]
+
+addCursorCoordAt :: Coord -> BufAction ()
+addCursorCoordAt c = coords %= (c:)
+
+addCursorOffsetAt :: Int -> BufAction ()
+addCursorOffsetAt o = offsets %= (o:)
 
 displayCursor ::  BufAction ()
 displayCursor = offsetsDo_ setStyle
   where
-    setStyle :: Int -> BufAction ()
+    setStyle :: Offset -> BufAction ()
     setStyle o = addStyle $ Span o (o+1) (flair ReverseVideo)
