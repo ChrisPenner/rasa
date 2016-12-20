@@ -14,7 +14,7 @@ main = rasa [slateEvent] $ do
   vim
   statusBar
   files
-  cursors
+  cursorMain
   logger
   slate
   styleMain
