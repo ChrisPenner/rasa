@@ -1,5 +1,11 @@
-{-# language Rank2Types, OverloadedStrings #-}
-module Rasa.Ext.Cursors.Types where
+{-# LANGUAGE Rank2Types, OverloadedStrings #-}
+
+module Rasa.Ext.Cursors.Types
+  ( Coord(..)
+  , asCoord
+  , addCoord
+  , clampCoord
+  ) where
 
 import Rasa.Ext
 import Control.Lens
@@ -12,7 +18,7 @@ import qualified Yi.Rope as Y
 data Coord =
   Coord Int
         Int
-        deriving (Show, Eq)
+  deriving (Show, Eq)
 
 instance Ord Coord where
   Coord a b <= Coord a' b'
@@ -25,19 +31,22 @@ asCoord txt = iso (toCoord txt) (toOffset txt)
 
 toOffset :: Y.YiString -> Coord -> Int
 toOffset txt (Coord row col) = lenRows + col
-  where lenRows = Y.length . Y.concat . take row . Y.lines' $ txt
+  where
+    lenRows = Y.length . Y.concat . take row . Y.lines' $ txt
 
 toCoord :: Y.YiString -> Int -> Coord
 toCoord txt offset = Coord numRows numColumns
-  where numRows = Y.countNewLines . Y.take offset $ txt
-        numColumns = (offset-) . Y.length . Y.concat . take numRows . Y.lines' $ txt
+  where
+    numRows = Y.countNewLines . Y.take offset $ txt
+    numColumns = (offset -) . Y.length . Y.concat . take numRows . Y.lines' $ txt
 
 addCoord :: Coord -> Coord -> Coord
-addCoord (Coord a b) (Coord a' b') = Coord (a+a') (b+b')
+addCoord (Coord a b) (Coord a' b') = Coord (a + a') (b + b')
 
-clampCoord ::  Y.YiString -> Coord -> Coord
+clampCoord :: Y.YiString -> Coord -> Coord
 clampCoord "" _ = Coord 0 0
-clampCoord txt (Coord row col) = Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
+clampCoord txt (Coord row col) =
+  Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
   where
     maxRow = Y.countNewLines txt
-    maxColumn = fromMaybe col (txt^?to Y.lines'.ix row.to Y.length)
+    maxColumn = fromMaybe col (txt ^? to Y.lines' . ix row . to Y.length)
