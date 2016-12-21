@@ -17,6 +17,10 @@ after n = lens getter setter
     where getter = T.drop n
           setter old new = T.take n old <> new
 
+nWords :: Int -> Lens' T.Text T.Text
+nWords n = lens getter setter
+  where getter = T.unwords . take n . T.words
+        setter old new =  T.unwords . (T.words new ++) . drop n . T.words $ old
 
 intillNextN :: Int -> T.Text -> Lens' T.Text T.Text
 intillNextN n pat = lens getter setter

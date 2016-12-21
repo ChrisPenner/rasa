@@ -1,20 +1,12 @@
 module Rasa.Ext.Cursors
-  ( moveCoordsBy
-  , moveCoordsBy'
-  , moveCoordsTo
-  , moveCoordsTo'
-  , moveOffsetsBy
-  , moveOffsetsBy'
-  , moveOffsetsTo
-  , moveOffsetsTo'
-  , cursorMain
+  ( cursorMain
   , deleteChar
   , insertText
   , findNext
-  , findNextAt
+  , findOffsetNext
   , findPrev
-  , findPrevAt
-  , coordsDo
+  , findOffsetPrev
+  , eachCoord
   , coordsDo_
   , offsetsDo
   , offsetsDo_
@@ -22,6 +14,8 @@ module Rasa.Ext.Cursors
   , addCursorOffsetAt
   , offsets
   , coords
+  , eachOffset
+  , coordsDo
   , addCoord
   , Coord(..)
   ) where

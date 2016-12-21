@@ -1,21 +1,15 @@
 {-# LANGUAGE TemplateHaskell, OverloadedStrings, Rank2Types #-}
 
 module Rasa.Ext.Cursors.Base
-  ( moveCoordsBy
-  , moveCoordsBy'
-  , moveCoordsTo
-  , moveCoordsTo'
-  , moveOffsetsBy
-  , moveOffsetsBy'
-  , moveOffsetsTo
-  , moveOffsetsTo'
-  , coordsDo
+  ( coordsDo
   , coordsDo_
   , offsetsDo
   , offsetsDo_
   , displayCursor
   , offsets
   , coords
+  , eachCoord
+  , eachOffset
   , addCursorCoordAt
   , addCursorOffsetAt
   ) where
@@ -43,7 +37,7 @@ makeLenses ''Cursor
 
 instance Default Cursor where
   def = Cursor {
-  _cursors=[Coord 1 0, Coord 0 0]
+  _cursors=[Coord 0 0]
 }
 
 cleanCursors :: Y.YiString -> [Coord] -> [Coord]
@@ -80,34 +74,6 @@ coordsDo f = use coords >>= mapM f
 
 coordsDo_ :: (Coord -> BufAction a) -> BufAction ()
 coordsDo_ = void . coordsDo
-
-moveCoordsTo :: (Coord -> BufAction Coord) -> BufAction ()
-moveCoordsTo f = coordsDo f >>= assign coords
-
-moveCoordsTo' :: Coord -> BufAction ()
-moveCoordsTo' c = eachCoord .= c
-
-moveCoordsBy :: (Coord -> BufAction Coord) -> BufAction ()
-moveCoordsBy f = do
-  newCoords <- coordsDo f
-  coords.partsOf each %= zipWith addCoord newCoords
-
-moveCoordsBy' :: Coord -> BufAction ()
-moveCoordsBy' c = eachCoord %= addCoord c
-
-moveOffsetsBy :: (Offset -> BufAction Offset) -> BufAction ()
-moveOffsetsBy f = do
-  newOffsets <- offsetsDo f
-  offsets.partsOf each %= zipWith (+) newOffsets
-
-moveOffsetsBy' :: Offset -> BufAction ()
-moveOffsetsBy' o = eachOffset %= (+o)
-
-moveOffsetsTo :: (Offset -> BufAction Offset) -> BufAction ()
-moveOffsetsTo f = offsetsDo f >>= assign offsets
-
-moveOffsetsTo' :: Offset -> BufAction ()
-moveOffsetsTo' o = offsets .= [o]
 
 addCursorCoordAt :: Coord -> BufAction ()
 addCursorCoordAt c = coords %= (c:)

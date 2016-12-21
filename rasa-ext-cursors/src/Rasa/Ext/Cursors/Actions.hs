@@ -3,8 +3,8 @@ module Rasa.Ext.Cursors.Actions
   , insertText
   , findNext
   , findPrev
-  , findNextAt
-  , findPrevAt
+  , findOffsetNext
+  , findOffsetPrev
   ) where
 
 import qualified Data.Text as T
@@ -23,13 +23,13 @@ insertText :: T.Text -> BufAction ()
 insertText txt = offsetsDo_ $ insertTextAt txt
 
 findNext :: T.Text -> BufAction ()
-findNext txt = moveOffsetsTo (findNextAt txt)
+findNext txt = offsets <~ offsetsDo (findOffsetNext txt)
 
-findNextAt :: T.Text -> Offset -> BufAction Offset
-findNextAt txt o = (o+) <$> use (text . after o . tillNext txt . to T.length)
+findOffsetNext :: T.Text -> Offset -> BufAction Offset
+findOffsetNext txt o = (o+) <$> use (text . after o . tillNext txt . to T.length)
 
 findPrev :: T.Text -> BufAction ()
-findPrev txt = moveOffsetsTo (findPrevAt txt)
+findPrev txt = offsets <~ offsetsDo (findOffsetPrev txt)
 
-findPrevAt :: T.Text -> Offset -> BufAction Offset
-findPrevAt txt o = (o+) <$> use (text . before o . tillPrev txt . to T.length . to negate)
+findOffsetPrev :: T.Text -> Offset -> BufAction Offset
+findOffsetPrev txt o = (o+) <$> use (text . before o . tillPrev txt . to T.length . to negate)
