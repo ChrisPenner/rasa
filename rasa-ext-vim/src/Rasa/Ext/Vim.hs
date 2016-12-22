@@ -11,7 +11,6 @@ import Rasa.Ext.StatusBar
 import Rasa.Ext.Scheduler
 
 import Control.Lens
-import Control.Monad
 import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable

@@ -65,6 +65,12 @@ module Rasa.Ext
    -- Use within an 'Action'
    --
    -- > exiting .= True
+   -- * Ranges
+  , Coord(..)
+  , Offset
+  , asCoord
+  , clampCoord
+  , addCoord
    -- * Useful Types
   , Event(..)
   , Mod(..)
@@ -74,6 +80,8 @@ module Rasa.Ext
   , asText
   , rope
   , clamp
+  , Range(..)
+  , range
   ) where
 
 -- * Performing Actions
@@ -83,6 +91,7 @@ import Rasa.Events
 import Rasa.Buffer
 import Rasa.Utils
 import Rasa.Text
+import Rasa.Range
 -- $extensionstate
 --
 -- Extension states for ALL the extensions installed are stored in the same

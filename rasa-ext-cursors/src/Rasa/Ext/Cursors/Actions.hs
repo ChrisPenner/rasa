@@ -12,7 +12,6 @@ import qualified Data.Text as T
 import Control.Lens
 import Control.Lens.Text
 import Rasa.Ext
-import Rasa.Ext.Cursors.Types
 import Rasa.Ext.Directive
 import Rasa.Ext.Cursors.Base
 
@@ -24,12 +23,12 @@ adjustNextLineCoordsBy cur adj =
 
 deleteChar :: BufAction ()
 deleteChar = offsetsDo_ $ \o -> do
-  deleteCharAt o
+  deleteRange (Range o (o+1))
   c <- toCoord o
   adjustNextLineCoordsBy c (Coord 0 (-1))
 
 insertText :: T.Text -> BufAction ()
-insertText txt = offsetsDo_ $ insertTextAt txt
+insertText txt = offsetsDo_ $ flip insertAt txt
 
 findNext :: T.Text -> BufAction ()
 findNext txt = offsets <~ offsetsDo (findOffsetNext txt)

@@ -1,17 +1,47 @@
 {-# LANGUAGE Rank2Types, OverloadedStrings #-}
-
-module Rasa.Ext.Cursors.Types
+module Rasa.Range
   ( Coord(..)
   , Offset
   , asCoord
   , addCoord
   , clampCoord
+  , Range(..)
+  , range
+  , (|->|)
+  , (|<-|)
+  , (|<->|)
+  , (|+|)
+  , (|-|)
   ) where
 
-import Rasa.Ext
+import Rasa.Utils
 import Control.Lens
 import Data.Maybe
+import Data.Monoid
 import qualified Yi.Rope as Y
+
+data Range = Range Int Int
+
+infixl 6 |->|
+infixl 6 |<-|
+infixl 6 |<->|
+infixl 6 |+|
+infixl 6 |-|
+
+(|+|) :: Range -> Offset -> Range
+Range s e |+| i = Range (s+i) (e+i)
+
+(|-|) :: Range -> Offset -> Range
+r |-| i = r |+| (-i)
+
+(|->|) :: Range -> Offset -> Range
+Range s e |->| i = Range s (e+i)
+
+(|<-|) :: Range -> Offset -> Range
+Range s e |<-| i = Range (s+i) e
+
+(|<->|) :: Range -> Offset -> Range
+Range s e |<->| i = Range (s-i) (e+i)
 
 type Offset = Int
 
@@ -28,6 +58,14 @@ instance Ord Coord where
     | a < a' = True
     | a > a' = False
     | otherwise = b <= b'
+
+range :: Range -> Lens' Y.YiString  Y.YiString
+range (Range start end) = lens getter setter
+  where
+    getter =  Y.drop start . Y.take end
+    setter old new = let prefix = Y.take start old
+                         suffix = Y.drop end old
+                      in prefix <> new <> suffix
 
 asCoord :: Y.YiString -> Iso' Int Coord
 asCoord txt = iso (toCoord txt) (toOffset txt)

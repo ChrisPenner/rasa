@@ -16,15 +16,11 @@ module Rasa.Ext.Cursors
   , coords
   , eachOffset
   , coordsDo
-  , addCoord
-  , Coord(..)
   ) where
 
 import Rasa.Ext.Cursors.Base
-import Rasa.Ext.Cursors.Types
 import Rasa.Ext.Cursors.Actions
 
-import Rasa.Ext
 import Rasa.Ext.Directive
 import Rasa.Ext.Scheduler
 

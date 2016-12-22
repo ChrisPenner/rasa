@@ -17,7 +17,6 @@ library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Cursors
   other-modules:
-                       Rasa.Ext.Cursors.Types
                        Rasa.Ext.Cursors.Actions
                        Rasa.Ext.Cursors.Base
   build-depends:       base >= 4.7 && < 5

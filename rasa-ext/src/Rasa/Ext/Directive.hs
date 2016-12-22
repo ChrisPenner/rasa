@@ -1,3 +1,4 @@
+{-# language Rank2Types, OverloadedStrings #-}
 module Rasa.Ext.Directive
   (
   -- * Performing Actions on Buffers
@@ -12,20 +13,24 @@ module Rasa.Ext.Directive
   , prevBuf
 
   -- * Buffer Actions
-  , insertTextAt
-  , deleteCharAt
+  , range
+  , overRange
+  , replaceRange
+  , deleteRange
+  , insertAt
+  , toCoord
+  , toOffset
   ) where
 
-import Rasa.Ext
+import Rasa.Text
 import Rasa.State
 import Rasa.Action
+import Rasa.Range
 import Rasa.Buffer as B
 import Control.Monad.IO.Class
 
 import Control.Lens
-import qualified Yi.Rope as Y
 import qualified Data.Text as T
-import Data.Monoid
 
 -- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
 -- performs the 'Rasa.Action.BufAction' on the focused buffer.
@@ -61,17 +66,6 @@ addBufferThen txt act = do
 exit :: Action ()
 exit = exiting .= True
 
--- | Inserts text at the specified index into the buffer's text.
-insertTextAt ::  T.Text -> Int -> BufAction ()
-insertTextAt new o =
-  let insertTxt txt = Y.take o txt <> Y.fromText new <> Y.drop o txt
-   in rope %= insertTxt
-
--- | Inserts text at the specified index into the buffer's text.
-deleteCharAt :: Int -> BufAction ()
-deleteCharAt o = B.rope %= deleteChar
-  where deleteChar txt = Y.take o txt <> Y.drop (o + 1) txt
-
 -- | Switches focus to the next buffer
 nextBuf :: Action ()
 nextBuf = do
@@ -83,3 +77,26 @@ prevBuf :: Action ()
 prevBuf = do
   numBuffers <- use (buffers.to length)
   focused %= (`mod` numBuffers) . subtract 1
+
+
+toCoord :: Offset -> BufAction Coord
+toCoord o = do
+  txt <- use rope
+  return $ o^.asCoord txt
+
+toOffset :: Coord -> BufAction Offset
+toOffset c = do
+  txt <- use rope
+  return $ c^.from (asCoord txt)
+
+deleteRange :: Range -> BufAction ()
+deleteRange r = rope.range r.asText .= ""
+
+replaceRange :: Range -> T.Text -> BufAction ()
+replaceRange r txt = rope.range r.asText .= txt
+
+insertAt :: Offset -> T.Text -> BufAction ()
+insertAt o txt = rope.range (Range o o).asText .= txt
+
+overRange :: Range -> (T.Text -> T.Text) -> BufAction ()
+overRange r f = rope.range r.asText %= f
