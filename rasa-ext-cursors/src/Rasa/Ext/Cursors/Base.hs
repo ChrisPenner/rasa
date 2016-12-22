@@ -12,6 +12,8 @@ module Rasa.Ext.Cursors.Base
   , eachOffset
   , addCursorCoordAt
   , addCursorOffsetAt
+  , toCoord
+  , toOffset
   ) where
 
 
@@ -86,3 +88,13 @@ displayCursor = offsetsDo_ setStyle
   where
     setStyle :: Offset -> BufAction ()
     setStyle o = addStyle $ Span o (o+1) (flair ReverseVideo)
+
+toCoord :: Offset -> BufAction Coord
+toCoord o = do
+  txt <- use rope
+  return $ o^.asCoord txt
+
+toOffset :: Coord -> BufAction Offset
+toOffset c = do
+  txt <- use rope
+  return $ c^.from (asCoord txt)

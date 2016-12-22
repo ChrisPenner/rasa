@@ -16,8 +16,17 @@ import Rasa.Ext.Cursors.Types
 import Rasa.Ext.Directive
 import Rasa.Ext.Cursors.Base
 
+adjustNextLineCoordsBy :: Coord -> Coord -> BufAction ()
+adjustNextLineCoordsBy cur adj =
+  eachCoord.filtered (crdGT cur) %= addCoord adj
+    where crdGT (Coord row col) (Coord row' col') =
+            row == row' && col' > col
+
 deleteChar :: BufAction ()
-deleteChar = offsetsDo_ deleteCharAt
+deleteChar = offsetsDo_ $ \o -> do
+  deleteCharAt o
+  c <- toCoord o
+  adjustNextLineCoordsBy c (Coord 0 (-1))
 
 insertText :: T.Text -> BufAction ()
 insertText txt = offsetsDo_ $ insertTextAt txt
