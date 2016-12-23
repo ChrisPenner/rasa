@@ -67,9 +67,15 @@ module Rasa.Ext
    -- > exiting .= True
    -- * Ranges
   , Coord(..)
-  , Offset
+  , Offset(..)
+  , Cursor
   , asCoord
+  , asOffsets
+  , asCoords
+  , cursorToOffset
+  , cursorToCoord
   , clampCoord
+  , clampRange
   , addCoord
    -- * Useful Types
   , Event(..)
@@ -81,7 +87,8 @@ module Rasa.Ext
   , rope
   , clamp
   , Range(..)
-  , range
+  , moveRange
+  , moveCursor
   ) where
 
 -- * Performing Actions
@@ -89,7 +96,6 @@ import Rasa.Action
 import Rasa.State
 import Rasa.Events
 import Rasa.Buffer
-import Rasa.Utils
 import Rasa.Text
 import Rasa.Range
 -- $extensionstate

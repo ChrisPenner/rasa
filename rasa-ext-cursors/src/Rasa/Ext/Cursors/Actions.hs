@@ -1,10 +1,10 @@
 module Rasa.Ext.Cursors.Actions
-  ( deleteChar
+  ( delete
   , insertText
   , findNext
   , findPrev
-  , findOffsetNext
-  , findOffsetPrev
+  , findNextFrom
+  , findPrevFrom
   ) where
 
 import qualified Data.Text as T
@@ -15,29 +15,59 @@ import Rasa.Ext
 import Rasa.Ext.Directive
 import Rasa.Ext.Cursors.Base
 
-adjustNextLineCoordsBy :: Coord -> Coord -> BufAction ()
-adjustNextLineCoordsBy cur adj =
-  eachCoord.filtered (crdGT cur) %= addCoord adj
+moveSameLineRangesBy :: Range -> Cursor -> BufAction ()
+moveSameLineRangesBy (Range _ end) amt = do
+  txt <- use rope
+  let endCrd = cursorToCoord txt end
+  res <- rangeDo $ \r@(Range s _) -> do
+    let startCrd = cursorToCoord txt s
+    if crdGT endCrd startCrd
+       then return $ moveRange txt amt r
+       else return r
+  ranges .= res
     where crdGT (Coord row col) (Coord row' col') =
             row == row' && col' > col
 
-deleteChar :: BufAction ()
-deleteChar = offsetsDo_ $ \o -> do
-  deleteRange (Range o (o+1))
-  c <- toCoord o
-  adjustNextLineCoordsBy c (Coord 0 (-1))
+-- deleteChar :: BufAction ()
+-- deleteChar = deleteN 1
+
+delete :: BufAction ()
+delete = rangeDo_ $ \r -> do
+  deleteRange r
+  amt <- rangeSize r
+  moveSameLineRangesBy r (Left . Offset $ amt)
 
 insertText :: T.Text -> BufAction ()
-insertText txt = offsetsDo_ $ flip insertAt txt
+insertText txt = rangeDo_ $ \r@(Range s _) -> do
+  insertAt s txt
+  moveSameLineRangesBy r (Left . Offset . T.length $ txt)
 
 findNext :: T.Text -> BufAction ()
-findNext txt = offsets <~ offsetsDo (findOffsetNext txt)
+findNext pat = do
+  txt <- use rope
+  res <- rangeDo $ \(Range _ e) -> do
+    off <- findNextFrom pat e
+    return $ Range off (moveCursor txt (Left . Offset $ 1) off)
+  ranges .= res
 
-findOffsetNext :: T.Text -> Offset -> BufAction Offset
-findOffsetNext txt o = (o+) <$> use (text . after o . tillNext txt . to T.length)
+findNextFrom :: T.Text -> Cursor -> BufAction Cursor
+findNextFrom pat c = do
+  txt <- use rope
+  let Offset o = cursorToOffset txt c
+  distance <- use (text . after o . tillNext pat . to T.length)
+  return (Left . Offset $ distance + o)
 
 findPrev :: T.Text -> BufAction ()
-findPrev txt = offsets <~ offsetsDo (findOffsetPrev txt)
+findPrev pat = do
+  txt <- use rope
+  res <- rangeDo $ \(Range _ e) -> do
+    off <- findPrevFrom pat e
+    return $ Range off (moveCursor txt (Left . Offset $ 1) off)
+  ranges .= res
 
-findOffsetPrev :: T.Text -> Offset -> BufAction Offset
-findOffsetPrev txt o = (o+) <$> use (text . before o . tillPrev txt . to T.length . to negate)
+findPrevFrom :: T.Text -> Cursor -> BufAction Cursor
+findPrevFrom pat c = do
+  txt <- use rope
+  let Offset o = cursorToOffset txt c
+  distance <- use (text . before o . tillPrev pat . to T.length .to negate)
+  return (Left . Offset $ distance + o)

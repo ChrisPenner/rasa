@@ -1,21 +1,14 @@
 module Rasa.Ext.Cursors
   ( cursorMain
-  , deleteChar
+  , delete
   , insertText
   , findNext
-  , findOffsetNext
+  , findNextFrom
   , findPrev
-  , findOffsetPrev
-  , eachCoord
-  , coordsDo_
-  , offsetsDo
-  , offsetsDo_
-  , addCursorCoordAt
-  , addCursorOffsetAt
-  , offsets
-  , coords
-  , eachOffset
-  , coordsDo
+  , findPrevFrom
+  , eachRange
+  , moveRanges
+  , ranges
   ) where
 
 import Rasa.Ext.Cursors.Base
@@ -25,4 +18,4 @@ import Rasa.Ext.Directive
 import Rasa.Ext.Scheduler
 
 cursorMain :: Scheduler ()
-cursorMain = beforeRender $ bufDo displayCursor
+cursorMain = beforeRender $ bufDo displayRange

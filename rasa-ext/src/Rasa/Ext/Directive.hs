@@ -13,13 +13,13 @@ module Rasa.Ext.Directive
   , prevBuf
 
   -- * Buffer Actions
-  , range
   , overRange
   , replaceRange
   , deleteRange
   , insertAt
-  , toCoord
-  , toOffset
+  , rangeSize
+  -- , toCoord
+  -- , toOffset
   ) where
 
 import Rasa.Text
@@ -95,8 +95,14 @@ deleteRange r = rope.range r.asText .= ""
 replaceRange :: Range -> T.Text -> BufAction ()
 replaceRange r txt = rope.range r.asText .= txt
 
-insertAt :: Offset -> T.Text -> BufAction ()
-insertAt o txt = rope.range (Range o o).asText .= txt
+insertAt :: Cursor -> T.Text -> BufAction ()
+insertAt c txt = rope.range (Range c c).asText .= txt
 
 overRange :: Range -> (T.Text -> T.Text) -> BufAction ()
 overRange r f = rope.range r.asText %= f
+
+rangeSize :: Range -> BufAction Int
+rangeSize r = do
+  txt <- use rope
+  let (Offset s, Offset e) = asOffsets txt r
+  return (e - s)
