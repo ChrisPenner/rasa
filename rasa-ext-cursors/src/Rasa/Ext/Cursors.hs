@@ -7,8 +7,10 @@ module Rasa.Ext.Cursors
   , findPrev
   , findPrevFrom
   , eachRange
-  , moveRanges
   , ranges
+  , rangeDo
+  , rangeDo_
+  , overRanges
   ) where
 
 import Rasa.Ext.Cursors.Base

@@ -60,16 +60,16 @@ global _ _ = return ()
 
 insert :: Event -> BufAction ()
 insert Esc = setMode Normal
-insert BS = moveRanges (Left . Offset $ (-1)) >> delete
+insert BS = overRanges (moveRangeByN (-1)) >> delete
 insert Enter = insertText "\n"
 -- insert (Keypress 'w' [Ctrl]) = killWord
-insert (Keypress c _) = insertText (T.singleton c) >> moveRanges (Left . Offset $ 1)
+insert (Keypress c _) = insertText (T.singleton c) >> overRanges (moveRangeByN 1)
 insert _ = return ()
 
 normal :: Event -> BufAction ()
 normal (Keypress 'i' _) = setMode Insert
 normal (Keypress 'I' _) = startOfLine >> setMode Insert
-normal (Keypress 'a' _) = moveRanges (Left . Offset $ 1) >> setMode Insert
+normal (Keypress 'a' _) = overRanges (moveRangeByN 1) >> setMode Insert
 normal (Keypress 'A' _) = endOfLine >> setMode Insert
 normal (Keypress '0' _) = startOfLine
 normal (Keypress '$' _) = endOfLine
@@ -79,15 +79,15 @@ normal (Keypress 'G' _) = do
   txt <- use text
   ranges .= [Range (Left . Offset $ T.length txt - 1) (Left . Offset $ T.length txt)]
 
-normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveRanges (Left . Offset $ 1) >> setMode Insert
+normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> overRanges (moveRangeByN 1) >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
-normal (Keypress 'h' _) = moveRanges (Left . Offset $ (-1))
+normal (Keypress 'h' _) = overRanges $ moveRangeByN (-1)
 -- normal (Keypress 'H' _) = rangeDo_ $ addRange . addCoord (Coord 0 (-1))
-normal (Keypress 'l' _) = moveRanges (Left . Offset $ 1)
+normal (Keypress 'l' _) = overRanges $ moveRangeByN 1
 -- normal (Keypress 'L' _) = rangeDo_ $ addRange . addCoord (Coord 0 1)
-normal (Keypress 'k' _) = moveRanges $ Right $ Coord (-1) 0
+normal (Keypress 'k' _) = overRanges $ moveRangeByC (Coord (-1) 0)
 -- normal (Keypress 'K' _) = rangeDo_ $ addRange . addCoord (Coord (-1) 0)
-normal (Keypress 'j' _) = moveRanges $ Right $ Coord 1 0
+normal (Keypress 'j' _) = overRanges $ moveRangeByC (Coord 1 0)
 -- normal (Keypress 'J' _) = rangeDo_ $ addRange . addCoord (Coord 1 0)
 -- normal (Keypress 'w' _) = findNext " " >> eachRange += Coord 0 1
 -- normal (Keypress 'W' _) = offsetsDo_ addCursor
@@ -102,10 +102,10 @@ normal (Keypress 'j' _) = moveRanges $ Right $ Coord 1 0
 --       newOffset <- findOffsetPrev " " (o - 1)
 --       addCursorOffsetAt newOffset
 
-normal (Keypress 'b' _) = moveRanges (Left . Offset $ (-1)) >> findPrev " "
+normal (Keypress 'b' _) = overRanges (moveRangeByN (-1)) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
 normal (Keypress 'F' _) = findPrev "f"
-normal (Keypress 'X' _) = moveRanges (Left . Offset $ (-1)) >> delete
+normal (Keypress 'X' _) = overRanges (moveRangeByN (-1)) >> delete
 normal (Keypress 'x' _) = delete
 normal (Keypress 's' [Ctrl]) = save
 normal (Keypress ';' _) = ranges <~ use (ranges.reversed.to (take 1))

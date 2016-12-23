@@ -88,7 +88,15 @@ module Rasa.Ext
   , clamp
   , Range(..)
   , moveRange
+  , moveRange'
+  , moveRangeByN
+  , moveRangeByN'
+  , moveRangeByC
+  , moveRangeByC'
   , moveCursor
+  , moveCursor'
+  , moveCursorByN
+  , moveCursorByN'
   ) where
 
 -- * Performing Actions

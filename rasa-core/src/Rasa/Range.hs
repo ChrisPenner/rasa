@@ -14,7 +14,17 @@ module Rasa.Range
   , Range(..)
   , range
   , moveRange
+  , moveRange'
+  , moveRangeByN
+  , moveRangeByN'
+  , moveRangeByC
+  , moveRangeByC'
   , moveCursor
+  , moveCursor'
+  , moveCursorByN
+  , moveCursorByN'
+  , moveCursorByC
+  , moveCursorByC'
   , Span(..)
   , combineSpans
   , clamp
@@ -24,6 +34,8 @@ import Control.Lens
 import Data.Maybe
 import Data.Monoid
 import Data.List
+import Rasa.Action
+import Rasa.Buffer
 import qualified Yi.Rope as Y
 
 
@@ -66,14 +78,54 @@ asCoords txt (Range start end) = (cursorToCoord txt start, cursorToCoord txt end
 asOffsets :: Y.YiString -> Range -> (Offset, Offset)
 asOffsets txt (Range start end) = (cursorToOffset txt start, cursorToOffset txt end)
 
-moveRange :: Y.YiString -> Cursor -> Range -> Range
-moveRange txt amt (Range start end) = 
-  Range (moveCursor txt amt start) (moveCursor txt amt end)
+moveRange :: Cursor -> Range -> BufAction Range
+moveRange amt r = do
+  txt <- use rope
+  return $ moveRange' txt amt r
 
-moveCursor :: Y.YiString -> Cursor -> Cursor -> Cursor
-moveCursor txt amt cur = let Offset amt' = cursorToOffset txt amt
-                             Offset cur' = cursorToOffset txt cur
-                          in Left . Offset $ amt' + cur'
+moveRange' :: Y.YiString -> Cursor -> Range -> Range
+moveRange' txt amt (Range start end) =
+  Range (moveCursor' txt amt start) (moveCursor' txt amt end)
+
+moveRangeByN :: Int -> Range -> BufAction Range
+moveRangeByN amt r = do
+  txt <- use rope
+  return $ moveRange' txt (Left . Offset $ amt) r
+
+moveRangeByN' :: Y.YiString -> Int -> Range -> Range
+moveRangeByN' txt amt = moveRange' txt (Left . Offset $ amt)
+
+moveRangeByC :: Coord -> Range -> BufAction Range
+moveRangeByC amt r = do
+  txt <- use rope
+  return $ moveRange' txt (Right amt) r
+
+moveRangeByC' :: Y.YiString -> Coord -> Range -> Range
+moveRangeByC' txt amt = moveRange' txt (Right amt)
+
+moveCursor' :: Y.YiString -> Cursor -> Cursor -> Cursor
+moveCursor' txt amt cur = let Offset amt' = cursorToOffset txt amt
+                           in moveCursorByN' txt amt' cur
+
+moveCursorByN :: Int -> Cursor -> BufAction Cursor
+moveCursorByN amt cur = do
+  txt <- use rope
+  return $ moveCursorByN' txt amt cur
+
+moveCursorByN' :: Y.YiString -> Int -> Cursor -> Cursor
+moveCursorByN' txt amt cur = let Offset cur' = cursorToOffset txt cur
+                              in Left . Offset $ amt + cur'
+
+moveCursorByC :: Coord -> Cursor -> BufAction Cursor
+moveCursorByC amt = moveCursor (Right amt)
+
+moveCursorByC' :: Y.YiString -> Coord -> Cursor -> Cursor
+moveCursorByC' txt amt = moveCursor' txt (Right amt)
+
+moveCursor :: Cursor -> Cursor -> BufAction Cursor
+moveCursor amt cur = do
+  txt <- use rope
+  return $ moveCursor' txt amt cur
 
 instance Num Coord where
   Coord row col + Coord row' col' = Coord (row + row') (col + col')
@@ -86,10 +138,10 @@ instance Num Coord where
 range :: Range -> Lens' Y.YiString  Y.YiString
 range r = lens getter setter
   where
-    getter txt = 
+    getter txt =
       let (Offset start, Offset end) = asOffsets txt r
        in Y.drop start . Y.take end $ txt
-    setter old new = 
+    setter old new =
       let (Offset start, Offset end) = asOffsets old r
           prefix = Y.take start old
           suffix = Y.drop end old

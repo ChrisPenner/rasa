@@ -22,7 +22,7 @@ moveSameLineRangesBy (Range _ end) amt = do
   res <- rangeDo $ \r@(Range s _) -> do
     let startCrd = cursorToCoord txt s
     if crdGT endCrd startCrd
-       then return $ moveRange txt amt r
+       then moveRange amt r
        else return r
   ranges .= res
     where crdGT (Coord row col) (Coord row' col') =
@@ -44,10 +44,10 @@ insertText txt = rangeDo_ $ \r@(Range s _) -> do
 
 findNext :: T.Text -> BufAction ()
 findNext pat = do
-  txt <- use rope
   res <- rangeDo $ \(Range _ e) -> do
     off <- findNextFrom pat e
-    return $ Range off (moveCursor txt (Left . Offset $ 1) off)
+    end <- moveCursorByN 1 off
+    return $ Range off end
   ranges .= res
 
 findNextFrom :: T.Text -> Cursor -> BufAction Cursor
@@ -59,10 +59,10 @@ findNextFrom pat c = do
 
 findPrev :: T.Text -> BufAction ()
 findPrev pat = do
-  txt <- use rope
   res <- rangeDo $ \(Range _ e) -> do
     off <- findPrevFrom pat e
-    return $ Range off (moveCursor txt (Left . Offset $ 1) off)
+    end <- moveCursorByN 1 off
+    return $ Range off end
   ranges .= res
 
 findPrevFrom :: T.Text -> Cursor -> BufAction Cursor

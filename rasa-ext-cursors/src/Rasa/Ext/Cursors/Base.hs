@@ -10,7 +10,7 @@ module Rasa.Ext.Cursors.Base
   , ranges
   , displayRange
   , eachRange
-  , moveRanges
+  , overRanges
   -- , offsets
   -- , coords
   -- , eachCoord
@@ -113,7 +113,5 @@ displayRange = rangeDo_ setStyle
     setStyle :: Range -> BufAction ()
     setStyle r = addStyle r (flair ReverseVideo)
 
-moveRanges :: Cursor -> BufAction ()
-moveRanges n = do
-  txt <- use rope
-  eachRange %= moveRange txt n
+overRanges :: (Range -> BufAction Range) -> BufAction ()
+overRanges f = ranges <~ rangeDo f
