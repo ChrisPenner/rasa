@@ -16,6 +16,7 @@ import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
 import qualified Data.Text as T
+import qualified Yi.Rope as Y
 
 data VimSt
   = Normal
@@ -74,11 +75,11 @@ normal (Keypress 'a' _) = moveRangesByN 1 >> setMode Insert
 normal (Keypress 'A' _) = endOfLine >> setMode Insert
 normal (Keypress '0' _) = startOfLine
 normal (Keypress '$' _) = endOfLine
-normal (Keypress 'g' _) = ranges .= [Range (Left . Offset $ 0) (Left . Offset $ 1)]
+normal (Keypress 'g' _) = ranges .= [Range (Coord 0 0) (Coord 0 1)]
 
 normal (Keypress 'G' _) = do
-  txt <- use text
-  ranges .= [Range (Left . Offset $ T.length txt - 1) (Left . Offset $ T.length txt)]
+  txt <- use rope
+  ranges .= [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
 normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveRangesByN 1 >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
@@ -89,14 +90,14 @@ normal (Keypress 'l' _) = moveRangesByN 1
 normal (Keypress 'k' _) = moveRangesByC $ Coord (-1) 0
 -- normal (Keypress 'K' _) = rangeDo_ $ addRange . addCoord (Coord (-1) 0)
 normal (Keypress 'j' _) = moveRangesByC $ Coord 1 0
-normal (Keypress 'J' _) = rangeDo_ $ moveRangeByC (Coord 1 0) >=> addRange
+normal (Keypress 'J' _) = rangeDo_ $ return . moveRange (Coord 1 0) >=> addRange
 normal (Keypress 'w' _) = findNext " " >> moveRangesByC (Coord 0 1)
 normal (Keypress 'W' _) = rangeDo_ addCursor
   where
     addCursor (Range _ end) = do
       next <- findNextFrom " " end
-      newStart <- moveCursorByN 1 next
-      newEnd <- moveCursorByN 1 newStart
+      let newStart = moveCursorByN 1 next
+          newEnd = moveCursorByN 1 newStart
       addRange $ Range newStart newEnd
 
 -- normal (Keypress 'B' _) = offsetsDo_ addCursor

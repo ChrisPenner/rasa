@@ -83,7 +83,7 @@ deleteRange r = rope.range r.asText .= ""
 replaceRange :: Range -> T.Text -> BufAction ()
 replaceRange r txt = rope.range r.asText .= txt
 
-insertAt :: Cursor -> T.Text -> BufAction ()
+insertAt :: Coord -> T.Text -> BufAction ()
 insertAt c txt = rope.range (Range c c).asText .= txt
 
 overRange :: Range -> (T.Text -> T.Text) -> BufAction ()

@@ -29,14 +29,11 @@ makeLenses ''Cursors
 
 instance Default Cursors where
   def = Cursors {
-  _cursors=[Range (Right $ Coord 0 0) (Right $ Coord 0 1)]
+  _cursors=[Range (Coord 0 0) (Coord 0 1)]
 }
 
 cleanRanges :: Y.YiString -> [Range] -> [Range]
-cleanRanges txt = fmap (clampRange txt) . reverse . nub . sortOn getEnd
-  where
-    getEnd (Range _ end) = let Offset o = cursorToOffset txt end
-                            in o
+cleanRanges txt = fmap (clampRange txt) . reverse . nub . sort
 
 ranges :: Lens' Buffer [Range]
 ranges = lens getter setter

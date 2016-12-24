@@ -68,12 +68,8 @@ module Rasa.Ext
    -- * Ranges
   , Coord(..)
   , Offset(..)
-  , Cursor
   , asCoord
   , asOffsets
-  , asCoords
-  , cursorToOffset
-  , cursorToCoord
   , clampCoord
   , clampRange
    -- * Useful Types
@@ -87,15 +83,8 @@ module Rasa.Ext
   , clamp
   , Range(..)
   , moveRange
-  , moveRange'
   , moveRangeByN
-  , moveRangeByN'
-  , moveRangeByC
-  , moveRangeByC'
-  , moveCursor
-  , moveCursor'
   , moveCursorByN
-  , moveCursorByN'
   ) where
 
 -- * Performing Actions

@@ -22,6 +22,7 @@ library
                      , rasa-ext-cursors
                      , rasa-ext-status-bar
                      , text
+                     , yi-rope
                      , text-lens
                      , data-default
                      , lens

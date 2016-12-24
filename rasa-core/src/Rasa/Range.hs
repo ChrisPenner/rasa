@@ -2,30 +2,16 @@
 module Rasa.Range
   ( Coord(..)
   , Offset(..)
-  , Cursor
   , asCoord
   , asOffsets
-  , cursorToOffset
-  , cursorToCoord
-  , asCoords
   , clampCoord
   , clampRange
   , Range(..)
   , range
-  , cRange
-  , oRange
   , moveRange
-  , moveRange'
   , moveRangeByN
-  , moveRangeByN'
-  , moveRangeByC
-  , moveRangeByC'
-  , moveCursor
-  , moveCursor'
   , moveCursorByN
-  , moveCursorByN'
   , moveCursorByC
-  , moveCursorByC'
   , Span(..)
   , combineSpans
   , clamp
@@ -35,16 +21,17 @@ import Control.Lens
 import Data.Maybe
 import Data.Monoid
 import Data.List
-import Rasa.Action
-import Rasa.Buffer
 import qualified Yi.Rope as Y
 
 
 data Range =
-  Range Cursor Cursor
+  Range Coord Coord
   deriving (Show, Eq)
 
-type Cursor = Either Offset Coord
+instance Ord Range where
+  Range start end <= Range start' end' 
+    | end == end' = start <= start'
+    | otherwise = end <= end'
 
 -- | (Coord Row Column) represents a char in a block of text. (zero indexed)
 -- e.g. Coord 0 0 is the first character in the text,
@@ -60,80 +47,26 @@ instance Ord Coord where
     | a > a' = False
     | otherwise = b <= b'
 
-
 newtype Offset =
   Offset Int
   deriving (Show, Eq)
 
-cRange :: Coord -> Coord -> Range
-cRange start end = Range (Right start) (Right end)
-
-oRange :: Offset -> Offset -> Range
-oRange start end = Range (Left start) (Left end)
-
-cursorToCoord :: Y.YiString -> Cursor -> Coord
-cursorToCoord txt (Left o) = o^.asCoord txt
-cursorToCoord _ (Right c) = c
-
-cursorToOffset :: Y.YiString -> Cursor -> Offset
-cursorToOffset _ (Left o) = o
-cursorToOffset txt (Right c) = c^.from (asCoord txt)
-
-asCoords :: Y.YiString -> Range -> (Coord, Coord)
-asCoords txt (Range start end) = (cursorToCoord txt start, cursorToCoord txt end)
-
 asOffsets :: Y.YiString -> Range -> (Offset, Offset)
-asOffsets txt (Range start end) = (cursorToOffset txt start, cursorToOffset txt end)
+asOffsets txt (Range start end) = (start^.from (asCoord txt), end^.from (asCoord txt))
 
-moveRange :: Cursor -> Range -> BufAction Range
-moveRange amt r = do
-  txt <- use rope
-  return $ moveRange' txt amt r
+moveRange :: Coord -> Range -> Range
+moveRange amt (Range start end) =
+  Range (moveCursorByC amt start) (moveCursorByC amt end)
 
-moveRange' :: Y.YiString -> Cursor -> Range -> Range
-moveRange' txt amt (Range start end) =
-  Range (moveCursor' txt amt start) (moveCursor' txt amt end)
+moveRangeByN :: Int -> Range -> Range
+moveRangeByN amt (Range start end) =
+  Range (moveCursorByN amt start) (moveCursorByN amt end)
 
-moveRangeByN :: Int -> Range -> BufAction Range
-moveRangeByN amt r = do
-  txt <- use rope
-  return $ moveRange' txt (Left . Offset $ amt) r
+moveCursorByN :: Int -> Coord -> Coord
+moveCursorByN amt (Coord row col) = Coord row (col + amt)
 
-moveRangeByN' :: Y.YiString -> Int -> Range -> Range
-moveRangeByN' txt amt = moveRange' txt (Left . Offset $ amt)
-
-moveRangeByC :: Coord -> Range -> BufAction Range
-moveRangeByC amt r = do
-  txt <- use rope
-  return $ moveRange' txt (Right amt) r
-
-moveRangeByC' :: Y.YiString -> Coord -> Range -> Range
-moveRangeByC' txt amt = moveRange' txt (Right amt)
-
-moveCursor' :: Y.YiString -> Cursor -> Cursor -> Cursor
-moveCursor' txt (Left (Offset amt)) = moveCursorByN' txt amt
-moveCursor' txt (Right amt) = moveCursorByC' txt amt
-
-moveCursorByN :: Int -> Cursor -> BufAction Cursor
-moveCursorByN amt cur = do
-  txt <- use rope
-  return $ moveCursorByN' txt amt cur
-
-moveCursorByN' :: Y.YiString -> Int -> Cursor -> Cursor
-moveCursorByN' txt amt cur = let Offset cur' = cursorToOffset txt cur
-                              in Left . Offset $ amt + cur'
-
-moveCursorByC :: Coord -> Cursor -> BufAction Cursor
-moveCursorByC amt = moveCursor (Right amt)
-
-moveCursorByC' :: Y.YiString -> Coord -> Cursor -> Cursor
-moveCursorByC' txt (Coord row col) cur = let (Coord row' col') = cursorToCoord txt cur
-                                          in (Right $ Coord (row + row') (col + col'))
-
-moveCursor :: Cursor -> Cursor -> BufAction Cursor
-moveCursor amt cur = do
-  txt <- use rope
-  return $ moveCursor' txt amt cur
+moveCursorByC :: Coord -> Coord -> Coord
+moveCursorByC (Coord row col) (Coord row' col') = Coord (row + row') (col + col')
 
 instance Num Coord where
   Coord row col + Coord row' col' = Coord (row + row') (col + col')
@@ -171,7 +104,6 @@ toCoord txt (Offset offset) = Coord numRows numColumns
 
 
 clampCoord :: Y.YiString -> Coord -> Coord
-clampCoord "" _ = Coord 0 0
 clampCoord txt (Coord row col) =
   Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
   where
@@ -180,12 +112,8 @@ clampCoord txt (Coord row col) =
 
 
 clampRange :: Y.YiString -> Range -> Range
-clampRange txt r =
-  Range (Left . Offset $ clamp 0 mx start) (Left . Offset $ clamp 0 mx end)
-  where
-    mx = Y.length txt
-    (Offset start, Offset end) = asOffsets txt r
-
+clampRange txt (Range start end) =
+  Range (clampCoord txt start) (clampCoord txt end)
 
 -- | A span applies some Monoid over the given range from start up to (not including) end
 data Span a = Span
