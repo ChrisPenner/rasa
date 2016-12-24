@@ -11,6 +11,7 @@ import Rasa.Ext.StatusBar
 import Rasa.Ext.Scheduler
 
 import Control.Lens
+import Control.Monad
 import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
@@ -60,16 +61,16 @@ global _ _ = return ()
 
 insert :: Event -> BufAction ()
 insert Esc = setMode Normal
-insert BS = overRanges (moveRangeByN (-1)) >> delete
+insert BS = moveRangesByN (-1) >> delete
 insert Enter = insertText "\n"
 -- insert (Keypress 'w' [Ctrl]) = killWord
-insert (Keypress c _) = insertText (T.singleton c) >> overRanges (moveRangeByN 1)
+insert (Keypress c _) = insertText (T.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
 normal :: Event -> BufAction ()
 normal (Keypress 'i' _) = setMode Insert
 normal (Keypress 'I' _) = startOfLine >> setMode Insert
-normal (Keypress 'a' _) = overRanges (moveRangeByN 1) >> setMode Insert
+normal (Keypress 'a' _) = moveRangesByN 1 >> setMode Insert
 normal (Keypress 'A' _) = endOfLine >> setMode Insert
 normal (Keypress '0' _) = startOfLine
 normal (Keypress '$' _) = endOfLine
@@ -79,22 +80,24 @@ normal (Keypress 'G' _) = do
   txt <- use text
   ranges .= [Range (Left . Offset $ T.length txt - 1) (Left . Offset $ T.length txt)]
 
-normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> overRanges (moveRangeByN 1) >> setMode Insert
+normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveRangesByN 1 >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
-normal (Keypress 'h' _) = overRanges $ moveRangeByN (-1)
+normal (Keypress 'h' _) = moveRangesByN (-1)
 -- normal (Keypress 'H' _) = rangeDo_ $ addRange . addCoord (Coord 0 (-1))
-normal (Keypress 'l' _) = overRanges $ moveRangeByN 1
+normal (Keypress 'l' _) = moveRangesByN 1
 -- normal (Keypress 'L' _) = rangeDo_ $ addRange . addCoord (Coord 0 1)
-normal (Keypress 'k' _) = overRanges $ moveRangeByC (Coord (-1) 0)
+normal (Keypress 'k' _) = moveRangesByC $ Coord (-1) 0
 -- normal (Keypress 'K' _) = rangeDo_ $ addRange . addCoord (Coord (-1) 0)
-normal (Keypress 'j' _) = overRanges $ moveRangeByC (Coord 1 0)
--- normal (Keypress 'J' _) = rangeDo_ $ addRange . addCoord (Coord 1 0)
--- normal (Keypress 'w' _) = findNext " " >> eachRange += Coord 0 1
--- normal (Keypress 'W' _) = offsetsDo_ addCursor
-  -- where
-    -- addCursor o = do
-      -- newOffset <- findOffsetNext " " o
-      -- addCursorOffsetAt (newOffset + 1)
+normal (Keypress 'j' _) = moveRangesByC $ Coord 1 0
+normal (Keypress 'J' _) = rangeDo_ $ moveRangeByC (Coord 1 0) >=> addRange
+normal (Keypress 'w' _) = findNext " " >> moveRangesByC (Coord 0 1)
+normal (Keypress 'W' _) = rangeDo_ addCursor
+  where
+    addCursor (Range _ end) = do
+      next <- findNextFrom " " end
+      newStart <- moveCursorByN 1 next
+      newEnd <- moveCursorByN 1 newStart
+      addRange $ Range newStart newEnd
 
 -- normal (Keypress 'B' _) = offsetsDo_ addCursor
 --   where
@@ -102,10 +105,10 @@ normal (Keypress 'j' _) = overRanges $ moveRangeByC (Coord 1 0)
 --       newOffset <- findOffsetPrev " " (o - 1)
 --       addCursorOffsetAt newOffset
 
-normal (Keypress 'b' _) = overRanges (moveRangeByN (-1)) >> findPrev " "
+normal (Keypress 'b' _) = moveRangesByN (-1) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
 normal (Keypress 'F' _) = findPrev "f"
-normal (Keypress 'X' _) = overRanges (moveRangeByN (-1)) >> delete
+normal (Keypress 'X' _) = moveRangesByN (-1) >> delete
 normal (Keypress 'x' _) = delete
 normal (Keypress 's' [Ctrl]) = save
 normal (Keypress ';' _) = ranges <~ use (ranges.reversed.to (take 1))

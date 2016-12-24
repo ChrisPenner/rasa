@@ -8,11 +8,12 @@ module Rasa.Range
   , cursorToOffset
   , cursorToCoord
   , asCoords
-  , addCoord
   , clampCoord
   , clampRange
   , Range(..)
   , range
+  , cRange
+  , oRange
   , moveRange
   , moveRange'
   , moveRangeByN
@@ -64,6 +65,12 @@ newtype Offset =
   Offset Int
   deriving (Show, Eq)
 
+cRange :: Coord -> Coord -> Range
+cRange start end = Range (Right start) (Right end)
+
+oRange :: Offset -> Offset -> Range
+oRange start end = Range (Left start) (Left end)
+
 cursorToCoord :: Y.YiString -> Cursor -> Coord
 cursorToCoord txt (Left o) = o^.asCoord txt
 cursorToCoord _ (Right c) = c
@@ -104,8 +111,8 @@ moveRangeByC' :: Y.YiString -> Coord -> Range -> Range
 moveRangeByC' txt amt = moveRange' txt (Right amt)
 
 moveCursor' :: Y.YiString -> Cursor -> Cursor -> Cursor
-moveCursor' txt amt cur = let Offset amt' = cursorToOffset txt amt
-                           in moveCursorByN' txt amt' cur
+moveCursor' txt (Left (Offset amt)) = moveCursorByN' txt amt
+moveCursor' txt (Right amt) = moveCursorByC' txt amt
 
 moveCursorByN :: Int -> Cursor -> BufAction Cursor
 moveCursorByN amt cur = do
@@ -120,7 +127,8 @@ moveCursorByC :: Coord -> Cursor -> BufAction Cursor
 moveCursorByC amt = moveCursor (Right amt)
 
 moveCursorByC' :: Y.YiString -> Coord -> Cursor -> Cursor
-moveCursorByC' txt amt = moveCursor' txt (Right amt)
+moveCursorByC' txt (Coord row col) cur = let (Coord row' col') = cursorToCoord txt cur
+                                          in (Right $ Coord (row + row') (col + col'))
 
 moveCursor :: Cursor -> Cursor -> BufAction Cursor
 moveCursor amt cur = do
@@ -161,8 +169,6 @@ toCoord txt (Offset offset) = Coord numRows numColumns
     numRows = Y.countNewLines . Y.take offset $ txt
     numColumns = (offset -) . Y.length . Y.concat . take numRows . Y.lines' $ txt
 
-addCoord :: Coord -> Coord -> Coord
-addCoord (Coord a b) (Coord a' b') = Coord (a + a') (b + b')
 
 clampCoord :: Y.YiString -> Coord -> Coord
 clampCoord "" _ = Coord 0 0

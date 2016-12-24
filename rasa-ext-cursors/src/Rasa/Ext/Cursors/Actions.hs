@@ -5,6 +5,8 @@ module Rasa.Ext.Cursors.Actions
   , findPrev
   , findNextFrom
   , findPrevFrom
+  , moveRangesByN
+  , moveRangesByC
   ) where
 
 import qualified Data.Text as T
@@ -18,24 +20,19 @@ import Rasa.Ext.Cursors.Base
 moveSameLineRangesBy :: Range -> Cursor -> BufAction ()
 moveSameLineRangesBy (Range _ end) amt = do
   txt <- use rope
-  let endCrd = cursorToCoord txt end
-  res <- rangeDo $ \r@(Range s _) -> do
-    let startCrd = cursorToCoord txt s
-    if crdGT endCrd startCrd
-       then moveRange amt r
-       else return r
-  ranges .= res
-    where crdGT (Coord row col) (Coord row' col') =
-            row == row' && col' > col
-
--- deleteChar :: BufAction ()
--- deleteChar = deleteN 1
+  let Coord endRow endCol = cursorToCoord txt end
+      moveInLine r@(Range s _) = do
+        let Coord startRow startCol = cursorToCoord txt s
+        if endRow == startRow && startCol > endCol
+            then moveRange amt r
+            else return r
+  ranges <~ rangeDo moveInLine
 
 delete :: BufAction ()
 delete = rangeDo_ $ \r -> do
   deleteRange r
   amt <- rangeSize r
-  moveSameLineRangesBy r (Left . Offset $ amt)
+  moveSameLineRangesBy r (Left . Offset $ (-amt))
 
 insertText :: T.Text -> BufAction ()
 insertText txt = rangeDo_ $ \r@(Range s _) -> do
@@ -71,3 +68,9 @@ findPrevFrom pat c = do
   let Offset o = cursorToOffset txt c
   distance <- use (text . before o . tillPrev pat . to T.length .to negate)
   return (Left . Offset $ distance + o)
+
+moveRangesByN :: Int -> BufAction ()
+moveRangesByN n = overRanges $ moveRangeByN n
+
+moveRangesByC :: Coord -> BufAction ()
+moveRangesByC c = overRanges $ moveRangeByC c

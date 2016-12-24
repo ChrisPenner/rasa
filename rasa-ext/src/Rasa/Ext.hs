@@ -76,7 +76,6 @@ module Rasa.Ext
   , cursorToCoord
   , clampCoord
   , clampRange
-  , addCoord
    -- * Useful Types
   , Event(..)
   , Mod(..)

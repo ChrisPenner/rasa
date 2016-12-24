@@ -11,6 +11,9 @@ module Rasa.Ext.Cursors
   , rangeDo
   , rangeDo_
   , overRanges
+  , moveRangesByN
+  , moveRangesByC
+  , addRange
   ) where
 
 import Rasa.Ext.Cursors.Base

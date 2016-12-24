@@ -18,8 +18,6 @@ module Rasa.Ext.Directive
   , deleteRange
   , insertAt
   , rangeSize
-  -- , toCoord
-  -- , toOffset
   ) where
 
 import Rasa.Text
@@ -78,16 +76,6 @@ prevBuf = do
   numBuffers <- use (buffers.to length)
   focused %= (`mod` numBuffers) . subtract 1
 
-
-toCoord :: Offset -> BufAction Coord
-toCoord o = do
-  txt <- use rope
-  return $ o^.asCoord txt
-
-toOffset :: Coord -> BufAction Offset
-toOffset c = do
-  txt <- use rope
-  return $ c^.from (asCoord txt)
 
 deleteRange :: Range -> BufAction ()
 deleteRange r = rope.range r.asText .= ""
