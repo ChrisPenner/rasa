@@ -28,8 +28,7 @@ moveSameLineRangesBy (Range _ (Coord endRow endCol)) amt = do
 delete :: BufAction ()
 delete = rangeDo_ $ \r -> do
   deleteRange r
-  amt <- rangeSize r
-  moveSameLineRangesBy r (Coord 0 (-amt))
+  moveSameLineRangesBy r (negate $ sizeOfR r)
 
 insertText :: T.Text -> BufAction ()
 insertText txt = rangeDo_ $ \r@(Range s _) -> do
@@ -46,10 +45,8 @@ findNext pat = do
 
 findNextFrom :: T.Text -> Coord -> BufAction Coord
 findNextFrom pat c = do
-  txt <- use rope
-  let Offset o = c^.from (asCoord txt)
-  distance <- use (text . after o . tillNext pat . to T.length)
-  return ((Offset $ distance + o)^.asCoord txt)
+  distance <- use (rope . afterC c . asText . tillNext pat . from asText . to sizeOf)
+  return (distance + c)
 
 findPrev :: T.Text -> BufAction ()
 findPrev pat = do

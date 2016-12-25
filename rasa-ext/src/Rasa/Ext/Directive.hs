@@ -17,7 +17,7 @@ module Rasa.Ext.Directive
   , replaceRange
   , deleteRange
   , insertAt
-  , rangeSize
+  , sizeOf
   ) where
 
 import Rasa.Text
@@ -76,7 +76,6 @@ prevBuf = do
   numBuffers <- use (buffers.to length)
   focused %= (`mod` numBuffers) . subtract 1
 
-
 deleteRange :: Range -> BufAction ()
 deleteRange r = rope.range r.asText .= ""
 
@@ -89,8 +88,3 @@ insertAt c txt = rope.range (Range c c).asText .= txt
 overRange :: Range -> (T.Text -> T.Text) -> BufAction ()
 overRange r f = rope.range r.asText %= f
 
-rangeSize :: Range -> BufAction Int
-rangeSize r = do
-  txt <- use rope
-  let (Offset s, Offset e) = asOffsets txt r
-  return (e - s)

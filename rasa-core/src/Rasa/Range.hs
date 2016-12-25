@@ -3,24 +3,28 @@ module Rasa.Range
   ( Coord(..)
   , Offset(..)
   , asCoord
-  , asOffsets
   , clampCoord
   , clampRange
   , Range(..)
   , range
+  , sizeOf
+  , sizeOfR
   , moveRange
   , moveRangeByN
   , moveCursorByN
-  , moveCursorByC
+  , moveCursor
   , Span(..)
   , combineSpans
   , clamp
+  , beforeC
+  , afterC
   ) where
 
 import Control.Lens
 import Data.Maybe
 import Data.Monoid
 import Data.List
+import Rasa.Text
 import qualified Yi.Rope as Y
 
 
@@ -51,12 +55,9 @@ newtype Offset =
   Offset Int
   deriving (Show, Eq)
 
-asOffsets :: Y.YiString -> Range -> (Offset, Offset)
-asOffsets txt (Range start end) = (start^.from (asCoord txt), end^.from (asCoord txt))
-
 moveRange :: Coord -> Range -> Range
 moveRange amt (Range start end) =
-  Range (moveCursorByC amt start) (moveCursorByC amt end)
+  Range (moveCursor amt start) (moveCursor amt end)
 
 moveRangeByN :: Int -> Range -> Range
 moveRangeByN amt (Range start end) =
@@ -65,8 +66,8 @@ moveRangeByN amt (Range start end) =
 moveCursorByN :: Int -> Coord -> Coord
 moveCursorByN amt (Coord row col) = Coord row (col + amt)
 
-moveCursorByC :: Coord -> Coord -> Coord
-moveCursorByC (Coord row col) (Coord row' col') = Coord (row + row') (col + col')
+moveCursor :: Coord -> Coord -> Coord
+moveCursor (Coord row col) (Coord row' col') = Coord (row + row') (col + col')
 
 instance Num Coord where
   Coord row col + Coord row' col' = Coord (row + row') (col + col')
@@ -75,18 +76,6 @@ instance Num Coord where
   abs (Coord row col) = Coord (abs row) (abs col)
   fromInteger i = Coord 0 (fromInteger i)
   signum (Coord row col) = Coord (signum row) (signum col)
-
-range :: Range -> Lens' Y.YiString  Y.YiString
-range r = lens getter setter
-  where
-    getter txt =
-      let (Offset start, Offset end) = asOffsets txt r
-       in Y.drop start . Y.take end $ txt
-    setter old new =
-      let (Offset start, Offset end) = asOffsets old r
-          prefix = Y.take start old
-          suffix = Y.drop end old
-       in prefix <> new <> suffix
 
 asCoord :: Y.YiString -> Iso' Offset Coord
 asCoord txt = iso (toCoord txt) (toOffset txt)
@@ -162,3 +151,35 @@ clamp mn mx n
   | n < mn = mn
   | n > mx = mx
   | otherwise = n
+
+sizeOfR :: Range -> Coord
+sizeOfR (Range start end) = end - start
+
+sizeOf :: Y.YiString -> Coord
+sizeOf txt = Coord (Y.countNewLines txt) (Y.length (txt ^. asLines . _last))
+
+range :: Range -> Lens' Y.YiString Y.YiString
+range (Range start end) = lens getter setter
+  where getter = view (beforeC end . afterC start)
+        setter old new = old & beforeC end . afterC start .~ new
+
+
+beforeC :: Coord -> Lens' Y.YiString  Y.YiString
+beforeC c@(Coord row col) = lens getter setter
+  where getter txt =
+          txt ^.. asLines . taking (row + 1) traverse
+              & _last %~ Y.take col
+              & Y.unlines
+
+        setter old new = let suffix = old ^. afterC c
+                          in new <> suffix
+
+afterC :: Coord -> Lens' Y.YiString  Y.YiString
+afterC c@(Coord row col) = lens getter setter
+  where getter txt =
+          txt ^.. asLines . dropping row traverse
+              & _head %~ Y.drop col
+              & Y.unlines
+
+        setter old new = let prefix = old ^. beforeC c
+                          in prefix <> new

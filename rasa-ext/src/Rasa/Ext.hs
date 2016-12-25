@@ -69,7 +69,6 @@ module Rasa.Ext
   , Coord(..)
   , Offset(..)
   , asCoord
-  , asOffsets
   , clampCoord
   , clampRange
    -- * Useful Types
@@ -82,6 +81,10 @@ module Rasa.Ext
   , rope
   , clamp
   , Range(..)
+  , range
+  , sizeOfR
+  , afterC
+  , beforeC
   , moveRange
   , moveRangeByN
   , moveCursorByN
