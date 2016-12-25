@@ -28,7 +28,10 @@
 module Rasa.Ext.Scheduler
   (
   -- * Lifecycle Hooks
-  S.Scheduler
+  Scheduler
+  , Hooks
+  , Hook
+  , getHook
   , onInit
   , beforeEvent
   , onEvent
@@ -36,57 +39,59 @@ module Rasa.Ext.Scheduler
   , onRender
   , afterRender
   , onExit
+  , addHook
   )
     where
 
-import qualified Rasa.Scheduler as S
+import Rasa.Scheduler
 import Rasa.Action
+import Rasa.Events
 
-import Control.Lens
-import Control.Monad.Writer
-import Data.Default
+-- import Control.Lens
+-- import Control.Monad.Writer
+-- import Data.Default
 
 
 -- | Registers an action to be performed during the Initialization phase.
 --
 -- This phase occurs exactly ONCE when the editor starts up.
-onInit :: Action () -> S.Scheduler ()
-onInit alt = tell (def & S.onInit <>~ [alt])
+onInit :: Action () -> Scheduler ()
+onInit action = addHook (const action :: Init -> Action ())
 
 -- | Registers an action to be performed BEFORE each event phase.
 --
 -- The 'events' ARE populated at this point.
 -- This is a good place to filter out events so they're not seen by other
 -- extensions.
-beforeEvent :: Action () -> S.Scheduler ()
-beforeEvent alt = tell (def & S.beforeEvent <>~ [alt])
+beforeEvent :: Action () -> Scheduler ()
+beforeEvent action = addHook (const action :: BeforeEvent -> Action ())
 
 -- | Registers an action to be performed during each event phase.
 --
 -- This is where most extensions should register to run.
-onEvent :: Action () -> S.Scheduler ()
-onEvent alt = tell (def & S.onEvent <>~ [alt])
+onEvent :: Action () -> Scheduler ()
+onEvent action = addHook (const action :: OnEvent -> Action ())
 
 -- | Registers an action to be performed BEFORE each render phase.
 --
 -- This is a good spot to add information useful to the renderer
 -- since all actions have been performed. Only cosmetic changes should
 -- occur during this phase.
-beforeRender :: Action () -> S.Scheduler ()
-beforeRender alt = tell (def & S.beforeRender <>~ [alt])
+beforeRender :: Action () -> Scheduler ()
+beforeRender action = addHook (const action :: BeforeRender -> Action ())
 
 -- | Registers an action to be performed during each render phase.
 --
 -- This phase should only be used by extensions which actually render something.
-onRender :: Action () -> S.Scheduler ()
-onRender alt = tell (def & S.onRender <>~ [alt])
+onRender :: Action () -> Scheduler ()
+onRender action = addHook (const action :: OnRender -> Action ())
 
 -- | Registers an action to be performed AFTER each render phase.
 --
 -- This is useful for cleaning up extension state that was registered for the
 -- renderer, but needs to be cleared before the next iteration.
-afterRender :: Action () -> S.Scheduler ()
-afterRender alt = tell (def & S.afterRender <>~ [alt])
+afterRender :: Action () -> Scheduler ()
+afterRender action = addHook (const action :: AfterRender -> Action ())
 
 -- | Registers an action to be performed during the exit phase.
 --
@@ -94,5 +99,5 @@ afterRender alt = tell (def & S.afterRender <>~ [alt])
 -- allows an opportunity to do clean-up, kill any processes you've started, or
 -- save any data before the editor terminates.
 
-onExit :: Action () -> S.Scheduler ()
-onExit alt = tell (def & S.onExit <>~ [alt])
+onExit :: Action () -> Scheduler ()
+onExit action = addHook (const action :: Exit -> Action ())

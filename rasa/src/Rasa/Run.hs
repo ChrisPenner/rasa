@@ -1,4 +1,4 @@
-{-# language ExistentialQuantification, Rank2Types #-}
+{-# language ExistentialQuantification, Rank2Types, ScopedTypeVariables #-}
 module Rasa.Run (rasa) where
 
 import Rasa.State
@@ -10,24 +10,38 @@ import Control.Lens
 import Control.Concurrent.Async
 import Control.Monad
 import Data.Default (def)
+import Data.Dynamic
+import Data.Foldable
+
+processAction :: forall a. Typeable a => Hooks -> a -> Action ()
+processAction hooks evt = traverse_ ($ evt) matchingHooks
+  where
+    matchingHooks :: [a -> Action ()]
+    matchingHooks = hooks^.at (typeRep (Proxy :: Proxy a))._Just.to getHook
+
+doThing :: Hooks ->  Action ()
+doThing hooks = do
+  evts <- use events
+  traverse_ (recurse.processAction hooks) evts
+    where recurse act = do
+            act
+            hasEvents <- use (events.to null)
+            when hasEvents (doThing hooks)
+
 
 rasa :: [Action [Event]] -> Scheduler () -> IO ()
 rasa eventListeners scheduler = do
-  initStore <- execAction def initialization
-  lastStore <- eventLoop eventListeners actions initStore
-  void $ execAction lastStore finalization
-    where schedule = getSchedule scheduler
-          actions = runSchedule schedule
-          initialization = sequence_ (schedule^.onInit)
-          finalization = sequence_ (schedule^.onExit)
+  initStore <- execAction (def & events .~ [Event Init]) mainAction
+  lastStore <- eventLoop eventListeners mainAction initStore
+  void $ execAction (lastStore & events .~ [Event Exit]) mainAction
+    where hooks = getHooks scheduler
+          mainAction = doThing hooks
 
 eventLoop ::  [Action [Event]] -> Action () -> Store -> IO Store
-eventLoop eventListeners actions store = do
-  newStore <- execAction store actions
+eventLoop eventListeners mainAction store = do
+  asyncEventListeners <- traverse (async.evalAction store) eventListeners
+  (_, nextEvents) <- waitAny asyncEventListeners
+  newStore <- execAction (store & events .~ [Event Exit]) mainAction
   if newStore^.exiting 
      then return newStore
-     else do
-       asyncEventListeners <- traverse (async.evalAction newStore) eventListeners
-       (_, nextEvents) <- waitAny asyncEventListeners
-       let withEvents = newStore & events .~ nextEvents
-       eventLoop eventListeners actions withEvents
+     else eventLoop eventListeners mainAction (newStore & events .~ nextEvents)

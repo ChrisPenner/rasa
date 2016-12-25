@@ -73,6 +73,9 @@ module Rasa.Ext
   , clampRange
    -- * Useful Types
   , Event(..)
+  , Keypress(..)
+  , Init(..)
+  , Exit(..)
   , Mod(..)
   , Buffer
   , Span(..)

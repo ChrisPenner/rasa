@@ -34,33 +34,31 @@ setMode vimst = bufExt .= vimst
 
 vim :: Scheduler ()
 vim = do
-  onEvent handleEvent
+  addHook handleEvent
   beforeRender setStatus
 
-handleEvent :: Action ()
-handleEvent = do
-  evts <- use events
+handleEvent :: Keypress -> Action ()
+handleEvent keypress = do
   focMode <- focusDo $ do
     mode <- getVim
     case mode of
-      Normal -> mapM_ normal evts
-      Insert -> mapM_ insert evts
+      Normal -> normal keypress
+      Insert -> insert keypress
     return mode
-
-  mapM_ (global focMode) evts
+  global focMode keypress
 
 setStatus :: Action ()
 setStatus = focusDo $ do
   mode <- getVim
   centerStatus $ show mode^.packed
 
-global :: VimSt -> Event -> Action ()
+global :: VimSt -> Keypress -> Action ()
 global Normal (Keypress '+' _) = nextBuf
 global Normal (Keypress '-' _) = prevBuf
 global _ (Keypress 'c' [Ctrl]) = exit
 global _ _ = return ()
 
-insert :: Event -> BufAction ()
+insert :: Keypress -> BufAction ()
 insert Esc = setMode Normal
 insert BS = moveRangesByN (-1) >> delete
 insert Enter = insertText "\n"
@@ -68,7 +66,7 @@ insert Enter = insertText "\n"
 insert (Keypress c _) = insertText (T.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
-normal :: Event -> BufAction ()
+normal :: Keypress -> BufAction ()
 normal (Keypress 'i' _) = setMode Insert
 normal (Keypress 'I' _) = startOfLine >> setMode Insert
 normal (Keypress 'a' _) = moveRangesByN 1 >> setMode Insert

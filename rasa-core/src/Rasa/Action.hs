@@ -1,10 +1,13 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, ExistentialQuantification #-}
 
 module Rasa.Action where
 
 import Control.Monad.State
 
+import Data.Dynamic
+import Control.Lens
 import Rasa.Buffer
+import Rasa.Events
 import Rasa.State
 
 -- | This is a monad-transformer stack for performing actions against the editor in response to 'Rasa.Event.Event's.
@@ -28,6 +31,9 @@ execAction store alt = execStateT (runAlt alt) store
 
 evalAction :: Store -> Action a -> IO a
 evalAction store alt = evalStateT (runAlt alt) store
+
+dispatchEvent :: forall a. (Typeable a, Show a) => a -> Action ()
+dispatchEvent evt = events <>= [Event evt]
 
 -- | This is a monad-transformer stack for performing actions on a specific buffer in response to events.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'

@@ -1,57 +1,45 @@
-{-# LANGUAGE TemplateHaskell, DeriveFunctor, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell, DeriveFunctor, GeneralizedNewtypeDeriving,
+   ExistentialQuantification, ScopedTypeVariables, FlexibleInstances #-}
+
+-- {-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings, ExistentialQuantification, ScopedTypeVariables,
+   -- GeneralizedNewtypeDeriving, FlexibleInstances,
+   -- StandaloneDeriving #-}
 
 module Rasa.Scheduler
   ( Scheduler(..)
-  , onInit
-  , beforeEvent
-  , onEvent
-  , beforeRender
-  , onRender
-  , afterRender
-  , onExit
-  , getSchedule
-  , runSchedule
+  , Hooks
+  , Hook
+  , getHooks
+  , addHook
+  , getHook
   ) where
 
-import Control.Monad.Writer
+import Control.Monad.State
 
 import Rasa.Action
-import Data.Default
 import Control.Lens
+import Data.Dynamic
+import Data.Map
+import Unsafe.Coerce
 
-data Schedule = Schedule
-  { _onInit :: [Action ()]
-  , _beforeEvent :: [Action ()]
-  , _onEvent :: [Action ()]
-  , _beforeRender :: [Action ()]
-  , _onRender :: [Action ()]
-  , _afterRender :: [Action ()]
-  , _onExit :: [Action ()]
-  }
+data Hook = forall a. Hook a
 
-makeLenses ''Schedule
+getHook :: forall a. Hook -> a
+getHook = coerce 
+  where
+    coerce :: Hook -> a
+    coerce (Hook x) = unsafeCoerce x
 
-instance Monoid Schedule where
-  mempty = Schedule mempty mempty mempty mempty mempty mempty mempty
-  Schedule a b c d e f g `mappend` Schedule a' b' c' d' e' f' g' =
-    Schedule (a <> a') (b <> b') (c <> c') (d <> d') (e <> e') (f <> f') (g <> g')
+type Hooks = Map TypeRep Hook
 
-instance Default Schedule where
-  def = Schedule mempty mempty mempty mempty mempty mempty mempty
+addHook :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
+addHook hook = at (typeRep (Proxy :: Proxy a)) ?= Hook hook
 
 -- | This is just a writer monad that allows registering Actions into
 -- specific lifecycle hooks.
 newtype Scheduler a = Scheduler
-  { runSched :: Writer Schedule a
-  } deriving (Functor, Applicative, Monad, MonadWriter Schedule)
+  { runSched :: State Hooks a
+  } deriving (Functor, Applicative, Monad, MonadState Hooks)
 
-getSchedule :: Scheduler () -> Schedule
-getSchedule = execWriter . runSched
-
-runSchedule :: Schedule -> Action ()
-runSchedule s = do
-  sequence_ $ s ^. beforeEvent
-  sequence_ $ s ^. onEvent
-  sequence_ $ s ^. beforeRender
-  sequence_ $ s ^. onRender
-  sequence_ $ s ^. afterRender
+getHooks :: Scheduler () -> Hooks
+getHooks = flip execState mempty . runSched
