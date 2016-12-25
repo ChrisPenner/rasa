@@ -18,7 +18,7 @@ import Data.Monoid
 renderBuf :: (Int, Int) -> BufAction V.Image
 renderBuf (width, height) = do
   -- txt <- textWrap width <$> use text
-  txt <- use text
+  txt <- use rope
   atts <- fmap (fmap convertStyle) <$> use styles
   let img = applyAttrs atts txt
   return $ V.resize width height img

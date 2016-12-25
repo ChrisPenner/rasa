@@ -65,12 +65,7 @@ flair a = Style (Nothing, Nothing, Just a)
 
 -- Inserts a style into a buffer's style list in sorted order
 addStyle :: Range -> Style -> BufAction ()
-addStyle (Range start end) style = do
-  txt <- use rope
-  let Offset s = start^. from (asCoord txt)
-      Offset e = end^.from (asCoord txt)
-      sp = Span s e style
-  styles %= (sp:)
+addStyle r style = styles %= (Span r style:)
 
 styleMain :: Scheduler ()
 styleMain = afterRender $ bufDo $ styles .= []

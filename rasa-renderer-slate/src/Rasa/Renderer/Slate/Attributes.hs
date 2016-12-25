@@ -3,10 +3,8 @@ module Rasa.Renderer.Slate.Attributes where
 
 import Rasa.Ext
 import Rasa.Ext.Style
-import qualified Data.Text as T
+import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
-import Data.List (unfoldr)
-import Control.Arrow (first)
 import Control.Lens
 
 convertStyle :: Style -> V.Attr
@@ -46,38 +44,42 @@ instance Monoid AttrMonoid where
   mempty = AttrMonoid V.defAttr
   AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
 
-applyAttrs :: [Span V.Attr] -> T.Text -> V.Image
-applyAttrs atts txt = applyAttrs' converted (T.lines txt)
+applyAttrs :: [Span V.Attr] -> Y.YiString -> V.Image
+applyAttrs atts txt = applyAttrs' converted (Y.lines txt)
   where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
         converted = combined & traverse._2 %~ attr'
 
-applyAttrs' :: [(Int, V.Attr)] -> [T.Text] -> V.Image
-applyAttrs' atts lines' = vertCat $ unfoldr attrLines (atts, lines')
+-- | Assumes atts' is sorted
+applyAttrs' :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
+applyAttrs' atts lines' = vertCat $ uncurry attrLine <$> pairLines atts lines'
   where
     vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
-    attrLines :: ([(Int, V.Attr)], [T.Text]) -> Maybe (V.Image, ([(Int, V.Attr)], [T.Text]))
-    attrLines (_, []) = Nothing
-    attrLines (as, l:ls) = let (img, restAs) = attrLine as l
-                     in Just (img, (decr 1 restAs, ls))
 
 -- Should be able to clean this up and provide better guarantees if I do a scan
 -- over attrs and get each successive mappend of them, then do T.splitAt for
 -- each offset, then apply the attr for each section at the begining of each
 -- of T.lines within each group. Ugly I know.
-attrLine :: [(Int, V.Attr)] -> T.Text -> (V.Image, [(Int, V.Attr)])
-attrLine [] txt = (plainText txt, [])
-attrLine ((0, attr):atts) txt = first (V.text' attr "" V.<|>) $ attrLine atts txt
-attrLine atts "" = (V.emptyImage, atts)
-attrLine allAttrs@((offset, _):_) txt
-  -- If the offset is larger, we can add the whole line, then decrement the attr offsets
-  | offset > T.length txt = (plainText txt, decr (T.length txt) allAttrs)
-  -- The offset occurs within the line, apply it in the middle
-  | otherwise = first (prefix V.<|>) suffix
-  where prefix = plainText (T.take offset txt)
-        suffix = attrLine (decr offset allAttrs) (T.drop offset txt)
+attrLine :: [(Coord, V.Attr)] -> Y.YiString -> V.Image
+attrLine [] txt = plainText txt
+attrLine atts "" = V.text' (mconcat (snd <$> atts)) ""
+attrLine ((Coord _ 0, attr):atts) txt = V.text' attr "" V.<|> attrLine atts txt
+attrLine atts@((Coord _ col, _):_) txt = 
+  let (prefix, suffix) = Y.splitAt col txt
+   in plainText prefix V.<|> attrLine (decrCol col atts) suffix
 
-decr :: Int -> [(Int, V.Attr)] -> [(Int, V.Attr)]
-decr n = fmap $ first (subtract n)
+pairLines :: [(Coord, b)] -> [a] -> [([(Coord, b)], a)]
+pairLines _ [] = []
+pairLines [] ls = zip (repeat []) ls
+pairLines crds@((Coord 0 _, _):_) (l:ls) = (takeWhile isSameRow crds, l) : pairLines (decrRow $ dropWhile isSameRow crds) ls
+  where isSameRow (Coord 0 _, _) = True
+        isSameRow _ = False
+pairLines crds (l:ls) = ([], l): pairLines (decrRow crds) ls
 
-plainText :: T.Text -> V.Image
-plainText = V.text' V.currentAttr
+decrRow :: [(Coord, a)] -> [(Coord, a)]
+decrRow = fmap (\(Coord r c, a) -> (Coord (r-1) c, a))
+
+decrCol :: Int -> [(Coord, a)] -> [(Coord, a)]
+decrCol n = fmap (\(Coord r c, a) -> (Coord r (c-n), a))
+
+plainText :: Y.YiString -> V.Image
+plainText = V.text' V.currentAttr . Y.toText

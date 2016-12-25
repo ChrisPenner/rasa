@@ -28,6 +28,7 @@ library
                      , rasa-ext-style
                      , rasa-ext-status-bar
                      , text
+                     , yi-rope
                      , lens
                      , vty >= 5.14
   default-language:    Haskell2010

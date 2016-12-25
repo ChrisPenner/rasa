@@ -104,10 +104,9 @@ clampRange :: Y.YiString -> Range -> Range
 clampRange txt (Range start end) =
   Range (clampCoord txt start) (clampCoord txt end)
 
--- | A span applies some Monoid over the given range from start up to (not including) end
+-- | A span applies some Monoid over the given range.
 data Span a = Span
-  { _start :: Int
-  , _end :: Int
+  { _getRange :: Range
   , _data :: a
   } deriving (Show, Eq, Functor)
 
@@ -116,35 +115,36 @@ data Marker
   | End
   deriving (Show, Eq)
 
+type ID = Int
 -- | Combines a list of spans containing some monoidal data into a list of offsets with
 -- with the data that applies from each Offset forwards
 combineSpans
   :: forall a.
      Monoid a
-  => [Span a] -> [(Int, a)]
+  => [Span a] -> [(Coord, a)]
 combineSpans spans = combiner [] $ sortOn (view _3) (splitStartEnd idSpans)
   where
-    idSpans :: [(Int, Span a)]
+    idSpans :: [(ID, Span a)]
     idSpans = zip [1 ..] spans
 
-    splitStartEnd :: [(Int, Span a)] -> [(Marker, Int, Int, a)]
+    splitStartEnd :: [(ID, Span a)] -> [(Marker, ID, Coord, a)]
     splitStartEnd [] = []
-    splitStartEnd ((i, Span s e d):rest) =
+    splitStartEnd ((i, Span (Range s e) d):rest) =
       (Start, i, s, d) : (End, i, e, d) : splitStartEnd rest
 
-    withoutId :: Int -> [(Int, a)] -> [(Int, a)]
+    withoutId :: ID -> [(ID, a)] -> [(ID, a)]
     withoutId i = filter ((/= i) . fst)
 
-    combiner :: [(Int, a)] -> [(Marker, Int, Int, a)] -> [(Int, a)]
+    combiner :: [(ID, a)] -> [(Marker, ID, Coord, a)] -> [(Coord, a)]
     combiner _ [] = []
-    combiner cur ((Start, i, offset, mData):rest) =
+    combiner cur ((Start, i, crd, mData):rest) =
       let dataSum = foldMap snd cur <> mData
           newData = (i, mData) : cur
-      in (offset, dataSum) : combiner newData rest
-    combiner cur ((End, i, offset, _):rest) =
+      in (crd, dataSum) : combiner newData rest
+    combiner cur ((End, i, crd, _):rest) =
       let dataSum = foldMap snd newData
           newData = withoutId i cur
-      in (offset, dataSum) : combiner newData rest
+      in (crd, dataSum) : combiner newData rest
 
 clamp :: Int -> Int -> Int -> Int
 clamp mn mx n
