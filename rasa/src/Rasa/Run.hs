@@ -17,22 +17,22 @@ import Data.Foldable
 rasa :: [Action [Keypress]] -> Scheduler () -> IO ()
 rasa eventListeners scheduler =
   evalAction def hooks $ do
-    handleEvent Init
+    dispatchEvent Init
     eventLoop eventListeners
-    handleEvent Exit
+    dispatchEvent Exit
     where hooks = getHooks scheduler
 
 eventLoop :: [Action [Keypress]] -> Action ()
 eventLoop eventListeners = do
-  handleEvent BeforeRender
-  handleEvent OnRender
-  handleEvent AfterRender
-  handleEvent BeforeEvent
+  dispatchEvent BeforeRender
+  dispatchEvent OnRender
+  dispatchEvent AfterRender
+  dispatchEvent BeforeEvent
   currentState <- get
   hooks <- ask
   -- This is a little weird, but I think it needs to be this way to execute listeners in parallel
   asyncEventListeners <- liftIO $ traverse (async.evalAction currentState hooks) eventListeners
   (_, nextEvents) <- liftIO $ waitAny asyncEventListeners
-  traverse_ handleEvent nextEvents
+  traverse_ dispatchEvent nextEvents
   isExiting <- use exiting
   unless isExiting $ eventLoop eventListeners

@@ -2,7 +2,7 @@
   ExistentialQuantification, ScopedTypeVariables #-}
 
 module Rasa.State
-  ( 
+  (
   -- * Accessing/Storing state
   Store
   , focused
@@ -16,18 +16,18 @@ module Rasa.State
   ) where
 
 import Rasa.Buffer
+import Rasa.Extensions
 import qualified Rasa.Editor as E
 
 import Unsafe.Coerce
 import Data.Dynamic
 import Data.Default
-import Data.Map
 import Data.Maybe
 import Control.Lens
 
 data Store = Store
   { _editor :: E.Editor
-  , _extState :: Map TypeRep Ext
+  , _extState :: ExtMap
   } deriving (Show)
 
 makeLenses ''Store

@@ -31,14 +31,14 @@ module Rasa.Ext.Scheduler
   Scheduler
   , Hooks
   , Hook
-  , matchingHooks
+  , dispatchEvent
+  , eventListener
   , onInit
   , beforeEvent
   , beforeRender
   , onRender
   , afterRender
   , onExit
-  , addHook
   )
     where
 
@@ -55,7 +55,7 @@ import Rasa.Events
 --
 -- This phase occurs exactly ONCE when the editor starts up.
 onInit :: Action () -> Scheduler ()
-onInit action = addHook (const action :: Init -> Action ())
+onInit action = eventListener (const action :: Init -> Action ())
 
 -- | Registers an action to be performed BEFORE each event phase.
 --
@@ -63,7 +63,7 @@ onInit action = addHook (const action :: Init -> Action ())
 -- This is a good place to filter out events so they're not seen by other
 -- extensions.
 beforeEvent :: Action () -> Scheduler ()
-beforeEvent action = addHook (const action :: BeforeEvent -> Action ())
+beforeEvent action = eventListener (const action :: BeforeEvent -> Action ())
 
 -- | Registers an action to be performed BEFORE each render phase.
 --
@@ -71,20 +71,20 @@ beforeEvent action = addHook (const action :: BeforeEvent -> Action ())
 -- since all actions have been performed. Only cosmetic changes should
 -- occur during this phase.
 beforeRender :: Action () -> Scheduler ()
-beforeRender action = addHook (const action :: BeforeRender -> Action ())
+beforeRender action = eventListener (const action :: BeforeRender -> Action ())
 
 -- | Registers an action to be performed during each render phase.
 --
 -- This phase should only be used by extensions which actually render something.
 onRender :: Action () -> Scheduler ()
-onRender action = addHook (const action :: OnRender -> Action ())
+onRender action = eventListener (const action :: OnRender -> Action ())
 
 -- | Registers an action to be performed AFTER each render phase.
 --
 -- This is useful for cleaning up extension state that was registered for the
 -- renderer, but needs to be cleared before the next iteration.
 afterRender :: Action () -> Scheduler ()
-afterRender action = addHook (const action :: AfterRender -> Action ())
+afterRender action = eventListener (const action :: AfterRender -> Action ())
 
 -- | Registers an action to be performed during the exit phase.
 --
@@ -93,4 +93,4 @@ afterRender action = addHook (const action :: AfterRender -> Action ())
 -- save any data before the editor terminates.
 
 onExit :: Action () -> Scheduler ()
-onExit action = addHook (const action :: Exit -> Action ())
+onExit action = eventListener (const action :: Exit -> Action ())

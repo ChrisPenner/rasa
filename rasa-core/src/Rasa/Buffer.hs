@@ -12,24 +12,19 @@ module Rasa.Buffer
   ) where
 
 import Rasa.Text
+import Rasa.Extensions
 
 import qualified Data.Text as T
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
-import Data.Dynamic
 import Data.Map
-
-data Ext = forall a. Show a => Ext a
-
-instance Show Ext where
-  show (Ext a) = show a
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
 -- A buffer is the State of the 'Rasa.Action.BufAction' monad transformer stack,
 -- so the type may be useful in defining lenses over your extension states.
 data Buffer = Buffer
   { _rope :: Y.YiString
-  , _bufExts :: Map TypeRep Ext
+  , _bufExts :: ExtMap
   }
 
 makeLenses ''Buffer

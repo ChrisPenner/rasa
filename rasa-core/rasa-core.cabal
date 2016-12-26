@@ -19,6 +19,7 @@ library
                        Rasa.Action
                        Rasa.Buffer
                        Rasa.Events
+                       Rasa.Extensions
                        Rasa.Editor
                        Rasa.State
                        Rasa.Scheduler

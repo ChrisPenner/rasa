@@ -34,11 +34,11 @@ setMode vimst = bufExt .= vimst
 
 vim :: Scheduler ()
 vim = do
-  addHook handleEvent
+  eventListener handleKeypress
   beforeRender setStatus
 
-handleEvent :: Keypress -> Action ()
-handleEvent keypress = do
+handleKeypress :: Keypress -> Action ()
+handleKeypress keypress = do
   focMode <- focusDo $ do
     mode <- getVim
     case mode of

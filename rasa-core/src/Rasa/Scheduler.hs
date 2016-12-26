@@ -6,9 +6,9 @@ module Rasa.Scheduler
   , Hooks
   , Hook
   , getHooks
-  , addHook
+  , eventListener
   , matchingHooks
-  , handleEvent
+  , dispatchEvent
   ) where
 
 import Control.Monad.State
@@ -21,11 +21,10 @@ import Data.Dynamic
 import Data.Map
 import Unsafe.Coerce
 
-handleEvent :: Typeable a => a -> Action ()
-handleEvent evt = do
+dispatchEvent :: Typeable a => a -> Action ()
+dispatchEvent evt = do
   hooks <- ask
   traverse_ ($ evt) (matchingHooks hooks)
-
 
 getHook :: forall a. Hook -> (a -> Action ())
 getHook = coerce
@@ -37,8 +36,8 @@ matchingHooks :: forall a. Typeable a => Hooks -> [a -> Action ()]
 matchingHooks hooks = getHook <$> (hooks^.at (typeRep (Proxy :: Proxy a))._Just)
 
 
-addHook :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
-addHook hook = modify $ insertWith mappend (typeRep (Proxy :: Proxy a)) [Hook hook]
+eventListener :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
+eventListener hook = modify $ insertWith mappend (typeRep (Proxy :: Proxy a)) [Hook hook]
 
 -- | This is just a writer monad that allows registering Actions into
 -- specific lifecycle hooks.
