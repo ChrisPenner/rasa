@@ -94,7 +94,7 @@ module Rasa.Ext
 
 -- * Performing Actions
 import Rasa.Action
-import Rasa.State
+import Rasa.Editor
 import Rasa.Events
 import Rasa.Buffer
 import Rasa.Text

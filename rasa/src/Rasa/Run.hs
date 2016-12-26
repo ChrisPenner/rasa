@@ -1,7 +1,7 @@
 {-# language ExistentialQuantification, Rank2Types, ScopedTypeVariables #-}
 module Rasa.Run (rasa) where
 
-import Rasa.State
+import Rasa.Editor
 import Rasa.Action
 import Rasa.Events
 import Rasa.Scheduler
@@ -28,10 +28,10 @@ eventLoop eventListeners = do
   dispatchEvent OnRender
   dispatchEvent AfterRender
   dispatchEvent BeforeEvent
-  currentState <- get
+  currentEditor <- get
   hooks <- ask
   -- This is a little weird, but I think it needs to be this way to execute listeners in parallel
-  asyncEventListeners <- liftIO $ traverse (async.evalAction currentState hooks) eventListeners
+  asyncEventListeners <- liftIO $ traverse (async.evalAction currentEditor hooks) eventListeners
   (_, nextEvents) <- liftIO $ waitAny asyncEventListeners
   traverse_ dispatchEvent nextEvents
   isExiting <- use exiting

@@ -6,7 +6,7 @@ module Rasa.Ext.Logger
 
 import Rasa.Ext
 import Rasa.Ext.Scheduler
-import Rasa.State
+import Rasa.Editor
 
 import Control.Lens
 import Control.Monad.State

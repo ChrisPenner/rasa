@@ -21,7 +21,7 @@ module Rasa.Ext.Directive
   ) where
 
 import Rasa.Text
-import Rasa.State
+import Rasa.Editor
 import Rasa.Action
 import Rasa.Range
 import Rasa.Buffer as B

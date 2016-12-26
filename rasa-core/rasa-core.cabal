@@ -21,7 +21,6 @@ library
                        Rasa.Events
                        Rasa.Extensions
                        Rasa.Editor
-                       Rasa.State
                        Rasa.Scheduler
                        Rasa.Text
                        Rasa.Range

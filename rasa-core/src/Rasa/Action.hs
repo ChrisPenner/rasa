@@ -8,7 +8,7 @@ import Data.Dynamic
 import Data.Map
 
 import Rasa.Buffer
-import Rasa.State
+import Rasa.Editor
 
 -- | This is a monad-transformer stack for performing actions against the editor.
 -- You register Actions to be run in response to events using 'Rasa.Scheduler.eventListener'
@@ -24,14 +24,14 @@ import Rasa.State
 data Hook = forall a. Hook a
 type Hooks = Map TypeRep [Hook]
 newtype Action a = Action
-  { runAct :: StateT Store (ReaderT Hooks IO) a
-  } deriving (Functor, Applicative, Monad, MonadState Store, MonadReader Hooks, MonadIO)
+  { runAct :: StateT Editor (ReaderT Hooks IO) a
+  } deriving (Functor, Applicative, Monad, MonadState Editor, MonadReader Hooks, MonadIO)
 
-execAction :: Store -> Hooks -> Action () -> IO Store
-execAction store hooks action  = flip runReaderT hooks $ execStateT (runAct action) store
+execAction :: Editor -> Hooks -> Action () -> IO Editor
+execAction editor hooks action  = flip runReaderT hooks $ execStateT (runAct action) editor
 
-evalAction :: Store -> Hooks -> Action a ->IO a
-evalAction store hooks action  = flip runReaderT hooks $ evalStateT (runAct action) store
+evalAction :: Editor -> Hooks -> Action a ->IO a
+evalAction editor hooks action  = flip runReaderT hooks $ evalStateT (runAct action) editor
 
 -- | This is a monad-transformer stack for performing actions on a specific buffer.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'
