@@ -8,13 +8,13 @@ import Data.Maybe
 
 import qualified Graphics.Vty as V
 
-slateEvent :: Action [Event]
+slateEvent :: Action [Keypress]
 slateEvent = do
     v <- getVty
     liftIO $ maybeToList . convertEvent <$> V.nextEvent v
 
-convertEvent :: V.Event -> Maybe Event
-convertEvent (V.EvKey e mods) = Event <$> convertKeypress e mods
+convertEvent :: V.Event -> Maybe Keypress
+convertEvent (V.EvKey e mods) = convertKeypress e mods
 convertEvent _ = Nothing
 
 convertKeypress :: V.Key -> [V.Modifier] -> Maybe Keypress

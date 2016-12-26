@@ -3,11 +3,9 @@
 module Rasa.Action where
 
 import Control.Monad.State
+import Control.Monad.Reader
 
-import Data.Dynamic
-import Control.Lens
 import Rasa.Buffer
-import Rasa.Events
 import Rasa.State
 
 -- | This is a monad-transformer stack for performing actions against the editor in response to 'Rasa.Event.Event's.
@@ -21,19 +19,19 @@ import Rasa.State
 --      * Access the events that triggered the action, see 'events'
 --      * Embed buffer actions using 'Rasa.Ext.Directive.bufDo' and 'Rasa.Ext.Directive.focusDo'
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Ext.Directive' module.
---
+
 newtype Action a = Action
-  { runAlt :: StateT Store IO a
-  } deriving (Functor, Applicative, Monad, MonadState Store, MonadIO)
+  { runAct :: StateT Store (ReaderT () IO) a
+  } deriving (Functor, Applicative, Monad, MonadState Store, MonadReader (), MonadIO)
 
 execAction :: Store -> Action () -> IO Store
-execAction store alt = execStateT (runAlt alt) store
+execAction store action = flip runReaderT () $ execStateT (runAct action) store
 
 evalAction :: Store -> Action a -> IO a
-evalAction store alt = evalStateT (runAlt alt) store
+evalAction store action = flip runReaderT () $ evalStateT (runAct action) store
 
-dispatchEvent :: forall a. (Typeable a, Show a) => a -> Action ()
-dispatchEvent evt = events <>= [Event evt]
+-- dispatchEvent :: forall a. (Typeable a, Show a) => a -> Action ()
+-- dispatchEvent evt = 
 
 -- | This is a monad-transformer stack for performing actions on a specific buffer in response to events.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'
@@ -48,12 +46,12 @@ dispatchEvent evt = events <>= [Event evt]
 --      * Access/Edit the buffer's 'text'
 --
 newtype BufAction a = BufAction
-  { getBufAction::StateT Buffer IO a
-  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadIO)
+  { getBufAction::StateT Buffer (ReaderT () IO) a
+  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader (), MonadIO)
 
-execBufAction :: Buffer -> BufAction a -> IO Buffer
-execBufAction buf = flip execStateT buf . getBufAction
+-- execBufAction :: Buffer -> BufAction a -> IO Buffer
+-- execBufAction buf = flip execStateT buf . getBufAction
 
 runBufAction :: Buffer -> BufAction a -> IO (a, Buffer)
-runBufAction buf = flip runStateT buf . getBufAction
+runBufAction buf = flip runReaderT () . flip runStateT buf . getBufAction
 

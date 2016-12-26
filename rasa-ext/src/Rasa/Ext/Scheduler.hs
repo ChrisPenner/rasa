@@ -31,10 +31,9 @@ module Rasa.Ext.Scheduler
   Scheduler
   , Hooks
   , Hook
-  , getHook
+  , matchingHooks
   , onInit
   , beforeEvent
-  , onEvent
   , beforeRender
   , onRender
   , afterRender
@@ -65,12 +64,6 @@ onInit action = addHook (const action :: Init -> Action ())
 -- extensions.
 beforeEvent :: Action () -> Scheduler ()
 beforeEvent action = addHook (const action :: BeforeEvent -> Action ())
-
--- | Registers an action to be performed during each event phase.
---
--- This is where most extensions should register to run.
-onEvent :: Action () -> Scheduler ()
-onEvent action = addHook (const action :: OnEvent -> Action ())
 
 -- | Registers an action to be performed BEFORE each render phase.
 --

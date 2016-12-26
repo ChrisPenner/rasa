@@ -1,9 +1,5 @@
-{-# LANGUAGE TemplateHaskell, DeriveFunctor, GeneralizedNewtypeDeriving,
-   ExistentialQuantification, ScopedTypeVariables, FlexibleInstances #-}
-
--- {-# LANGUAGE Rank2Types, TemplateHaskell, OverloadedStrings, ExistentialQuantification, ScopedTypeVariables,
-   -- GeneralizedNewtypeDeriving, FlexibleInstances,
-   -- StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving,
+   ExistentialQuantification, ScopedTypeVariables #-}
 
 module Rasa.Scheduler
   ( Scheduler(..)
@@ -11,7 +7,7 @@ module Rasa.Scheduler
   , Hook
   , getHooks
   , addHook
-  , getHook
+  , matchingHooks
   ) where
 
 import Control.Monad.State
@@ -24,16 +20,19 @@ import Unsafe.Coerce
 
 data Hook = forall a. Hook a
 
-getHook :: forall a. Hook -> a
-getHook = coerce 
+getHook :: forall a. Hook -> (a -> Action ())
+getHook = coerce
   where
-    coerce :: Hook -> a
+    coerce :: Hook -> (a -> Action ())
     coerce (Hook x) = unsafeCoerce x
 
-type Hooks = Map TypeRep Hook
+matchingHooks :: forall a. Typeable a => Hooks -> [a -> Action ()]
+matchingHooks hooks = getHook <$> (hooks^.at (typeRep (Proxy :: Proxy a))._Just)
+
+type Hooks = Map TypeRep [Hook]
 
 addHook :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
-addHook hook = at (typeRep (Proxy :: Proxy a)) ?= Hook hook
+addHook hook = modify $ insertWith mappend (typeRep (Proxy :: Proxy a)) [Hook hook]
 
 -- | This is just a writer monad that allows registering Actions into
 -- specific lifecycle hooks.

@@ -51,7 +51,6 @@ module Rasa.Ext
    -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
    --
    -- > txt <- use text
-  , events
    -- | A lens over the currently events that triggered the action.
    -- Use within an 'Action'
    --

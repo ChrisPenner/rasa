@@ -25,7 +25,6 @@ import Rasa.State
 import Rasa.Action
 import Rasa.Range
 import Rasa.Buffer as B
-import Control.Monad.IO.Class
 
 import Control.Lens
 import qualified Data.Text as T
@@ -35,7 +34,6 @@ import qualified Data.Text as T
 
 focusDo :: BufAction a -> Action a
 focusDo = Action . zoom focusedBuf . getBufAction
-
 
 -- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
 -- performs the 'Rasa.Action.BufAction' on every buffer and collects the return
@@ -53,9 +51,8 @@ addBuffer txt = buffers <>= [newBuffer txt]
 -- 'Rasa.Action.BufAction' agains that buffer.
 addBufferThen :: T.Text -> BufAction a -> Action a
 addBufferThen txt act = do
-  (a, newBuf) <- liftIO $ runBufAction (newBuffer txt) act
-  buffers <>= [newBuf]
-  return a
+  buffers <>= [newBuffer txt]
+  fmap (!! 0) . Action . zoom (buffers._last) . fmap (:[]) . getBufAction $ act
 
 -- | This signals to the editor that you'd like to shutdown. The current events
 -- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' hook will run,

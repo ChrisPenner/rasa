@@ -10,38 +10,30 @@ import Control.Lens
 import Control.Concurrent.Async
 import Control.Monad
 import Data.Default (def)
-import Data.Dynamic
 import Data.Foldable
+import Data.Dynamic
 
-processAction :: forall a. Typeable a => Hooks -> a -> Action ()
-processAction hooks evt = traverse_ ($ evt) matchingHooks
-  where
-    matchingHooks :: [a -> Action ()]
-    matchingHooks = hooks^.at (typeRep (Proxy :: Proxy a))._Just.to getHook
+performAction :: Typeable a => Hooks -> a -> Action ()
+performAction hooks evt = traverse_ ($ evt) (matchingHooks hooks)
 
-doThing :: Hooks ->  Action ()
-doThing hooks = do
-  evts <- use events
-  traverse_ (recurse.processAction hooks) evts
-    where recurse act = do
-            act
-            hasEvents <- use (events.to null)
-            when hasEvents (doThing hooks)
-
-
-rasa :: [Action [Event]] -> Scheduler () -> IO ()
+rasa :: [Action [Keypress]] -> Scheduler () -> IO ()
 rasa eventListeners scheduler = do
-  initStore <- execAction (def & events .~ [Event Init]) mainAction
-  lastStore <- eventLoop eventListeners mainAction initStore
-  void $ execAction (lastStore & events .~ [Event Exit]) mainAction
+  initStore <- execAction def (performAction hooks Init)
+  lastStore <- eventLoop eventListeners hooks initStore
+  void $ execAction lastStore (performAction hooks Exit)
     where hooks = getHooks scheduler
-          mainAction = doThing hooks
 
-eventLoop ::  [Action [Event]] -> Action () -> Store -> IO Store
-eventLoop eventListeners mainAction store = do
-  asyncEventListeners <- traverse (async.evalAction store) eventListeners
+eventLoop :: [Action [Keypress]] -> Hooks -> Store -> IO Store
+eventLoop eventListeners hooks store = do
+  afterRenderStore <- doHooks [BeforeRender] store
+                >>= doHooks [OnRender]
+                >>= doHooks [AfterRender]
+  beforeEventStore <- doHooks [BeforeEvent] afterRenderStore
+  asyncEventListeners <- traverse (async.evalAction beforeEventStore) eventListeners
   (_, nextEvents) <- waitAny asyncEventListeners
-  newStore <- execAction (store & events .~ [Event Exit]) mainAction
-  if newStore^.exiting 
-     then return newStore
-     else eventLoop eventListeners mainAction (newStore & events .~ nextEvents)
+  afterEventsStore <- doHooks nextEvents beforeEventStore
+  if afterEventsStore^.exiting 
+     then return afterEventsStore
+     else eventLoop eventListeners hooks afterEventsStore
+       where doHooks :: Typeable a => [a] -> Store -> IO Store
+             doHooks events store' = execAction store' $ traverse_ (performAction hooks) events

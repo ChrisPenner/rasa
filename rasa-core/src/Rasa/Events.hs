@@ -13,7 +13,7 @@ deriving instance Show Event
 
 data Init = Init deriving (Show, Eq, Typeable)
 data BeforeEvent = BeforeEvent deriving (Show, Eq, Typeable)
-data OnEvent = OnEvent deriving (Show, Eq, Typeable)
+-- data OnEvent = OnEvent deriving (Show, Eq, Typeable)
 data BeforeRender = BeforeRender deriving (Show, Eq, Typeable)
 data OnRender = OnRender deriving (Show, Eq, Typeable)
 data AfterRender = AfterRender deriving (Show, Eq, Typeable)

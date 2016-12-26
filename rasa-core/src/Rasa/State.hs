@@ -6,7 +6,6 @@ module Rasa.State
   -- * Accessing/Storing state
   Store
   , focused
-  , events
   , buffers
   , extState
   , allBufExt
@@ -16,7 +15,6 @@ module Rasa.State
   , focusedBuf
   ) where
 
-import Rasa.Events
 import Rasa.Buffer
 import qualified Rasa.Editor as E
 
@@ -28,8 +26,7 @@ import Data.Maybe
 import Control.Lens
 
 data Store = Store
-  { _events :: [Event]
-  , _editor :: E.Editor
+  { _editor :: E.Editor
   , _extState :: Map TypeRep Ext
   } deriving (Show)
 
@@ -38,8 +35,7 @@ makeLenses ''Store
 instance Default Store where
   def =
     Store
-    { _events = []
-    , _editor = def
+    { _editor = def
     , _extState = def
     }
 
