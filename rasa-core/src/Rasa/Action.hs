@@ -4,6 +4,8 @@ module Rasa.Action where
 
 import Control.Monad.State
 import Control.Monad.Reader
+import Data.Dynamic
+import Data.Map
 
 import Rasa.Buffer
 import Rasa.State
@@ -20,15 +22,17 @@ import Rasa.State
 --      * Embed buffer actions using 'Rasa.Ext.Directive.bufDo' and 'Rasa.Ext.Directive.focusDo'
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Ext.Directive' module.
 
+data Hook = forall a. Hook a
+type Hooks = Map TypeRep [Hook]
 newtype Action a = Action
-  { runAct :: StateT Store (ReaderT () IO) a
-  } deriving (Functor, Applicative, Monad, MonadState Store, MonadReader (), MonadIO)
+  { runAct :: StateT Store (ReaderT Hooks IO) a
+  } deriving (Functor, Applicative, Monad, MonadState Store, MonadReader Hooks, MonadIO)
 
-execAction :: Store -> Action () -> IO Store
-execAction store action = flip runReaderT () $ execStateT (runAct action) store
+execAction :: Store -> Hooks -> Action () -> IO Store
+execAction store hooks action  = flip runReaderT hooks $ execStateT (runAct action) store
 
-evalAction :: Store -> Action a -> IO a
-evalAction store action = flip runReaderT () $ evalStateT (runAct action) store
+evalAction :: Store -> Hooks -> Action a ->IO a
+evalAction store hooks action  = flip runReaderT hooks $ evalStateT (runAct action) store
 
 -- dispatchEvent :: forall a. (Typeable a, Show a) => a -> Action ()
 -- dispatchEvent evt = 
@@ -46,12 +50,11 @@ evalAction store action = flip runReaderT () $ evalStateT (runAct action) store
 --      * Access/Edit the buffer's 'text'
 --
 newtype BufAction a = BufAction
-  { getBufAction::StateT Buffer (ReaderT () IO) a
-  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader (), MonadIO)
+  { getBufAction::StateT Buffer (ReaderT Hooks IO) a
+  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader Hooks, MonadIO)
 
 -- execBufAction :: Buffer -> BufAction a -> IO Buffer
 -- execBufAction buf = flip execStateT buf . getBufAction
 
-runBufAction :: Buffer -> BufAction a -> IO (a, Buffer)
-runBufAction buf = flip runReaderT () . flip runStateT buf . getBufAction
-
+-- runBufAction :: Buffer -> Hooks -> BufAction a -> IO (a, Buffer)
+-- runBufAction buf hooks = flip runReaderT hooks . flip runStateT buf . getBufAction

@@ -23,6 +23,7 @@ library
                      , rasa-core
                      , async
                      , lens
+                     , mtl
                      , data-default
 
   default-language:    Haskell2010

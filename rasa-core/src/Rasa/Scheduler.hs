@@ -8,17 +8,24 @@ module Rasa.Scheduler
   , getHooks
   , addHook
   , matchingHooks
+  , handleEvent
   ) where
 
 import Control.Monad.State
 
 import Rasa.Action
 import Control.Lens
+import Data.Foldable
+import Control.Monad.Reader
 import Data.Dynamic
 import Data.Map
 import Unsafe.Coerce
 
-data Hook = forall a. Hook a
+handleEvent :: Typeable a => a -> Action ()
+handleEvent evt = do
+  hooks <- ask
+  traverse_ ($ evt) (matchingHooks hooks)
+
 
 getHook :: forall a. Hook -> (a -> Action ())
 getHook = coerce
@@ -29,7 +36,6 @@ getHook = coerce
 matchingHooks :: forall a. Typeable a => Hooks -> [a -> Action ()]
 matchingHooks hooks = getHook <$> (hooks^.at (typeRep (Proxy :: Proxy a))._Just)
 
-type Hooks = Map TypeRep [Hook]
 
 addHook :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
 addHook hook = modify $ insertWith mappend (typeRep (Proxy :: Proxy a)) [Hook hook]

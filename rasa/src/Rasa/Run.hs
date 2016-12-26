@@ -9,31 +9,30 @@ import Rasa.Scheduler
 import Control.Lens
 import Control.Concurrent.Async
 import Control.Monad
+import Control.Monad.State
+import Control.Monad.Reader
 import Data.Default (def)
 import Data.Foldable
-import Data.Dynamic
-
-performAction :: Typeable a => Hooks -> a -> Action ()
-performAction hooks evt = traverse_ ($ evt) (matchingHooks hooks)
 
 rasa :: [Action [Keypress]] -> Scheduler () -> IO ()
-rasa eventListeners scheduler = do
-  initStore <- execAction def (performAction hooks Init)
-  lastStore <- eventLoop eventListeners hooks initStore
-  void $ execAction lastStore (performAction hooks Exit)
+rasa eventListeners scheduler =
+  evalAction def hooks $ do
+    handleEvent Init
+    eventLoop eventListeners
+    handleEvent Exit
     where hooks = getHooks scheduler
 
-eventLoop :: [Action [Keypress]] -> Hooks -> Store -> IO Store
-eventLoop eventListeners hooks store = do
-  afterRenderStore <- doHooks [BeforeRender] store
-                >>= doHooks [OnRender]
-                >>= doHooks [AfterRender]
-  beforeEventStore <- doHooks [BeforeEvent] afterRenderStore
-  asyncEventListeners <- traverse (async.evalAction beforeEventStore) eventListeners
-  (_, nextEvents) <- waitAny asyncEventListeners
-  afterEventsStore <- doHooks nextEvents beforeEventStore
-  if afterEventsStore^.exiting 
-     then return afterEventsStore
-     else eventLoop eventListeners hooks afterEventsStore
-       where doHooks :: Typeable a => [a] -> Store -> IO Store
-             doHooks events store' = execAction store' $ traverse_ (performAction hooks) events
+eventLoop :: [Action [Keypress]] -> Action ()
+eventLoop eventListeners = do
+  handleEvent BeforeRender
+  handleEvent OnRender
+  handleEvent AfterRender
+  handleEvent BeforeEvent
+  currentState <- get
+  hooks <- ask
+  -- This is a little weird, but I think it needs to be this way to execute listeners in parallel
+  asyncEventListeners <- liftIO $ traverse (async.evalAction currentState hooks) eventListeners
+  (_, nextEvents) <- liftIO $ waitAny asyncEventListeners
+  traverse_ handleEvent nextEvents
+  isExiting <- use exiting
+  unless isExiting $ eventLoop eventListeners
