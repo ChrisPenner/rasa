@@ -6,20 +6,15 @@ module Rasa.Ext.Logger
 
 import Rasa.Ext
 import Rasa.Ext.Scheduler
-import Rasa.Editor
 
-import Control.Lens
 import Control.Monad.State
 
 logger :: Scheduler ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
   afterRender $ do
-    bufs <- use buffers
-    extensions <- use extState
-    liftIO $ appendFile "logs.log" ("Buffers==============\n" ++ show bufs ++ "\n\n")
-    liftIO $ appendFile "logs.log" ("Editor Extensions==============\n" ++ show extensions ++ "\n\n")
-    liftIO $ appendFile "logs.log" "---\n\n"
+    editor <- get
+    liftIO $ appendFile "logs.log" (show editor)
 
 logInfo :: String -> Action ()
 logInfo msg = liftIO $ appendFile "info.log" ("INFO: " ++ msg ++ "\n")

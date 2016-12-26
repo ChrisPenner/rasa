@@ -8,17 +8,12 @@ import Data.Dynamic
 -- type. At the moment it's quite sparse, but it will expand as new types of
 -- events are needed.
 
-data Event = forall a. (Show a, Typeable a) => Event a
-deriving instance Show Event
-
 data Init = Init deriving (Show, Eq, Typeable)
 data BeforeEvent = BeforeEvent deriving (Show, Eq, Typeable)
--- data OnEvent = OnEvent deriving (Show, Eq, Typeable)
 data BeforeRender = BeforeRender deriving (Show, Eq, Typeable)
 data OnRender = OnRender deriving (Show, Eq, Typeable)
 data AfterRender = AfterRender deriving (Show, Eq, Typeable)
 data Exit = Exit deriving (Show, Eq, Typeable)
-data Unknown = Unknown deriving (Show, Eq, Typeable)
 
 data Keypress
   = Keypress Char
@@ -34,4 +29,3 @@ data Mod
   | Alt
   | Shift
   deriving (Show, Eq)
-

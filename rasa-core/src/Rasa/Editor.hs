@@ -12,7 +12,6 @@ module Rasa.Editor
   , buffers
   , exiting
   , ext
-  , extState
   , allBufExt
   , bufExt
   , focusedBuf
@@ -32,9 +31,15 @@ data Editor = Editor
   , _focused :: Int
   , _exiting :: Bool
   , _extState :: ExtMap
-  } deriving (Show)
-
+  }
 makeLenses ''Editor
+
+instance Show Editor where
+  show editor = 
+    "Buffers==============\n" ++ show (editor^.buffers) ++ "\n\n"
+    ++ "Editor Extensions==============\n" ++ show (editor^.extState) ++ "\n\n"
+    ++ "---\n\n"
+
 
 instance Default Editor where
   def =

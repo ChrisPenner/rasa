@@ -60,7 +60,7 @@ module Rasa.Ext
   , exiting
    -- | A lens over the current 'exit' status of the editor, allows an extension to
    -- signal the editor to shutdown. If this is set the current events will finish processing, then the
-   -- 'Rasa.Ext.Scheduler.onExit' hook will run, then the editor will exit.
+   -- 'Rasa.Ext.Events.Exit' event will be dispatched, then the editor will exit.
    -- Use within an 'Action'
    --
    -- > exiting .= True
@@ -70,19 +70,17 @@ module Rasa.Ext
   , asCoord
   , clampCoord
   , clampRange
-   -- * Useful Types
-  , Event(..)
+   -- * Events
   , Keypress(..)
-  , Init(..)
-  , Exit(..)
   , Mod(..)
+   -- * Useful Types
   , Buffer
   , Span(..)
+  , Range(..)
   , combineSpans
   , asText
   , rope
   , clamp
-  , Range(..)
   , range
   , sizeOfR
   , afterC

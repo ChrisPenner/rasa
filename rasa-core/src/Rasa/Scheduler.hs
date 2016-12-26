@@ -21,6 +21,11 @@ import Data.Dynamic
 import Data.Map
 import Unsafe.Coerce
 
+-- | This is just a simple monad that allows registering event listeners
+newtype Scheduler a = Scheduler
+  { runSched :: State Hooks a
+  } deriving (Functor, Applicative, Monad, MonadState Hooks)
+
 dispatchEvent :: Typeable a => a -> Action ()
 dispatchEvent evt = do
   hooks <- ask
@@ -38,12 +43,6 @@ matchingHooks hooks = getHook <$> (hooks^.at (typeRep (Proxy :: Proxy a))._Just)
 
 eventListener :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
 eventListener hook = modify $ insertWith mappend (typeRep (Proxy :: Proxy a)) [Hook hook]
-
--- | This is just a writer monad that allows registering Actions into
--- specific lifecycle hooks.
-newtype Scheduler a = Scheduler
-  { runSched :: State Hooks a
-  } deriving (Functor, Applicative, Monad, MonadState Hooks)
 
 getHooks :: Scheduler () -> Hooks
 getHooks = flip execState mempty . runSched
