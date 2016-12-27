@@ -50,8 +50,8 @@ findNextFrom pat c = do
 
 findPrev :: T.Text -> BufAction ()
 findPrev pat = do
-  res <- rangeDo $ \(Range _ e) -> do
-    off <- findPrevFrom pat e
+  res <- rangeDo $ \(Range s _) -> do
+    off <- findPrevFrom pat s
     let end = moveCursorByN 1 off
     return $ Range off end
   ranges .= res

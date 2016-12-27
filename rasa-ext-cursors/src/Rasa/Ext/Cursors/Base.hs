@@ -32,8 +32,13 @@ instance Default Cursors where
   _cursors=[Range (Coord 0 0) (Coord 0 1)]
 }
 
+ensureSize :: Range -> Range
+ensureSize r@(Range s e)
+  | s == e = Range s (moveCursorByN 1 e)
+  | otherwise = r
+
 cleanRanges :: Y.YiString -> [Range] -> [Range]
-cleanRanges txt = fmap (clampRange txt) . reverse . nub . sort
+cleanRanges txt = fmap (ensureSize . clampRange txt) . reverse . nub . sort
 
 ranges :: Lens' Buffer [Range]
 ranges = lens getter setter

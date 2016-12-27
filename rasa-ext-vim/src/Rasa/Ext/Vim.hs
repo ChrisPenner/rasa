@@ -11,7 +11,6 @@ import Rasa.Ext.StatusBar
 import Rasa.Ext.Scheduler
 
 import Control.Lens
-import Control.Monad
 import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
@@ -62,7 +61,6 @@ insert :: Keypress -> BufAction ()
 insert Esc = setMode Normal
 insert BS = moveRangesByN (-1) >> delete
 insert Enter = insertText "\n"
--- insert (Keypress 'w' [Ctrl]) = killWord
 insert (Keypress c _) = insertText (T.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
@@ -82,13 +80,12 @@ normal (Keypress 'G' _) = do
 normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveRangesByN 1 >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
 normal (Keypress 'h' _) = moveRangesByN (-1)
--- normal (Keypress 'H' _) = rangeDo_ $ addRange . addCoord (Coord 0 (-1))
 normal (Keypress 'l' _) = moveRangesByN 1
--- normal (Keypress 'L' _) = rangeDo_ $ addRange . addCoord (Coord 0 1)
 normal (Keypress 'k' _) = moveRangesByC $ Coord (-1) 0
--- normal (Keypress 'K' _) = rangeDo_ $ addRange . addCoord (Coord (-1) 0)
+normal (Keypress 'K' _) = rangeDo_ $ addRange . moveRange (Coord (-1) 0)
+normal (Keypress 'J' _) = rangeDo_ $ addRange . moveRange (Coord 1 0)
 normal (Keypress 'j' _) = moveRangesByC $ Coord 1 0
-normal (Keypress 'J' _) = rangeDo_ $ return . moveRange (Coord 1 0) >=> addRange
+normal (Keypress 'J' _) = rangeDo_ $ addRange . moveRange (Coord 1 0)
 normal (Keypress 'w' _) = findNext " " >> moveRangesByC (Coord 0 1)
 normal (Keypress 'W' _) = rangeDo_ addCursor
   where
@@ -98,11 +95,13 @@ normal (Keypress 'W' _) = rangeDo_ addCursor
           newEnd = moveCursorByN 1 newStart
       addRange $ Range newStart newEnd
 
--- normal (Keypress 'B' _) = offsetsDo_ addCursor
---   where
---     addCursor o = do
---       newOffset <- findOffsetPrev " " (o - 1)
---       addCursorOffsetAt newOffset
+normal (Keypress 'B' _) = rangeDo_ addCursor
+  where
+    addCursor (Range start _) = do
+      next <- findPrevFrom " " start
+      let newStart = next
+          newEnd = moveCursorByN 1 newStart
+      addRange $ Range newStart newEnd
 
 normal (Keypress 'b' _) = moveRangesByN (-1) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
