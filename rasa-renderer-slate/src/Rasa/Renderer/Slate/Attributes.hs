@@ -7,12 +7,14 @@ import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
 import Control.Lens
 
+-- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
 convertStyle (Style (fg', bg', flair')) = V.Attr
                                         (maybe V.KeepCurrent convertFlair flair')
                                         (maybe V.KeepCurrent convertColor fg')
                                         (maybe V.KeepCurrent convertColor bg')
 
+-- | Convert flair from "Rasa.Ext.Style" into 'V.Style's
 convertFlair :: Flair -> V.MaybeDefault V.Style
 convertFlair Standout = V.SetTo V.standout
 convertFlair Underline = V.SetTo V.underline
@@ -22,6 +24,7 @@ convertFlair Dim = V.SetTo  V.dim
 convertFlair Bold = V.SetTo V.bold
 convertFlair DefFlair = V.Default
 
+-- | Convert colors from "Rasa.Ext.Style" into 'V.Color's
 convertColor :: Color -> V.MaybeDefault V.Color
 convertColor Black = V.SetTo V.black
 convertColor Red = V.SetTo V.red
@@ -33,28 +36,35 @@ convertColor Cyan = V.SetTo V.cyan
 convertColor White = V.SetTo V.white
 convertColor DefColor = V.Default
 
+-- | helper to reset to default attributes
 reset :: V.Image
 reset = V.text' V.defAttr ""
 
+-- | A newtype to define a (not necessarily law abiding) Monoid for 'V.Attr' which acts as we like.
 newtype AttrMonoid = AttrMonoid {
   attr' :: V.Attr
 }
 
+-- | We want 'mempty' to be 'V.defAttr' instead of 'V.currentAttr' for use in 'combineSpans'.
 instance Monoid AttrMonoid where
   mempty = AttrMonoid V.defAttr
   AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
 
+-- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: [Span V.Attr] -> Y.YiString -> V.Image
 applyAttrs atts txt = applyAttrs' converted (Y.lines txt)
   where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
         converted = combined & traverse._2 %~ attr'
 
--- | Assumes atts' is sorted
 applyAttrs' :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
 applyAttrs' atts lines' = vertCat $ uncurry attrLine <$> pairLines atts lines'
   where
     vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
 
+
+-- | Applies the list of attrs to the line and returns a 'V.Image'. It assumes that the list
+-- contains only 'Coord's on the same line (i.e. row == 0)
+--
 -- Should be able to clean this up and provide better guarantees if I do a scan
 -- over attrs and get each successive mappend of them, then do T.splitAt for
 -- each offset, then apply the attr for each section at the begining of each
@@ -63,10 +73,11 @@ attrLine :: [(Coord, V.Attr)] -> Y.YiString -> V.Image
 attrLine [] txt = plainText txt
 attrLine atts "" = V.text' (mconcat (snd <$> atts)) ""
 attrLine ((Coord _ 0, attr):atts) txt = V.text' attr "" V.<|> attrLine atts txt
-attrLine atts@((Coord _ col, _):_) txt = 
+attrLine atts@((Coord _ col, _):_) txt =
   let (prefix, suffix) = Y.splitAt col txt
    in plainText prefix V.<|> attrLine (decrCol col atts) suffix
 
+-- | Pairs up lines with their styles.
 pairLines :: [(Coord, b)] -> [a] -> [([(Coord, b)], a)]
 pairLines _ [] = []
 pairLines [] ls = zip (repeat []) ls
@@ -75,11 +86,14 @@ pairLines crds@((Coord 0 _, _):_) (l:ls) = (takeWhile isSameRow crds, l) : pairL
         isSameRow _ = False
 pairLines crds (l:ls) = ([], l): pairLines (decrRow crds) ls
 
+-- | Decrements the row of all future attrs' location
 decrRow :: [(Coord, a)] -> [(Coord, a)]
 decrRow = fmap (\(Coord r c, a) -> (Coord (r-1) c, a))
 
+-- | Decrements the column of all future attrs' location by the given amount
 decrCol :: Int -> [(Coord, a)] -> [(Coord, a)]
 decrCol n = fmap (\(Coord r c, a) -> (Coord r (c-n), a))
 
+-- | Creates a text image without any new attributes.
 plainText :: Y.YiString -> V.Image
 plainText = V.text' V.currentAttr . Y.toText

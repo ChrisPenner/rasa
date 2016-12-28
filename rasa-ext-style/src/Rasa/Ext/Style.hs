@@ -1,5 +1,5 @@
 {-# language TemplateHaskell #-}
-module Rasa.Ext.Style (styleMain, styles, addStyle, fg, bg, flair, Color(..), Flair(..),  Style(..)) where
+module Rasa.Ext.Style (style, styles, addStyle, fg, bg, flair, Color(..), Flair(..),  Style(..)) where
 
 import Rasa.Ext
 import Rasa.Ext.Directive
@@ -9,6 +9,8 @@ import Control.Lens
 import Data.Default
 import Control.Applicative
 
+-- | These represent the possible colors for 'fg' or 'bg'.
+-- 'DefColor' represents the terminal's default color.
 data Color =
     Black
   | Red
@@ -21,6 +23,8 @@ data Color =
   | DefColor
   deriving (Show, Eq)
 
+-- | These represent the possible extra attributes which may be applied.
+-- 'DefFlair' represents the terminal's default text attributes.
 data Flair =
     Standout
   | Underline
@@ -31,12 +35,16 @@ data Flair =
   | DefFlair
   deriving (Show, Eq)
 
+-- | A container which holds a foreground color, background color, and a flair.
+-- a 'Nothing' represents that we should not change that attribute.
 newtype Style = Style (Maybe Color, Maybe Color, Maybe Flair)
   deriving (Show, Eq)
 
 instance Default Style where
   def = Style (Just DefColor, Just DefColor, Just DefFlair)
 
+-- | The monoid instance replaces any attributes which have a 'Just' in the new 'Style'
+-- and persists any that are 'Nothing' in the new style (using 'Data.Alternative' for 'Data.Maybe')
 instance Monoid Style where
   Style (a, b, c) `mappend` Style (a', b', c') = Style (a' <|> a, b' <|> b, c' <|> c)
 
@@ -50,22 +58,35 @@ newtype Styles =
 
 makeLenses ''Styles
 
+-- | A lens over the styles stored in the current buffer.
 styles :: Lens' Buffer [Span Style]
 styles = bufExt.styles'
 
 instance Default Styles where
   def = Styles []
 
-fg, bg :: Color -> Style
+-- | Create a new 'Style' with the given 'Color' as the foreground.
+fg :: Color -> Style
 fg a = Style (Just a, Nothing, Nothing)
+
+-- | Create a new 'Style' with the given 'Color' as the background.
+bg :: Color -> Style
 bg a = Style (Nothing, Just a, Nothing)
 
+-- Create a new 'Style' with the given 'Flair' as its flair.
 flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
--- Inserts a style into a buffer's style list in sorted order
+-- | Applies a style over a given range in the buffer's style list.
 addStyle :: Range -> Style -> BufAction ()
-addStyle r style = styles %= (Span r style:)
+addStyle r st = styles %= (Span r st:)
 
-styleMain :: Scheduler ()
-styleMain = afterRender $ bufDo $ styles .= []
+-- | The main export for the style extension. Add this to your user config.
+--
+-- e.g.
+--
+-- > rasa [...] $ do
+-- >    style
+-- >    ...
+style :: Scheduler ()
+style = afterRender $ bufDo $ styles .= []

@@ -15,19 +15,21 @@ import Control.Lens
 import qualified Data.Text as T
 import Data.Monoid
 
+-- | Given a window size, creates a 'BufAction' which will return an image representing the buffer it's run in.
 renderBuf :: (Int, Int) -> BufAction V.Image
 renderBuf (width, height) = do
-  -- txt <- textWrap width <$> use text
   txt <- use rope
   atts <- fmap (fmap convertStyle) <$> use styles
   let img = applyAttrs atts txt
   return $ V.resize width height img
 
+-- | Get the current terminal size.
 getSize :: Action (Int, Int)
 getSize = do
   v <- getVty
   liftIO $ V.displayBounds $ V.outputIface v
 
+-- | Render the Editor
 render :: Action ()
 render = do
   (width, height) <- getSize
@@ -38,6 +40,7 @@ render = do
   v <- getVty
   liftIO $ V.update v pic
 
+-- | Render the status bar.
 renderStatus :: Int -> Action V.Image
 renderStatus width = focusDo $ do
   statuses <- use bufExt
@@ -48,15 +51,3 @@ renderStatus width = focusDo $ do
       joinedParts = T.intercalate " | " <$> barParts
       fullLine = foldMap addSpacer joinedParts
   return $ V.text' V.defAttr fullLine
-
--- textWrap :: Int -> T.Text -> T.Text
--- textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)
-
--- splitLine :: Int -> (T.Text -> Maybe (T.Text, T.Text))
--- splitLine n t
---   | T.null t = Nothing
---   | T.compareLength (fst . splitAtNewline $ t) n == LT = Just $ splitAtNewline t
---   | otherwise = Just $ second (T.append "-> ") $ T.splitAt n t
-
--- splitAtNewline :: T.Text -> (T.Text, T.Text)
--- splitAtNewline = second (T.drop 1) . T.span (/= '\n')
