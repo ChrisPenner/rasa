@@ -21,15 +21,15 @@ import Rasa.Editor
 --      * Embed buffer actions using 'Rasa.Ext.Directive.bufDo' and 'Rasa.Ext.Directive.focusDo'
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Ext.Directive' module.
 
-data Hook = forall a. Hook a
-type Hooks = Map TypeRep [Hook]
 newtype Action a = Action
   { runAct :: StateT Editor (ReaderT Hooks IO) a
   } deriving (Functor, Applicative, Monad, MonadState Editor, MonadReader Hooks, MonadIO)
 
+-- | Unwrap and execute an Action (returning the editor state)
 execAction :: Editor -> Hooks -> Action () -> IO Editor
 execAction editor hooks action  = flip runReaderT hooks $ execStateT (runAct action) editor
 
+-- | Unwrap and evaluate an Action (returning the value)
 evalAction :: Editor -> Hooks -> Action a ->IO a
 evalAction editor hooks action  = flip runReaderT hooks $ evalStateT (runAct action) editor
 
@@ -46,3 +46,10 @@ evalAction editor hooks action  = flip runReaderT hooks $ evalStateT (runAct act
 newtype BufAction a = BufAction
   { getBufAction::StateT Buffer (ReaderT Hooks IO) a
   } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader Hooks, MonadIO)
+
+
+-- | A wrapper around event listeners so they can be stored in 'Hooks'.
+data Hook = forall a. Hook a
+
+-- | A map of Event types to a list of listeners for that event
+type Hooks = Map TypeRep [Hook]

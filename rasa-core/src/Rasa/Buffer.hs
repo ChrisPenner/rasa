@@ -6,8 +6,10 @@ module Rasa.Buffer
   ( Buffer
   , Ext(..)
   , bufExts
+  -- | A lens over the extensions stored for a buffer
   , text
   , rope
+  -- | A lens over the text stored in a buffer (as a 'Y.YiString')
   , newBuffer
   ) where
 
@@ -29,6 +31,7 @@ data Buffer = Buffer
 
 makeLenses ''Buffer
 
+-- | A lens into the text of the given buffer. Use within a BufAction.
 text :: Lens' Buffer T.Text
 text = rope.asText
 
@@ -36,6 +39,7 @@ instance Show Buffer where
   show b = "<Buffer {text:" ++ show (b^..text . to (T.take 30)) ++ "...,\n"
            ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
 
+-- | Creates a new buffer from the givven text.
 newBuffer :: T.Text -> Buffer
 newBuffer txt =
   Buffer

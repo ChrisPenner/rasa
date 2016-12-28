@@ -2,15 +2,25 @@
   ExistentialQuantification, ScopedTypeVariables,
   OverloadedStrings
   #-}
--- {-# LANGUAGE TemplateHaskell, Rank2Types,  GADTs #-}
 
 module Rasa.Editor
   (
   -- * Accessing/Storing state
   Editor
+
   , focused
+-- | 'focused' is the index of the currently selected buffer (this will likely change)
+
   , buffers
+
+-- |'buffers' is a lens into all buffers.
+
   , exiting
+
+-- | 'exiting' Whether the editor is in the process of exiting. Can be set inside an 'Rasa.Action.Action':
+--
+-- > exiting .= True
+
   , ext
   , allBufExt
   , bufExt
@@ -26,6 +36,7 @@ import Data.Default
 import Data.Maybe
 import Control.Lens
 
+-- | This is the primary state of the editor.
 data Editor = Editor
   { _buffers :: [Buffer]
   , _focused :: Int
@@ -35,7 +46,7 @@ data Editor = Editor
 makeLenses ''Editor
 
 instance Show Editor where
-  show editor = 
+  show editor =
     "Buffers==============\n" ++ show (editor^.buffers) ++ "\n\n"
     ++ "Editor Extensions==============\n" ++ show (editor^.extState) ++ "\n\n"
     ++ "---\n\n"
@@ -51,6 +62,8 @@ instance Default Editor where
     , _exiting=False
     }
 
+-- | A lens over the extensions of all buffers.
+-- This is useful for setting defaults or altering extension state across all buffers.
 allBufExt
   :: forall a.
      (Show a, Typeable a)
@@ -66,7 +79,7 @@ allBufExt =
 -- if you treat the focus as a member of your extension state it should just
 -- work out.
 --
--- This lens falls back on the extension's 'Data.Default.Default' instance if
+-- This lens falls back on the extension's 'Data.Default.Default' instance (when getting) if
 -- nothing has yet been stored.
 
 bufExt
@@ -89,7 +102,7 @@ bufExt = lens getter setter
 -- inferred as the focal point. It's a little bit of magic, if you treat the
 -- focus as a member of your extension state it should just work out.
 --
--- This lens falls back on the extension's 'Data.Default.Default' instance if
+-- This lens falls back on the extension's 'Data.Default.Default' instance (when getting) if
 -- nothing has yet been stored.
 
 ext
@@ -108,6 +121,7 @@ ext = lens getter setter
         editor
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
+-- | 'focusedBuf' is a lens which focuses the currently selected buffer.
 focusedBuf :: Lens' Editor Buffer
 focusedBuf = lens getter setter
   where

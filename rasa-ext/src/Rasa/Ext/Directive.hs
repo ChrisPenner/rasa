@@ -73,15 +73,19 @@ prevBuf = do
   numBuffers <- use (buffers.to length)
   focused %= (`mod` numBuffers) . subtract 1
 
+-- | Deletes the text in the given range from the buffer.
 deleteRange :: Range -> BufAction ()
 deleteRange r = rope.range r.asText .= ""
 
+-- | Replaces the text in the given range from the buffer.
 replaceRange :: Range -> T.Text -> BufAction ()
 replaceRange r txt = rope.range r.asText .= txt
 
+-- | Inserts text into the buffer at the given Coord.
 insertAt :: Coord -> T.Text -> BufAction ()
 insertAt c txt = rope.range (Range c c).asText .= txt
 
+-- | Runs the given function over the text in the range, replacing it with the results.
 overRange :: Range -> (T.Text -> T.Text) -> BufAction ()
 overRange r f = rope.range r.asText %= f
 

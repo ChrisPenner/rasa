@@ -11,18 +11,18 @@
 -- The event cycle proceeds as follows:
 --
 -- @
---     onInit  (Runs ONCE)
+--     Init  (Runs ONCE)
 --
 --     -- The following loops until an exit is triggered:
---     beforeEvent -> onEvent -> beforeRender -> onRender -> afterRender
+--     BeforeEvent -> (any event) -> BeforeRender -> OnRender -> AfterRender
 --
---     onExit (Runs ONCE)
+--     Exit (Runs ONCE)
 -- @
 --
 -- Each extension which wishes to perform actions exports a @'Scheduler' ()@
 -- which the user inserts in their config file.
 -- 
--- See an example of a 'Scheduler' and a simple extension here: 'Rasa.Ext'
+-- See an example of a 'Scheduler' and a simple extension in the "Rasa.Ext" module.
 ----------------------------------------------------------------------------
 
 module Rasa.Ext.Scheduler
@@ -39,17 +39,11 @@ module Rasa.Ext.Scheduler
   , onRender
   , afterRender
   , onExit
-  )
-    where
+  ) where
 
 import Rasa.Scheduler
 import Rasa.Action
 import Rasa.Events
-
--- import Control.Lens
--- import Control.Monad.Writer
--- import Data.Default
-
 
 -- | Registers an action to be performed during the Initialization phase.
 --
@@ -58,10 +52,6 @@ onInit :: Action () -> Scheduler ()
 onInit action = eventListener (const action :: Init -> Action ())
 
 -- | Registers an action to be performed BEFORE each event phase.
---
--- The 'events' ARE populated at this point.
--- This is a good place to filter out events so they're not seen by other
--- extensions.
 beforeEvent :: Action () -> Scheduler ()
 beforeEvent action = eventListener (const action :: BeforeEvent -> Action ())
 

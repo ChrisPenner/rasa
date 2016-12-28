@@ -12,15 +12,15 @@
 -- public API.
 --
 -- See "Rasa.Ext.Scheduler" and "Rasa.Ext.Directive" for more information.
--- 
+--
 -- There are two main things that an extension can do, either react
 -- to editor events, or expose useful actions and/or state for other extensions
 -- to use.
--- 
+--
 -- To react to events an extension defines a 'Rasa.Ext.Scheduler.Scheduler' which
 -- the user puts in their config file. The 'Rasa.Ext.Scheduler.Scheduler' defines which
 -- parts of the event cycle to react to. See 'Rasa.Ext.Scheduler.Scheduler' for more detailed information.
--- 
+--
 -- Whether performing its own actions or being used by a different extension
 -- an extension will want to define some 'Action's to perform. Actions
 -- can operate over buffers or even perform IO and comprise the main way in which
@@ -37,6 +37,7 @@
 -- >     mapM_ (liftIO . appendFile "logs" . (++ "\n") . show) evts
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 ----------------------------------------------------------------------------
+
 module Rasa.Ext
   ( Action
   , BufAction
@@ -51,19 +52,16 @@ module Rasa.Ext
    -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
    --
    -- > txt <- use text
-   -- | A lens over the currently events that triggered the action.
-   -- Use within an 'Action'
-   --
-   -- > evts <- use events
-   -- > -- or
-   -- > events .= []
+   -- 
   , exiting
    -- | A lens over the current 'exit' status of the editor, allows an extension to
    -- signal the editor to shutdown. If this is set the current events will finish processing, then the
+   -- 
    -- 'Rasa.Ext.Events.Exit' event will be dispatched, then the editor will exit.
    -- Use within an 'Action'
    --
    -- > exiting .= True
+   --
    -- * Ranges
   , Coord(..)
   , Offset(..)
@@ -90,13 +88,13 @@ module Rasa.Ext
   , moveCursorByN
   ) where
 
--- * Performing Actions
 import Rasa.Action
 import Rasa.Editor
 import Rasa.Events
 import Rasa.Buffer
 import Rasa.Text
 import Rasa.Range
+
 -- $extensionstate
 --
 -- Extension states for ALL the extensions installed are stored in the same
