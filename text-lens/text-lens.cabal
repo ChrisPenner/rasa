@@ -26,7 +26,7 @@ library
 
   default-extensions:  OverloadedStrings
 
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall
 
 test-suite text-lens-test
   type:                exitcode-stdio-1.0

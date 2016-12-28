@@ -27,7 +27,7 @@ library
 
   default-extensions:
 
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall
 
 source-repository head
   type:     git
