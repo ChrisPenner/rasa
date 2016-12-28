@@ -122,9 +122,8 @@ Installation
 At the moment you must build Rasa from source, 
 
 1. Install [stack](https://docs.haskellstack.org/en/stable/README/)
-2. Clone this repo as the `rasa` directory
-3. Inside `rasa` run `stack build`
-4. Run with `stack exec rasa-exe`
+2. Clone this repo and `cd` into the directory
+3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
 
 Contributing
 ============
@@ -132,10 +131,3 @@ Contributing
 Things are moving quickly, but I'd love a hand! You can get a rough idea of where
 you can help out at the [Roadmap](https://github.com/ChrisPenner/rasa/issues/2), feel free to leave a comment there
 asking any questions, I'm always free to chat.
-
-Using Rasa
-----------
-
-At the moment things are changing very quickly, but you can get a rough idea of
-the controls from
-[here](https://github.com/ChrisPenner/rasa/blob/master/src/Directives.hs).
