@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Vim
   build-depends:       base >= 4.7 && < 5
-                     , rasa-ext
+                     , rasa
                      , rasa-ext-files
                      , rasa-ext-cursors
                      , rasa-ext-status-bar

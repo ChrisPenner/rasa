@@ -16,15 +16,31 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-                       Rasa.Run
+                       Rasa
+
+                       Rasa.Ext
+
+                       Rasa.Internal.Action
+                       Rasa.Internal.Buffer
+                       Rasa.Internal.Directive
+                       Rasa.Internal.Editor
+                       Rasa.Internal.Events
+                       Rasa.Internal.Extensions
+                       Rasa.Internal.Range
+                       Rasa.Internal.Scheduler
+                       Rasa.Internal.Text
 
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
-                     , rasa-core
                      , async
+                     , containers
+                     , data-default
                      , lens
                      , mtl
-                     , data-default
+                     , text
+                     , text-lens
+                     , transformers
+                     , yi-rope
 
   default-language:    Haskell2010
 

@@ -1,5 +1,5 @@
 {-# language Rank2Types #-}
-module Rasa.Text
+module Rasa.Internal.Text
   ( asText
   , asLines
   ) where

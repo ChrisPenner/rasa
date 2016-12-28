@@ -20,8 +20,6 @@ import qualified Data.Text as T
 import Rasa.Ext
 import Rasa.Ext.Cmd
 import Rasa.Ext.StatusBar
-import Rasa.Ext.Directive
-import Rasa.Ext.Scheduler
 
 data FileInfo = FileInfo
   { _filename :: Maybe T.Text

@@ -1,5 +1,5 @@
-{-# language ExistentialQuantification, StandaloneDeriving #-}
-module Rasa.Events where
+{-# language ExistentialQuantification #-}
+module Rasa.Internal.Events where
 
 import Data.Dynamic
 

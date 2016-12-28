@@ -8,8 +8,7 @@
 -- Maintainer  :  Chris Penner <christopher.penner@gmail.com>
 --
 -- This module and its descendents contain the public API for building an extension
--- for Rasa. It mostly just re-exports the parts of rasa-core that are considered
--- public API.
+-- for Rasa. It re-exports the parts of rasa that are public API for creating extensions.
 --
 -- See "Rasa.Ext.Scheduler" and "Rasa.Ext.Directive" for more information.
 --
@@ -52,11 +51,11 @@ module Rasa.Ext
    -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
    --
    -- > txt <- use text
-   -- 
+   --
   , exiting
    -- | A lens over the current 'exit' status of the editor, allows an extension to
    -- signal the editor to shutdown. If this is set the current events will finish processing, then the
-   -- 
+   --
    -- 'Rasa.Ext.Events.Exit' event will be dispatched, then the editor will exit.
    -- Use within an 'Action'
    --
@@ -68,9 +67,44 @@ module Rasa.Ext
   , asCoord
   , clampCoord
   , clampRange
+
    -- * Events
   , Keypress(..)
   , Mod(..)
+
+  -- * Dealing with events
+  , Scheduler
+  , Hooks
+  , Hook
+  , dispatchEvent
+  , eventListener
+
+  -- * Built-in Event Hooks
+  , onInit
+  , beforeEvent
+  , beforeRender
+  , onRender
+  , afterRender
+  , onExit
+
+  -- * Performing Actions on Buffers
+  , bufDo
+  , focusDo
+
+  -- * Editor Actions
+  , exit
+  , addBuffer
+  , addBufferThen
+  , nextBuf
+  , prevBuf
+
+  -- * Buffer Actions
+  , overRange
+  , replaceRange
+  , deleteRange
+  , insertAt
+  , sizeOf
+
    -- * Useful Types
   , Buffer
   , Span(..)
@@ -88,12 +122,14 @@ module Rasa.Ext
   , moveCursorByN
   ) where
 
-import Rasa.Action
-import Rasa.Editor
-import Rasa.Events
-import Rasa.Buffer
-import Rasa.Text
-import Rasa.Range
+import Rasa.Internal.Action
+import Rasa.Internal.Directive
+import Rasa.Internal.Editor
+import Rasa.Internal.Events
+import Rasa.Internal.Buffer
+import Rasa.Internal.Text
+import Rasa.Internal.Range
+import Rasa.Internal.Scheduler
 
 -- $extensionstate
 --

@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types, OverloadedStrings, DeriveFunctor, ScopedTypeVariables #-}
-module Rasa.Range
+module Rasa.Internal.Range
   ( Coord(..)
   , Offset(..)
   , asCoord
@@ -24,7 +24,7 @@ import Control.Lens
 import Data.Maybe
 import Data.Monoid
 import Data.List
-import Rasa.Text
+import Rasa.Internal.Text
 import qualified Yi.Rope as Y
 
 

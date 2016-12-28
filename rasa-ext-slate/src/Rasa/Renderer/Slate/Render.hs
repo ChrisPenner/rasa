@@ -3,7 +3,6 @@ module Rasa.Renderer.Slate.Render (render) where
 
 import Rasa.Ext
 import Rasa.Ext.Style
-import Rasa.Ext.Directive
 import Rasa.Ext.StatusBar (left, center, right)
 import Rasa.Renderer.Slate.State
 import Rasa.Renderer.Slate.Attributes

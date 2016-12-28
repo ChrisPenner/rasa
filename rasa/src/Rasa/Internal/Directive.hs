@@ -1,5 +1,5 @@
 {-# language Rank2Types, OverloadedStrings #-}
-module Rasa.Ext.Directive
+module Rasa.Internal.Directive
   (
   -- * Performing Actions on Buffers
     bufDo
@@ -20,11 +20,11 @@ module Rasa.Ext.Directive
   , sizeOf
   ) where
 
-import Rasa.Text
-import Rasa.Editor
-import Rasa.Action
-import Rasa.Range
-import Rasa.Buffer as B
+import Rasa.Internal.Text
+import Rasa.Internal.Editor
+import Rasa.Internal.Action
+import Rasa.Internal.Range
+import Rasa.Internal.Buffer as B
 
 import Control.Lens
 import qualified Data.Text as T

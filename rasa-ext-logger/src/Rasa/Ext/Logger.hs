@@ -5,7 +5,6 @@ module Rasa.Ext.Logger
   ) where
 
 import Rasa.Ext
-import Rasa.Ext.Scheduler
 
 import Control.Monad.State
 

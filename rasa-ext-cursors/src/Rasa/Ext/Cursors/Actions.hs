@@ -14,7 +14,6 @@ import qualified Data.Text as T
 import Control.Lens
 import Control.Lens.Text
 import Rasa.Ext
-import Rasa.Ext.Directive
 import Rasa.Ext.Cursors.Base
 
 -- | Moves all Ranges that are on the same END row as the given range by the coord's row and column

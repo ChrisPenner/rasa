@@ -1,5 +1,5 @@
 {-# language ExistentialQuantification, ScopedTypeVariables #-}
-module Rasa.Extensions
+module Rasa.Internal.Extensions
   ( Ext(..)
   , ExtMap
   ) where

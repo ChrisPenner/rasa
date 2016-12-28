@@ -2,8 +2,6 @@ flags: {}
 extra-package-dbs: []
 packages:
 - ./rasa
-- ./rasa-core
-- ./rasa-ext
 - ./rasa-ext-cmd
 - ./rasa-ext-cursors
 - ./rasa-ext-files

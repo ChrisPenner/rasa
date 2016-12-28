@@ -1,7 +1,6 @@
 module Rasa.Renderer.Slate (slate, terminalEvents) where
 
 import Rasa.Ext
-import Rasa.Ext.Scheduler
 import Rasa.Renderer.Slate.Render (render)
 import Rasa.Renderer.Slate.Event (terminalEvents)
 import Rasa.Renderer.Slate.State (getVty)

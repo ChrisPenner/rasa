@@ -20,7 +20,7 @@ library
                        Rasa.Ext.Cursors.Actions
                        Rasa.Ext.Cursors.Base
   build-depends:       base >= 4.7 && < 5
-                     , rasa-ext
+                     , rasa
                      , rasa-ext-style
                      , text-lens
                      , lens

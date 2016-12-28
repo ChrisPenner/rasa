@@ -2,8 +2,6 @@
 module Rasa.Ext.Style (style, styles, addStyle, fg, bg, flair, Color(..), Flair(..),  Style(..)) where
 
 import Rasa.Ext
-import Rasa.Ext.Directive
-import Rasa.Ext.Scheduler
 import Control.Lens
 
 import Data.Default

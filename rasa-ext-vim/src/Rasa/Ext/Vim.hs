@@ -6,9 +6,7 @@ module Rasa.Ext.Vim
 import Rasa.Ext
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
-import Rasa.Ext.Directive
 import Rasa.Ext.StatusBar
-import Rasa.Ext.Scheduler
 
 import Control.Lens
 import Data.Text.Lens (packed)

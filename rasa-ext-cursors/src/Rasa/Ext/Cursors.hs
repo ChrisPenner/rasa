@@ -24,8 +24,7 @@ module Rasa.Ext.Cursors
 import Rasa.Ext.Cursors.Base
 import Rasa.Ext.Cursors.Actions
 
-import Rasa.Ext.Directive
-import Rasa.Ext.Scheduler
+import Rasa.Ext
 
 -- | Registers hooks for the extension. The user should add this to their config.
 cursors :: Scheduler ()

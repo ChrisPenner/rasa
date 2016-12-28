@@ -16,7 +16,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Style
   build-depends:       base >= 4.7 && < 5
-                     , rasa-ext
+                     , rasa
                      , lens
                      , data-default
   default-language:    Haskell2010

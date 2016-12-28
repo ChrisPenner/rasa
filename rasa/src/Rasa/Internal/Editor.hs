@@ -3,7 +3,7 @@
   OverloadedStrings
   #-}
 
-module Rasa.Editor
+module Rasa.Internal.Editor
   (
   -- * Accessing/Storing state
   Editor
@@ -17,7 +17,7 @@ module Rasa.Editor
 
   , exiting
 
--- | 'exiting' Whether the editor is in the process of exiting. Can be set inside an 'Rasa.Action.Action':
+-- | 'exiting' Whether the editor is in the process of exiting. Can be set inside an 'Rasa.Internal.Action.Action':
 --
 -- > exiting .= True
 
@@ -27,8 +27,8 @@ module Rasa.Editor
   , focusedBuf
   ) where
 
-import Rasa.Buffer
-import Rasa.Extensions
+import Rasa.Internal.Buffer
+import Rasa.Internal.Extensions
 
 import Unsafe.Coerce
 import Data.Dynamic

@@ -19,7 +19,7 @@ library
                        Rasa.Ext.Cmd
 
   build-depends:       base >= 4.7 && < 5
-                     , rasa-ext
+                     , rasa
                      , data-default
                      , lens
                      , text

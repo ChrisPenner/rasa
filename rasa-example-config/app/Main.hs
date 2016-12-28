@@ -1,6 +1,6 @@
 module Main where
 
-import Rasa.Run (rasa)
+import Rasa (rasa)
 import Rasa.Ext.Style
 import Rasa.Ext.Vim
 import Rasa.Ext.Files

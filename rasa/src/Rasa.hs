@@ -1,10 +1,10 @@
 {-# language ExistentialQuantification, Rank2Types, ScopedTypeVariables #-}
-module Rasa.Run (rasa) where
+module Rasa (rasa) where
 
-import Rasa.Editor
-import Rasa.Action
-import Rasa.Events
-import Rasa.Scheduler
+import Rasa.Internal.Editor
+import Rasa.Internal.Action
+import Rasa.Internal.Events
+import Rasa.Internal.Scheduler
 
 import Control.Lens
 import Control.Concurrent.Async

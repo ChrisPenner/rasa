@@ -2,7 +2,7 @@
    GeneralizedNewtypeDeriving, FlexibleInstances,
    StandaloneDeriving #-}
 
-module Rasa.Buffer
+module Rasa.Internal.Buffer
   ( Buffer
   , Ext(..)
   , bufExts
@@ -13,8 +13,8 @@ module Rasa.Buffer
   , newBuffer
   ) where
 
-import Rasa.Text
-import Rasa.Extensions
+import Rasa.Internal.Text
+import Rasa.Internal.Extensions
 
 import qualified Data.Text as T
 import qualified Yi.Rope as Y
@@ -22,7 +22,7 @@ import Control.Lens hiding (matching)
 import Data.Map
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
--- A buffer is the State of the 'Rasa.Action.BufAction' monad transformer stack,
+-- A buffer is the State of the 'Rasa.Internal.Action.BufAction' monad transformer stack,
 -- so the type may be useful in defining lenses over your extension states.
 data Buffer = Buffer
   { _rope :: Y.YiString

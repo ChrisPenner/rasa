@@ -19,8 +19,6 @@ import Data.Default
 import qualified Data.Text as T
 
 import Rasa.Ext
-import Rasa.Ext.Directive
-import Rasa.Ext.Scheduler
 
 data StatusBar = StatusBar
   { _left :: [T.Text]
