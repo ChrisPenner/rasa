@@ -14,6 +14,36 @@ What people are saying
 
 > You should go outside one of these days. - Mother
 
+Installation
+------------
+
+At the moment you must build Rasa from source;
+
+1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
+2. Clone this repo and `cd` into the directory
+3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
+
+Getting started
+---------------
+
+Here's a great guide on building a copy-paste extension from scratch! I definitely
+recommend checking it out!
+
+### [Building Your First Extension](docs/Building-An-Extension.md)
+
+\^ That guide will walk you through installation and getting running! Once
+you're running rasa you can experiment with creating your own adaptations. You
+should customize your keymap to add a few mappings you like. It's a short step
+from here to developing your own extensions. `Action`s like you'd use in an
+extension can be registered to hooks in your `Main.hs`. You can build and
+experiment with entire extensions in your config file and extract them as a
+package when you're ready, kind of like a vimrc file. Again, just read the 
+extension guide, it covers what you need to know!
+
+If you have any issues (and I'm sure there'll be a few; it's a new project!)
+please report them [here](https://github.com/ChrisPenner/rasa/issues).
+
+
 Core Principles
 ---------------
 
@@ -74,34 +104,6 @@ Extensions define things that they'd like to do using a powerful set of
 functions which they can embed in an `Action`. Within an action an extension
 may perform IO, access the available buffers, store and access extension state,
 and edit text.
-
-Installation
-------------
-
-At the moment you must build Rasa from source;
-
-1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
-2. Clone this repo and `cd` into the directory
-3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
-
-Getting started
----------------
-
-First off, follow the installation instructions above and make sure you can get
-the editor running with the example-config. Once it's up and running you can
-experiment with creating your own adaptations. You should customize your keymap
-to add a few mappings you like. It's a short step from here to developing your
-own extensions. `Action`s like you'd use in an extension can be registered to
-hooks in your `Main.hs`. You can build and experiment with entire extensions in
-your config file and extract them as a package when you're ready, kind of like
-a vimrc file.
-
-Here's a great guide on building a copy-paste extension from scratch! I definitely
-recommend checking it out!
-[Building Your First Extension](docs/Building-An-Extension.md)
-
-If you have any issues (and I'm sure there'll be a few; it's a new project!)
-please report them [here](https://github.com/ChrisPenner/rasa/issues).
 
 Contributing
 ============
