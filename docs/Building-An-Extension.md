@@ -10,7 +10,7 @@ a bit off; feel free to open an issue
 chat](https://gitter.im/rasa-editor/Lobby)!
 
 Downloading and Setting up Rasa
-===============================
+-------------------------------
 
 Rasa is a Haskell project, configured in Haskell; so we're going to need a
 basic Haskell working environment if we're going to get anywhere. This guide
@@ -45,8 +45,12 @@ main = rasa [terminalEvents] $ do
 To get a feel for the different things we can do we'll be building
 a simple copy-paste extension.
 
-To get started let's add a simple action and see if we can even get it running. 
-Let's make a new action to write "Hello world" to a logging file so we can see if it runs!
+Hello World
+-----------
+
+To get started let's add a simple action and see if we can even get it running.
+Let's make a new action to write "Hello world" to a logging file so we can see
+if it runs!
 
 ```haskell
 helloWorld :: Action ()
@@ -117,14 +121,14 @@ I'd recommend reading more about it in the docs on Hackage, but basically it's
 just a wrapper around commands that say when to 'schedule' actions.
 
 There's only a few commands we can use inside `Scheduler`, the main one is
-`eventListener` which takes a function which uses some event to generate and action, and it registers it to be run
+`eventListener` which takes a function which uses some event to generate an action, and it registers it to be run
 any time that action occurs. There are also a few handy wrappers around `eventListener` for 
 some of the built-in rasa events. Let's use one called `onInit` now!
 
 `onInit` has the signature `onInit :: Action () -> Scheduler ()`, which
-suggests that it takes an action and 'schedules' it to run 'on init'. Which is
-exactly what it does! Anything we pass to onInit will run when rasa starts up!
-In reality it just sets up an eventListener for the `Init` event which is dispatched when rasa starts up, but it's
+suggests that it takes an action and 'schedules' it to run 'on initialization'. Which is
+exactly what it does! Anything we pass to `onInit` will run when rasa starts up!
+Under the hood it just calls `eventListener` for the `Init` event which is dispatched when rasa starts up, but it's
 a nifty helper to make things simpler. Let's use it to schedule our `helloWorld` Action.
 
 ```haskell
@@ -133,7 +137,7 @@ main = rasa [terminalEvents] $ do
   onInit helloWorld
 ```
 
-If we've done this right, then it when we rebuild the editor should compile and
+If we've done this right, then when we rebuild the editor should compile and
 start up!
 Okay, so how can we see whether it worked? If you're using the Vim key-bindings then you can quit using `Ctrl-C`
 and check your directory to see if you've got any new files!
@@ -144,7 +148,12 @@ Hello, World!
 ```
 
 Awesome! It's working! Okay, we can run an action! what's next? I suppose it
-would be nice to run an action in response to some keypress right? Let's change `helloWorld` into a function which
+would be nice to run an action in response to some keypress right? 
+
+Listening for Keypresses
+------------------------
+
+Let's change `helloWorld` into a function which
 takes a `Keypress` and writes the pressed key to a file!
 
 ```haskell
@@ -161,8 +170,8 @@ rasa/rasa-example-config/app/Main.hs:28:10: error:
                 with actual type ‘Keypress -> Action ()’
 ```
 
-Hrmm, right! Now we don't want to use `onInit` anymore, now that we're listening for
-a more general event we can use `eventListener`! Let's look at the type signature:
+Hrmm, right! Now that we're listening for keypress events we don't want to use `onInit` anymore.
+Time for the more general `eventListener`! Let's look at the type signature:
 
 ```haskell
 eventListener :: forall a. Typeable a => (a -> Action ()) -> Scheduler ()
@@ -174,8 +183,9 @@ idea is that you can see it takes a function from ANY event `a` to an
 scenes that stores the function and calls it on any events that come that match
 the type which that function expects, running the resulting Action. Check out
 the source code behind `eventListener` if you're interested! It's pretty cool!
-Okay! So we've got our function from our event type (Keypress), so let's try
-embedding it using `eventListener`
+But for now we'll just move on and trust that it does what it says. So we've
+got our function from our event type (Keypress), so let's try embedding it
+using `eventListener`
 
 ```haskell
 main = rasa [terminalEvents] $ do
@@ -188,23 +198,23 @@ Okay, let's build that and run it, now in a separate terminal we'll run
 hit a few keys and you should see them come streaming in! See how easy it is
 to get things working?
 
-Next up we'll try doing something useful. A key part of extensions in rasa is
-that they can interact with other extensions! This means we can take advantage
-of the work that others have done before us! The main way that we interact with
-other extensions is to use `Action`s that they expose for us! 
+Interacting With Other Extensions
+-----------------------
+
+A key part of extensions in rasa is that they can interact with other
+extensions! This means we can take advantage of the work that others have done
+before us! The main way that we interact with other extensions is to use
+`Action`s that they expose for us.
 
 We're doing a copy-paste sort of thing so we'll want to look at what the
 cursors extension provides for us to use. If we take a look at the
-documentation for `rasa-ext-cursors` we'll see a few things that we can do. We
-should avoid accessing directly the state that the `cursors` extension has
-stored, we should let it do the bookkeeping and just use the functions that
-they expose for us. 
+documentation for `rasa-ext-cursors` we'll see a few things that we can do.
 
-One thing that looks promising is `rangeDo`, it lets us run a function over
-each range that the `cursors` extension has selected. `cursors` handles many
-selections at the same time, which makes things a bit more complicated, but
-let's just pretend for now that it only handles one at a time. `rangeDo` has
-the following signature:
+Out of the actions they've exposed for us to use one thing that looks promising
+is `rangeDo`, it lets us run a function over each range that the `cursors`
+extension has selected. `cursors` handles many selections at the same time,
+which makes things a bit more complicated, but let's just pretend for now that
+it only handles one at a time. `rangeDo` has the following signature:
 
 ```haskell
 rangeDo :: (Range -> BufAction a) -> BufAction [a]
@@ -267,6 +277,12 @@ Let's try it out. Hopefully it builds for you and you can test it out by moving
 the cursor around and pressing 'y' to write out the current character to the
 `copy-pasta.txt` file (you can watch it with `tail -f copy-pasta.txt`).
 
+If you're new to Vim bindings (these are a bit different after all) you can 
+move the cursor around the screen by using the `hjkl` keys.
+
+Storing Extension State for Later
+---------------------------------
+
 We've got a good start at this point! If you like you can add multiple cursors
 using the cursors extension and should see that each cursor's contents is
 copied to the file. The next thing we'll need to do is to store the last thing
@@ -300,9 +316,6 @@ it's the `Data.Default` typeclass. Basically it just states that our
 Extension's state has a default value which it can be initialized to. Though
 it's not always easy to come up with a Default state for your extension, Rasa
 requires it because it simplifies initializing the extensions by a great deal.
-For more complicated extensions you may wish to define the default to simply
-be `Nothing` and initialize it to `Just something` when you first access it, but
-that doesn't concern us right now.
 
 Okay, let's write the Default instance!
 
@@ -330,9 +343,9 @@ copyPasta (Keypress 'y' _) = focusDo $ rangeDo_ copier
 copyPasta _ = return ()
 ```
 
-`bufExt` is a special lens into a map of extension states, it's special in that
-it will check the type of the thing we're trying to set it to and will only get
-or replace objects of the same type! This is why we needed to wrap our string
+`bufExt` is a special lens into a map of extension states, it's special because
+it will check the type of the thing we're trying to set and will only get
+or set objects of the same type in the map! This is why we needed to wrap our string
 up in a `newtype`. It also ensures that no-one else can alter our state unless
 they have access to the `CopyPasta` type, so if we don't expose it, then we're
 the only ones who can make changes! The `.=` symbol comes from the lens library,
@@ -346,12 +359,16 @@ to a file called 'logs.log' (original I know...). If `logger` is in the config
 then we can `tail -f logs.log` to see how our editor state changes as we perform
 events. Give it a try now!
 
-If you hit 'y' when a character is selected, then squint a little, you might be
-able to see that one of the buffers has a `CopyPasta` object stored in with
-its extensions! Since we derived a `Show` instance for `CopyPasta` we should also
-be able to see the string that was copied!
+If you hit 'y' when a character is selected in the editor, then look at the
+logs in `logs.log` and squint a little, you might be able to see that one of
+the buffers has a `CopyPasta` object stored in with its extensions! Since we
+derived a `Show` instance for `CopyPasta` we should also be able to see the
+string that was copied!
 
 Good stuff! If you've gotten stuck on anything, please make an [issue](https://github.com/ChrisPenner/rasa/issues) for it!.
+
+Accessing Stored State
+----------------------
 
 Now for the fun part! Let's make it paste! We'll add another case to the
 copyPasta function that listens for the user to press the 'p' key instead, if
@@ -395,16 +412,19 @@ lens infers which state to retrieve for us! Pretty cool eh?
 
 We'll do a simple pattern match on the left of the arrow
 `CopyPasta str <- use bufExt` to get the string we stored earlier.
-Now we can use the nifty `insertText` function! It returns a BufAction (), so we
-can just us it in-line with the other bufAction where we extract the state.
+Now we can use the nifty `insertText` function! It returns a `BufAction ()`, so we
+can just us it in-line with the other `BufAction` where we extract the state.
 
-One last catch! `insetText` expects a Text object, so we `pack` the string into
+One last catch! `insertText` expects a Text object, so we `pack` the string into
 a text object using `T.pack`. Give it a go!
 
 At this point we have a working (albeit simple) copy-pasting extension which
 has a separate copy-register for each buffer! We've learned how to listen for
 and respond to events, and store state to use later! We've also learned how to use
 utilities that are exported from other extensions!
+
+Dispatching Custom Events
+-------------------------
 
 Let's add just one last feature, other extensions may want to know when
 the user copies something. Let's expose an event hook so that they can 'listen'
@@ -522,64 +542,4 @@ tricky stuff!
 
 Cheers!
 
-Here's my full `Main.hs` if you got stuck anywhere:
-
-```haskell
-module Main where
-
-import Rasa (rasa)
-import Rasa.Ext
-import Rasa.Ext.Style
-import Rasa.Ext.Vim
-import Rasa.Ext.Files
-import Rasa.Ext.StatusBar
-import Rasa.Ext.Logger
-import Rasa.Ext.Cursors
-import Rasa.Renderer.Slate
-
-import Control.Monad.IO.Class
-import Control.Lens
-import Data.Default
-import qualified Data.Text as T
-
-newtype CopyPasta = CopyPasta String
-  deriving Show
-
-instance Default CopyPasta where
-  def = CopyPasta ""
-
-newtype Copied = Copied String
-
-copyPasta :: Keypress -> Action ()
-copyPasta (Keypress 'y' _) = do
-  copied <- focusDo $ rangeDo copier
-  mapM_ (dispatchEvent . Copied) copied
-  where
-    copier :: Range -> BufAction String
-    copier r = do
-      str <- use (range r . asString)
-      bufExt .= CopyPasta str
-      return str
-copyPasta (Keypress 'p' _) = focusDo paster
-  where
-    paster :: BufAction ()
-    paster = do
-      CopyPasta str <- use bufExt
-      insertText (T.pack str)
-copyPasta _ = return ()
-
-copyListener :: Copied -> Action ()
-copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
-
-main :: IO ()
-main = rasa [terminalEvents] $ do
-  vim
-  statusBar
-  files
-  cursors
-  logger
-  slate
-  style
-  eventListener copyPasta
-  eventListener copyListener
-```
+The full `Main.hs` file is available [here](CopyPasta.hs) if you got stuck anywhere:
