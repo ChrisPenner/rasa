@@ -95,8 +95,6 @@ module Rasa.Ext
    -- * Accessing/Editing Context
   , Buffer
   , text
-
-
   -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
   --
   -- > txt <- use text
@@ -146,8 +144,10 @@ module Rasa.Ext
   , moveRangeByN
   , moveCursorByN
 
-   -- * Useful Types
+   -- * Useful Utilities
   , asText
+  , asString
+  , asLines
   , rope
   , clamp
   ) where

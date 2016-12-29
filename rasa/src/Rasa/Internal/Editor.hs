@@ -25,16 +25,19 @@ module Rasa.Internal.Editor
   , allBufExt
   , bufExt
   , focusedBuf
+  , range
   ) where
 
 import Rasa.Internal.Buffer
 import Rasa.Internal.Extensions
+import Rasa.Internal.Range
 
 import Unsafe.Coerce
 import Data.Dynamic
 import Data.Default
 import Data.Maybe
 import Control.Lens
+import qualified Yi.Rope as Y
 
 -- | This is the primary state of the editor.
 data Editor = Editor
@@ -131,3 +134,10 @@ focusedBuf = lens getter setter
     setter editor new =
       let foc = editor ^. focused
       in editor & buffers . ix foc .~ new
+
+-- | A lens over text which is encompassed by a 'Range'
+range :: Range -> Lens' Buffer Y.YiString
+range (Range start end) = lens getter setter
+  where getter = view (rope . beforeC end . afterC start)
+        setter old new = old & rope . beforeC end . afterC start .~ new
+

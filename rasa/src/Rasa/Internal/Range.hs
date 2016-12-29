@@ -6,7 +6,6 @@ module Rasa.Internal.Range
   , clampCoord
   , clampRange
   , Range(..)
-  , range
   , sizeOf
   , sizeOfR
   , moveRange
@@ -171,12 +170,6 @@ sizeOfR (Range start end) = end - start
 -- | Returns the number of rows and columns that a chunk of text spans as a 'Coord'
 sizeOf :: Y.YiString -> Coord
 sizeOf txt = Coord (Y.countNewLines txt) (Y.length (txt ^. asLines . _last))
-
--- | A lens over text which is encompassed by a 'Range'
-range :: Range -> Lens' Y.YiString Y.YiString
-range (Range start end) = lens getter setter
-  where getter = view (beforeC end . afterC start)
-        setter old new = old & beforeC end . afterC start .~ new
 
 -- | A lens over text before a given 'Coord'
 beforeC :: Coord -> Lens' Y.YiString  Y.YiString

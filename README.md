@@ -81,7 +81,7 @@ Installation
 
 At the moment you must build Rasa from source;
 
-1. Install [stack](https://docs.haskellstack.org/en/stable/README/)
+1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
 2. Clone this repo and `cd` into the directory
 3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
 
