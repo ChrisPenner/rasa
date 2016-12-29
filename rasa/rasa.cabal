@@ -1,5 +1,5 @@
 name:                rasa
-version:             0.1.0.0
+version:             0.1.2
 synopsis:            A modular text editor
 homepage:            https://github.com/ChrisPenner/rasa#readme
 license:             MIT
@@ -22,12 +22,15 @@ description:         A modular text editor
   /Pros/
   .
   * Implementing most core functionality as extensions ensures a powerful and elegant extension interface.
+  .
   * Flexibility; don't like the default cursor implementation? Write your own!
+  .
   * Adaptability; the core of Rasa is miniscule, you can mix and match extensions to build any editor you want.
   .
   /Cons/
   .
   * Module cross-dependencies makes the community infrastructure more fragile; We'll likely have to develop a solution to this as a community as time goes on.
+  .
   * Fragmentation; Not having a single implementation for a given feature means extensions that depend on a feature have to pick a specific implementation to augment. Over time data-structures and types will be standardized into Rasa's core to help alleviate this.
   .
   While highly experimental, I've found the current API to be quite expressive and adaptable; 

@@ -29,7 +29,7 @@ Getting started
 Here's a great guide on building a copy-paste extension from scratch! I definitely
 recommend checking it out!
 
-### [Building Your First Extension](docs/Building-An-Extension.md)
+### [Building Your First Extension](https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md)
 
 \^ That guide will walk you through installation and getting running! Once
 you're running rasa you can experiment with creating your own adaptations. You
