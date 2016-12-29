@@ -29,7 +29,7 @@ import Data.Foldable
 import Data.Map
 import Unsafe.Coerce
 
--- The Scheduler is how you can register your extension's actions to run
+-- | The Scheduler is how you can register your extension's actions to run
 -- at different points in the editor's event cycle.
 --
 -- The event cycle proceeds as follows:
