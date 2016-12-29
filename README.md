@@ -3,8 +3,7 @@ Rasa (Rah-zah)
 
 [![Join the chat at https://gitter.im/rasa-editor/Lobby](https://badges.gitter.im/rasa-editor/Lobby.svg)](https://gitter.im/rasa-editor/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Embarrassingly modular customizable text editor built in Haskell using Lens
-combinators
+Embarrassingly modular customizable text editor built in Haskell.
 
 What people are saying
 ----------------------
@@ -96,6 +95,10 @@ own extensions. `Action`s like you'd use in an extension can be registered to
 hooks in your `Main.hs`. You can build and experiment with entire extensions in
 your config file and extract them as a package when you're ready, kind of like
 a vimrc file.
+
+Here's a great guide on building a copy-paste extension from scratch! I definitely
+recommend checking it out!
+[Building Your First Extension](docs/Building-An-Extension.md)
 
 If you have any issues (and I'm sure there'll be a few; it's a new project!)
 please report them [here](https://github.com/ChrisPenner/rasa/issues).

@@ -234,10 +234,16 @@ copyPasta (Keypress 'y' _) = focusDo $ rangeDo_ copier
   where
     copier :: Range -> BufAction ()
     copier r = do
-      txt <- use (range r . asString)
-      liftIO $ appendFile "copy-pasta.txt" ("You copied: " ++ txt ++ "\n")
+      str <- use (range r . asString)
+      liftIO $ appendFile "copy-pasta.txt" ("You copied: " ++ str ++ "\n")
 copyPasta _ = return ()
 ```
+
+We're using a few other packages now, so we'll have to tell stack that we want
+to include them in the build! We can do this by going to the
+`rasa-example-config.cabal` file and we'll add `lens` and `rasa-ext-cursors` to
+the `build-depends` list there. While we're at it, go ahead and add
+`data-default` and `text` too, we'll need those soon!
 
 Okay let's unpack it a bit! We're now listening specifically for the 'y'
 character to be pressed, if anything else is pressed we'll just do a simple
@@ -248,7 +254,7 @@ the focused buffer. The `BufAction` that we're running is handled by
 `rangeDo` which discards return values resulting in just `BufAction ()`.
 
 As we discovered earlier `rangeDo` takes a function over a range, which we've
-defined as `copier`. The next line `txt <- (use range r . asString)` may be new
+defined as `copier`. The next line `str <- (use range r . asString)` may be new
 to you even if you've written Haskell before, but it's using the [lens
 library](https://hackage.haskell.org/package/lens) to access state from within
 a `BufAction`. In this case we're using the `range` lens which accesses the
@@ -264,41 +270,316 @@ the cursor around and pressing 'y' to write out the current character to the
 We've got a good start at this point! If you like you can add multiple cursors
 using the cursors extension and should see that each cursor's contents is
 copied to the file. The next thing we'll need to do is to store the last thing
-we've copied so that we can paste it back later, we could just store it in a file,
-but this gets tricky and inefficient for more complicated data-structures, so we'll
-do it another way. Rasa provides a way for each extension to store state, in fact
-you can store either state global to the entire editor, or we can store state local
-to each buffer. In this case we want the latter, that way we can keep a different
-copy-paste register for each buffer.
+we've copied so that we can paste it back later, we could just store it in a
+file, but this gets tricky and inefficient for more complicated
+data-structures, so we'll do it another way. Rasa provides a way for each
+extension to store state, in fact you can store either state global to the
+entire editor, or we can store state local to each buffer. In this case we want
+the latter, that way we can keep a different copy-paste register for each
+buffer.
 
+If I haven't lost you yet, then we'll take the steps to store some persistent
+state in the Buffer that we can access later. We need to define a custom
+data-type for this so that Rasa can tell it apart from all the other
+extension's states. Make sure that you don't store basic data-types like 
+Strings or Ints or they might conflict with other extensions! Always either wrap
+your type with a `newtype` for your extension, or define a new `data` type.
 
+In this case we really only need to store a String which we'll paste later, so
+we'll just wrap `String` in a newtype called `CopyPasta`
 
+```haskell
+newtype CopyPasta = CopyPasta String
+  deriving Show
+```
 
+That was easy, note that we're deriving a `Show` instance here, Rasa requires a
+`Show` instance for extension states because it makes debugging them much
+easier! There's one more typeclass we need to implement in order to store this,
+it's the `Data.Default` typeclass. Basically it just states that our
+Extension's state has a default value which it can be initialized to. Though
+it's not always easy to come up with a Default state for your extension, Rasa
+requires it because it simplifies initializing the extensions by a great deal.
+For more complicated extensions you may wish to define the default to simply
+be `Nothing` and initialize it to `Just something` when you first access it, but
+that doesn't concern us right now.
 
+Okay, let's write the Default instance!
 
+```haskell
+-- New import at the top of your file!
+import Data.Default
 
+instance Default CopyPasta where
+  def = CopyPasta ""
+```
 
+For now we'll just define the default to be an empty string.
 
+With that, we've got everything set up to store custom state! Let's change our
+copyPasta code so it copies text into the extension state rather than into a file.
 
+```haskell
+copyPasta :: Keypress -> Action ()
+copyPasta (Keypress 'y' _) = focusDo $ rangeDo_ copier
+  where
+    copier :: Range -> BufAction ()
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+copyPasta _ = return ()
+```
 
+`bufExt` is a special lens into a map of extension states, it's special in that
+it will check the type of the thing we're trying to set it to and will only get
+or replace objects of the same type! This is why we needed to wrap our string
+up in a `newtype`. It also ensures that no-one else can alter our state unless
+they have access to the `CopyPasta` type, so if we don't expose it, then we're
+the only ones who can make changes! The `.=` symbol comes from the lens library,
+it just sets the `bufExt` to be the new value.
 
+So even if this builds, how can we tell if it's actually working? Well if you
+like you can include the `logger` extension (it should have been included in
+the config already). This extension will print out the state of the editor after
+every event that it processes, so it's great for debugging! It prints them out
+to a file called 'logs.log' (original I know...). If `logger` is in the config
+then we can `tail -f logs.log` to see how our editor state changes as we perform
+events. Give it a try now!
 
+If you hit 'y' when a character is selected, then squint a little, you might be
+able to see that one of the buffers has a `CopyPasta` object stored in with
+its extensions! Since we derived a `Show` instance for `CopyPasta` we should also
+be able to see the string that was copied!
 
+Good stuff! If you've gotten stuck on anything, please make an [issue](https://github.com/ChrisPenner/rasa/issues) for it!.
 
+Now for the fun part! Let's make it paste! We'll add another case to the
+copyPasta function that listens for the user to press the 'p' key instead, if
+they press 'p', then we'll paste whatever we have stored!
 
+```haskell
+-- Another import!
+import qualified Data.Text as T
 
+copyPasta :: Keypress -> Action ()
+copyPasta (Keypress 'y' _) = focusDo $ rangeDo_ copier
+  where
+    copier :: Range -> BufAction ()
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+copyPasta (Keypress 'p' _) = focusDo paster
+  where
+    paster :: BufAction ()
+    paster = do
+      CopyPasta str <- use bufExt
+      insertText (T.pack str)
+copyPasta _ = return ()
+```
 
+Let's break down the new section. You'll see that this time we don't have to run
+something over every range because there's actually a useful `insertText` function
+exposed by the `cursors` extension! Here's the signature:
 
+```haskell
+insertText :: Text -> BufAction ()
+```
 
+It takes some Text and inserts it at the beginning of every range! How convenient!
+That means we can just a write a single `BufAction` that does what we need and
+embed it using `focusDo`. This time we're EXTRACTING our extension state from
+the buffer, so we again use the bufExt lens. `use` is a lens utility that
+allows us to pull out the focus of a lens. Again, we can magically use the
+bufExt lens, and since we later use the result as the `CopyPasta` type the
+lens infers which state to retrieve for us! Pretty cool eh?
 
+We'll do a simple pattern match on the left of the arrow
+`CopyPasta str <- use bufExt` to get the string we stored earlier.
+Now we can use the nifty `insertText` function! It returns a BufAction (), so we
+can just us it in-line with the other bufAction where we extract the state.
 
+One last catch! `insetText` expects a Text object, so we `pack` the string into
+a text object using `T.pack`. Give it a go!
 
+At this point we have a working (albeit simple) copy-pasting extension which
+has a separate copy-register for each buffer! We've learned how to listen for
+and respond to events, and store state to use later! We've also learned how to use
+utilities that are exported from other extensions!
 
+Let's add just one last feature, other extensions may want to know when
+the user copies something. Let's expose an event hook so that they can 'listen'
+for when something gets copied and do something in return! This is actually
+really easy to do since it's a core part of how rasa operates!
 
+First we'll define a new type that represents the behaviour. Each unique action
+that someone may want to listen for should have its own `newtype` or `data` type.
 
+```haskell
+newtype Copied = Copied String
+```
 
+Okay! So there's a type that not only specifies what happened, but also
+includes the necessary data for someone to do something useful (we'll include
+the string that was copied with the event)!
 
+If we were writing this as an extension in a separate package we'd expose the
+type (and maybe the constructor so that people can pattern match on it). Then
+other folks could use `eventListener` to listen for the event just like we
+did with `Keypress` events!
+
+Now that we've defined the type, we need to dispatch an event each time
+the user copies something! Say hello to `dispatchEvent`!
+
+```haskell
+dispatchEvent :: Typeable a => a -> Action ()
+```
+
+This looks pretty similar to the `eventListener` signature, but all that it does
+is takes any event type and will trigger any hooks that are listening for events
+of that type! Let's give it a go!
+
+```haskell
+copyPasta :: Keypress -> Action ()
+copyPasta (Keypress 'y' _) = focusDo $ rangeDo_ copier
+  where
+    copier :: Range -> BufAction ()
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+      -- We'll dispatch the copied event with the text we copied!
+      dispatchEvent $ Copied str
+copyPasta (Keypress 'p' _) = focusDo paster
+  where
+    paster :: BufAction ()
+    paster = do
+      CopyPasta str <- use bufExt
+      insertText (T.pack str)
+copyPasta _ = return ()
+```
+
+This is what we'd expect to do, but uh-oh! We build this and we get an error!
+
+```
+rasa/rasa-example-config/app/Main.hs:48:7: error:
+    - Couldn't match type ‘Action’ with ‘BufAction’
+```
+
+Ahh, looks like `dispatchEvent` creates an action, but inside `copier` we're
+inside a `BufAction`! This is unfortunate, but we can work around it. Hopefully
+there'll be a better workaround coming soon!
+
+For now we can work around it by returning the string we copied from the
+`BufAction` and then dispatch the event then! This may look a bit cryptic if
+you're not too used to Haskell, but that's okay! Asking for help on Stack Overflow
+is a great way to learn how to do tricky things like this! Here's a version that
+works!
+
+```haskell
+copyPasta :: Keypress -> Action ()
+copyPasta (Keypress 'y' _) = do
+  copied <- focusDo $ rangeDo copier
+  mapM_ (dispatchEvent . Copied) copied
+  where
+    copier :: Range -> BufAction String
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+      return str
+copyPasta (Keypress 'p' _) = focusDo paster
+  where
+    paster :: BufAction ()
+    paster = do
+      CopyPasta str <- use bufExt
+      insertText (T.pack str)
+copyPasta _ = return ()
+```
+
+Again, if that' tricky to understand don't worry too much about it!
+
+Now we're alerting any listeners each time we copy something! Don't believe me?
+Okay fine! Let's listen for the events so we can see them coming through!
+
+```haskell
+copyListener :: Copied -> Action ()
+copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
+
+main = rasa [terminalEvents] $ do
+  -- other extensions
+  eventListener copyListener
+```
+
+Magical! Just like before, all we need to do is write a function that uses
+events of the type we want to listen for and then register the function with
+`eventListener`.
+
+That's all for this episode! The API will be changing (see: improving) over
+time so stay tuned for updates. For now go and make some of your own
+extensions! I'm excited to see what you come up with!
 
 There are a few other extensions included in this repo, so go ahead and take a
 look at how they're doing things to get a few more ideas on how to do the
 tricky stuff!
+
+Cheers!
+
+Here's my full `Main.hs` if you got stuck anywhere:
+
+```haskell
+module Main where
+
+import Rasa (rasa)
+import Rasa.Ext
+import Rasa.Ext.Style
+import Rasa.Ext.Vim
+import Rasa.Ext.Files
+import Rasa.Ext.StatusBar
+import Rasa.Ext.Logger
+import Rasa.Ext.Cursors
+import Rasa.Renderer.Slate
+
+import Control.Monad.IO.Class
+import Control.Lens
+import Data.Default
+import qualified Data.Text as T
+
+newtype CopyPasta = CopyPasta String
+  deriving Show
+
+instance Default CopyPasta where
+  def = CopyPasta ""
+
+newtype Copied = Copied String
+
+copyPasta :: Keypress -> Action ()
+copyPasta (Keypress 'y' _) = do
+  copied <- focusDo $ rangeDo copier
+  mapM_ (dispatchEvent . Copied) copied
+  where
+    copier :: Range -> BufAction String
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+      return str
+copyPasta (Keypress 'p' _) = focusDo paster
+  where
+    paster :: BufAction ()
+    paster = do
+      CopyPasta str <- use bufExt
+      insertText (T.pack str)
+copyPasta _ = return ()
+
+copyListener :: Copied -> Action ()
+copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
+
+main :: IO ()
+main = rasa [terminalEvents] $ do
+  vim
+  statusBar
+  files
+  cursors
+  logger
+  slate
+  style
+  eventListener copyPasta
+  eventListener copyListener
+```
