@@ -12,6 +12,8 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 description:         A modular text editor
+  This is only a snippet, see the project's <https://github.com/ChrisPenner/rasa README>.
+  .
   Rasa is a text editor project with a few interesting goals. For better or worse it attempts
   to be as modular as possible. This means that most functionality which would typically be considered to be 'core' in other editors
   is implemented as extensions in Rasa.
@@ -33,11 +35,13 @@ description:         A modular text editor
   .
   /Getting Started/
   .
-  First I'd recommend cloning the <https://github.com/ChrisPenner/rasa Github repo> 
-  and try running the example-config included there. Once you get it running (see the <https://github.com/ChrisPenner/rasa/blob/master/README.md README>) then you
-  can customize your keymap to add a few mappings you like. It's a short step from here to developing your own extensions.
-  You can fork the repo and simple modify the example-config's @Main.hs@ and add functionality there. 
-  You can build and experiment with entire extensions in your config file and extract them as a package when you're ready.
+  First clone the <https://github.com/ChrisPenner/rasa Github repo>
+  and try running the example-config included there. 
+  Once you get it running (see the <https://github.com/ChrisPenner/rasa/blob/master/README.md README>) then you
+  can customize your keymap to add a few mappings you like. 
+  Then I'd check out the 
+  <https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md Building your own extensions guide>.
+  It goes in depth into everything you'd want to know!
   .
   If you have any issues (and I'm sure there'll be a few; it's a new project!) please report them <https://github.com/ChrisPenner/rasa/issues here> and we'll talk about it!
 
