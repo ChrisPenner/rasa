@@ -532,6 +532,126 @@ Magical! Just like before, all we need to do is write a function that uses
 events of the type we want to listen for and then register the function with
 `eventListener`.
 
+### Extracting the Extension to its own Package
+
+Now that we've built an extension we should share it with the community!
+
+If we extract it into its own package then other extensions and users can
+depend on it and use it in their own extensions and configurations. To do this
+we can use stack to create a new project for us. `cd` into the top-level rasa
+directory where the rest of the `rasa-ext` foldrs are and run
+`stack new rasa-ext-copy-pasta simple-library`.
+
+It's good practice to prefix your rasa extension package name with `rasa-ext` just
+so people can easily search for them. Running that stack command should have
+made a new package folder for you with a simple library package template inside. 
+Go ahead and `cd rasa-ext-copy-pasta`.
+
+Inside here you'll see some config files and a `src` folder. You'll want to
+open up the `rasa-ext-copy-pasta.cabal` and make sure the info in there is
+correct. You'll need to move over the things we added to 'build-depends:' into
+this cabal file. ' You'll also see a `stack.yaml` inside the folder, we won't
+need that since the entire rasa git repository is a single stack project with
+its own `stack.yaml`, so go ahead and `rm stack.yaml`.
+
+At this point we can move our code over, you can delete the `Lib.hs` that's in
+`src` and instead make some folders inside `src`: `Rasa/Ext`. Add a new file inside
+`Ext` called `CopyPasta.hs`. Your structure should look something like this:
+
+```
+rasa-ext-copy-pasta
+^
+├── src
+│   └── Rasa
+│       └── Ext
+│           └── CopyPasta.hs
+├── rasa-ext-copy-pasta.cabal
+├── Setup.hs
+└── LICENSE
+```
+
+All extensions should be stored as a new module inside `Rasa.Ext`.
+Now we can go ahead and copy those functions we wrote inside `Main.hs` into our
+new `CopyPasta.hs` and add a module definition at the top. We'll want to only
+export things we're okay with other people using, so how about we export a
+`Scheduler ()` which sets up the key-listener and also the `Copied` type so
+that users can write their own event listeners for it.
+
+We'll end up with something like this:
+
+```haskell
+-- CopyPasta.hs
+
+module Rasa.Ext.CopyPasta (
+    copyPasta
+  , Copied(..)
+) where
+
+import Rasa.Ext
+import Rasa.Ext.Cursors
+
+import Control.Monad.IO.Class
+import Control.Lens
+import Data.Default
+import qualified Data.Text as T
+
+newtype CopyPasta = CopyPasta String
+  deriving Show
+
+instance Default CopyPasta where
+  def = CopyPasta ""
+
+newtype Copied = Copied String
+
+-- We've renamed things so we can export a single 'Scheduler'
+-- that the user can embed in their config.
+copyPasta :: Scheduler ()
+copyPasta = eventListener keyListener
+
+keyListener :: Keypress -> Action ()
+keyListener (Keypress 'y' _) = do
+  copied <- focusDo $ rangeDo copier
+  mapM_ (dispatchEvent . Copied) copied
+  where
+    copier :: Range -> BufAction String
+    copier r = do
+      str <- use (range r . asString)
+      bufExt .= CopyPasta str
+      return str
+keyListener (Keypress 'p' _) = focusDo paster
+  where
+    paster :: BufAction ()
+    paster = do
+      CopyPasta str <- use bufExt
+      insertText (T.pack str)
+keyListener _ = return ()
+```
+
+Lastly we need to tell cabal which modules we want to export, so we'll add
+`Rasa.Ext.CopyPasta` to the list in rasa-ext-copy-pasta.cabal:
+
+```yaml
+  exposed-modules: Rasa.Ext.CopyPasta
+```
+
+Aaaaaaand since we're doing this inside one big stack project we'll need
+to tell stack about it in the `stack.yaml`; add your new package to the `packages`
+list:
+
+```yaml
+packages:
+# ... other packages
+- ./rasa-ext-copy-pasta
+```
+
+If you really wanted to do this right, you'd make a new package outside of the
+rasa repo; this requires setting up your own stack.yaml dependencies, which can
+be a bit tricky, so if you run into any trouble come make an issue and we'll
+see if we can sort it out! But conceptually, we've made our own package that
+anyone could use! All that would be left is to
+`stack upload rasa-ext-copy-pasta` to upload it to hackage (but please don't do
+that or we'll have a ton of copies of this tutorial uploaded).
+
 That's all for this episode! The API will be changing (see: improving) over
 time so stay tuned for updates. For now go and make some of your own
 extensions! I'm excited to see what you come up with!

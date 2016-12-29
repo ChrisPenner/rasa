@@ -2,7 +2,7 @@ Rasa (Rah-zah)
 ==============
 
 [![Join the chat at https://gitter.im/rasa-editor/Lobby](https://badges.gitter.im/rasa-editor/Lobby.svg)](https://gitter.im/rasa-editor/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Hackage](https://img.shields.io/badge/hackage-latest-green.svg)]()
+[![Hackage](https://img.shields.io/badge/hackage-latest-green.svg)](https://hackage.haskell.org/package/rasa)
 
 Embarrassingly modular customizable text editor built in Haskell.
 
