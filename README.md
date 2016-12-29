@@ -2,8 +2,23 @@ Rasa (Rah-zah)
 ==============
 
 [![Join the chat at https://gitter.im/rasa-editor/Lobby](https://badges.gitter.im/rasa-editor/Lobby.svg)](https://gitter.im/rasa-editor/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Hackage](https://img.shields.io/badge/hackage-latest-green.svg)]()
 
 Embarrassingly modular customizable text editor built in Haskell.
+
+Documentation
+-------------
+You can find hackage documentation for rasa and some extensions here:
+
+- [rasa](https://hackage.haskell.org/package/rasa)
+- [rasa-ext-cmd](https://hackage.haskell.org/package/rasa-ext-cmd)
+- [rasa-ext-cursors](https://hackage.haskell.org/package/rasa-ext-cursors)
+- [rasa-ext-files](https://hackage.haskell.org/package/rasa-ext-files)
+- [rasa-ext-logger](https://hackage.haskell.org/package/rasa-ext-logger)
+- [rasa-ext-slate](https://hackage.haskell.org/package/rasa-ext-slate)
+- [rasa-ext-status-bar](https://hackage.haskell.org/package/rasa-ext-status-bar)
+- [rasa-ext-style](https://hackage.haskell.org/package/rasa-ext-style)
+- [rasa-ext-vim](https://hackage.haskell.org/package/rasa-ext-vim)
 
 What people are saying
 ----------------------
@@ -22,6 +37,38 @@ At the moment you must build Rasa from source;
 1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
 2. Clone this repo and `cd` into the directory
 3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
+
+### Troubleshooting
+
+- You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses.
+- You'll need to point to the icu4c lib in your stack.yaml wherever it's stored on your system. If you install
+    using brew on your Mac, then you can add the following to your stack.yaml:
+
+```yaml
+extra-lib-dirs:
+- /usr/local/opt/icu4c/lib 
+extra-include-dirs:
+- /usr/local/opt/icu4c/include
+```
+
+- Depending on which LTS you're on, you'll likely also have to add each rasa package you use to your stack.yaml as
+    extra-deps, here's an example:
+
+```yaml
+# in stack.yaml
+extra-deps:
+- rasa-0.1.0.0
+- rasa-ext-cursors-0.1.0.0
+- rasa-ext-logger-0.1.0.0
+- rasa-ext-status-bar-0.1.0.0
+- rasa-ext-vim-0.1.0.0
+- text-lens-0.1.0.0
+- rasa-ext-files-0.1.0.0
+- rasa-ext-cmd-0.1.0.0
+- rasa-ext-slate-0.1.0.0
+- rasa-ext-style-0.1.0.0
+- vty-5.14
+```
 
 Getting started
 ---------------
