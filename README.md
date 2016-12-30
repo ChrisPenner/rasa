@@ -6,6 +6,10 @@ Rasa (Rah-zah)
 
 Embarrassingly modular customizable text editor built in Haskell.
 
+![Rasa Editor](https://github.com/ChrisPenner/rasa/blob/master/docs/rasa.png "Rasa Editor")
+
+A Rasa editing session with multiple cursors.
+
 Documentation
 -------------
 You can find hackage documentation for rasa and some extensions here:
