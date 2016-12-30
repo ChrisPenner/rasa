@@ -1,0 +1,23 @@
+-- For more details, see
+-- http://cabal.readthedocs.io/en/latest/nix-local-build-overview.html
+
+packages:
+ ./rasa
+ ./rasa-ext-cmd
+ ./rasa-ext-cursors
+ ./rasa-ext-files
+ ./rasa-ext-logger
+ ./rasa-ext-slate
+ ./rasa-ext-status-bar
+ ./rasa-ext-style
+ ./rasa-ext-vim
+ ./rasa-example-config
+ ./text-lens
+
+-- uncomment the fragment below if you installed icu4c manually or see
+--  https://github.com/haskell/hackage-server#installing-icu
+-- on how to install icu4c so that the text-icu package can find it automatically
+--
+-- package text-icu
+--   extra-lib-dirs: /usr/local/opt/icu4c/lib 
+--   extra-include-dirs: /usr/local/opt/icu4c/include
