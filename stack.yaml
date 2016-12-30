@@ -22,3 +22,4 @@ extra-include-dirs:
 - /usr/local/opt/icu4c/include
 
 resolver: lts-7.11
+pvp-bounds: both
