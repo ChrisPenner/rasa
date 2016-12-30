@@ -25,15 +25,20 @@
 -- extensons do what they need to do. Read more here: 'Action', 'BufAction'.
 --
 -- To sum it all up, Here's an example of a simple logging extension that
--- simply writes each event to a file.
+-- simply writes each keypress to a file.
 --
+-- > logKeypress :: Keypress -> Action ()
+-- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
+-- >
 -- > logger :: Scheduler ()
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
--- >   onEvent $ do
--- >     evts <- use events
--- >     mapM_ (liftIO . appendFile "logs" . (++ "\n") . show) evts
+-- >   eventListener logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
+--
+-- Check out this tutorial on building extensions, it's also just a great way to learn
+-- how the editor works: <https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md Building an
+-- Extension>.
 ----------------------------------------------------------------------------
 
 module Rasa.Ext
