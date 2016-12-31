@@ -14,7 +14,7 @@ import Rasa.Renderer.Slate
 -- 'terminalEvents' is an event provider which listens for key-presses etc.
 -- The @do@ block is of type 'Rasa.Ext.Scheduler.Scheduler'
 main :: IO ()
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   vim
   statusBar
   files
