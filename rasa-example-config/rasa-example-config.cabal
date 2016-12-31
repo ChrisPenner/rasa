@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 executable rasa
   hs-source-dirs:      app
   main-is:             Main.hs
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , rasa
                      , rasa-ext-vim
                      , rasa-ext-style

@@ -18,7 +18,7 @@ library
   exposed-modules:
                        Rasa.Ext.StatusBar
 
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , rasa
                      , data-default
                      , lens

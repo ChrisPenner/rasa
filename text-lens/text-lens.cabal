@@ -18,7 +18,7 @@ library
   exposed-modules:
                        Control.Lens.Text
 
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , text
                      , lens
                      , extra
