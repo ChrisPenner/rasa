@@ -37,7 +37,7 @@ setMode vimst = bufExt .= vimst
 --
 -- e.g.
 --
--- > rasa [keypressProvider] $ do
+-- > rasa $ do
 -- >    vim
 -- >    ...
 vim :: Scheduler ()

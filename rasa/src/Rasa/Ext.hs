@@ -45,6 +45,7 @@ module Rasa.Ext
   (
   -- * Editor Actions
     Action
+  , doAsync
   , exit
   , addBuffer
   , addBufferThen

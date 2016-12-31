@@ -47,7 +47,7 @@ copyListener :: Copied -> Action ()
 copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
 
 main :: IO ()
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   vim
   statusBar
   files

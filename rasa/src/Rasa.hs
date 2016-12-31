@@ -17,12 +17,14 @@ import Data.List
 --
 -- @rasa eventProviders extensions@
 --
--- This should be imported by a user-config and called with extension event providers and extension event hooks as
--- arguments. e.g.:
+-- This should be imported by a user-config with and called with a 'Scheduler'
+-- containing any extensions which have event listeners.
 --
--- > rasa [slateEvent] $ do
+-- > rasa $ do
 -- >   cursor
 -- >   vim
+-- >   slate
+
 rasa :: Scheduler () -> IO ()
 rasa scheduler =
   evalAction def hooks $ do
@@ -32,8 +34,8 @@ rasa scheduler =
     where hooks = getHooks scheduler
 
 -- | This is the main event loop, it runs recursively forever until something
--- sets 'Rasa.Editor.exiting'. It runs the pre-event hooks, then listens for an
--- event from the event providers, then runs the post event hooks and repeats.
+-- sets 'Rasa.Editor.exiting'. It runs the pre-event hooks, then checks if any
+-- async events have finished, then runs the post event hooks and repeats.
 eventLoop :: Action ()
 eventLoop = do
   dispatchEvent BeforeRender
