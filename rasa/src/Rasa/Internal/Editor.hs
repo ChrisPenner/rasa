@@ -7,6 +7,8 @@ module Rasa.Internal.Editor
   (
   -- * Accessing/Storing state
   Editor
+  , HasEditor
+  , editor
 
   , focused
 -- | 'focused' is the index of the currently selected buffer (this will likely change)
@@ -46,12 +48,12 @@ data Editor = Editor
   , _exiting :: Bool
   , _extState :: ExtMap
   }
-makeLenses ''Editor
+makeClassy ''Editor
 
 instance Show Editor where
-  show editor =
-    "Buffers==============\n" ++ show (editor^.buffers) ++ "\n\n"
-    ++ "Editor Extensions==============\n" ++ show (editor^.extState) ++ "\n\n"
+  show ed =
+    "Buffers==============\n" ++ show (ed^.buffers) ++ "\n\n"
+    ++ "Editor Extensions==============\n" ++ show (ed^.extState) ++ "\n\n"
     ++ "---\n\n"
 
 
@@ -68,9 +70,9 @@ instance Default Editor where
 -- | A lens over the extensions of all buffers.
 -- This is useful for setting defaults or altering extension state across all buffers.
 allBufExt
-  :: forall a.
-     (Show a, Typeable a)
-  => Traversal' Editor (Maybe a)
+  :: forall a e.
+    (Show a, Typeable a, HasEditor e)
+  => Traversal' e (Maybe a)
 allBufExt =
   buffers . traverse . bufExts . at (typeRep (Proxy :: Proxy a)) . mapping coerce
   where
@@ -109,31 +111,31 @@ bufExt = lens getter setter
 -- nothing has yet been stored.
 
 ext
-  :: forall a.
-     (Show a, Typeable a, Default a)
-  => Lens' Editor a
+  :: forall a e.
+    (Show a, Typeable a, Default a, HasEditor e)
+  => Lens' e a
 ext = lens getter setter
   where
-    getter editor =
-      fromMaybe def $ editor ^. extState . at (typeRep (Proxy :: Proxy a)) .
+    getter ed =
+      fromMaybe def $ ed ^. extState . at (typeRep (Proxy :: Proxy a)) .
       mapping coerce
-    setter editor new =
+    setter ed new =
       set
         (extState . at (typeRep (Proxy :: Proxy a)) . mapping coerce)
         (Just new)
-        editor
+        ed
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
 -- | 'focusedBuf' is a lens which focuses the currently selected buffer.
-focusedBuf :: Lens' Editor Buffer
+focusedBuf :: HasEditor e => Lens' e Buffer
 focusedBuf = lens getter setter
   where
-    getter editor =
-      let foc = editor ^. focused
-      in editor ^?! buffers . ix foc
-    setter editor new =
-      let foc = editor ^. focused
-      in editor & buffers . ix foc .~ new
+    getter ed =
+      let foc = ed ^. focused
+      in ed ^?! buffers . ix foc
+    setter ed new =
+      let foc = ed ^. focused
+      in ed & buffers . ix foc .~ new
 
 -- | A lens over text which is encompassed by a 'Range'
 range :: Range -> Lens' Buffer Y.YiString

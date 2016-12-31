@@ -97,6 +97,8 @@ module Rasa.Ext
   , ext
   , bufExt
 
+  , editor
+
    -- * Accessing/Editing Context
   , Buffer
   , text
@@ -123,6 +125,7 @@ module Rasa.Ext
   , Hook
   , dispatchEvent
   , eventListener
+  , eventProvider
 
   -- * Built-in Event Hooks
   , onInit
@@ -158,6 +161,7 @@ module Rasa.Ext
   ) where
 
 import Rasa.Internal.Action
+import Rasa.Internal.Async
 import Rasa.Internal.Directive
 import Rasa.Internal.Editor
 import Rasa.Internal.Events

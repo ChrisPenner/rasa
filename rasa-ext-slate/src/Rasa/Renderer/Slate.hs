@@ -1,4 +1,4 @@
-module Rasa.Renderer.Slate (slate, terminalEvents) where
+module Rasa.Renderer.Slate (slate) where
 
 import Rasa.Ext
 import Rasa.Renderer.Slate.Render (render)
@@ -17,6 +17,7 @@ import Control.Monad.IO.Class
 -- >    ...
 slate :: Scheduler ()
 slate = do
+  onInit terminalEvents
   onRender render
   onExit shutdown
 

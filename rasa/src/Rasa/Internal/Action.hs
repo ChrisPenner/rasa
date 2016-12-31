@@ -1,14 +1,24 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, ExistentialQuantification #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, ExistentialQuantification, TemplateHaskell, StandaloneDeriving #-}
 
 module Rasa.Internal.Action where
 
+import Control.Lens
+import Control.Concurrent.Async
 import Control.Monad.State
 import Control.Monad.Reader
 import Data.Dynamic
 import Data.Map
+import Data.Default
 
 import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
+
+
+-- | A wrapper around event listeners so they can be stored in 'Hooks'.
+data Hook = forall a. Hook a
+
+-- | A map of Event types to a list of listeners for that event
+type Hooks = Map TypeRep [Hook]
 
 -- | This is a monad-transformer stack for performing actions against the editor.
 -- You register Actions to be run in response to events using 'Rasa.Internal.Scheduler.eventListener'
@@ -22,16 +32,32 @@ import Rasa.Internal.Editor
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Internal.Ext.Directive' module.
 
 newtype Action a = Action
-  { runAct :: StateT Editor (ReaderT Hooks IO) a
-  } deriving (Functor, Applicative, Monad, MonadState Editor, MonadReader Hooks, MonadIO)
+  { runAct :: StateT ActionState (ReaderT Hooks IO) a
+  } deriving (Functor, Applicative, Monad, MonadState ActionState, MonadReader Hooks, MonadIO)
 
 -- | Unwrap and execute an Action (returning the editor state)
-execAction :: Editor -> Hooks -> Action () -> IO Editor
-execAction editor hooks action  = flip runReaderT hooks $ execStateT (runAct action) editor
+execAction :: ActionState -> Hooks -> Action () -> IO ActionState
+execAction actionState hooks action = flip runReaderT hooks . execStateT (runAct action) $ actionState
 
 -- | Unwrap and evaluate an Action (returning the value)
-evalAction :: Editor -> Hooks -> Action a ->IO a
-evalAction editor hooks action  = flip runReaderT hooks $ evalStateT (runAct action) editor
+evalAction :: ActionState -> Hooks -> Action a -> IO a
+evalAction actionState hooks action  = flip runReaderT hooks $ evalStateT (runAct action) actionState
+
+type AsyncAction = Async (Action ())
+data ActionState = ActionState
+  { _ed :: Editor
+  , _asyncs :: [AsyncAction]
+  }
+makeClassy ''ActionState
+
+instance HasEditor ActionState where
+  editor = ed
+
+instance Default ActionState where
+  def = ActionState
+    { _ed=def
+    , _asyncs=def
+    }
 
 -- | This is a monad-transformer stack for performing actions on a specific buffer.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'
@@ -47,9 +73,3 @@ newtype BufAction a = BufAction
   { getBufAction::StateT Buffer (ReaderT Hooks IO) a
   } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader Hooks, MonadIO)
 
-
--- | A wrapper around event listeners so they can be stored in 'Hooks'.
-data Hook = forall a. Hook a
-
--- | A map of Event types to a list of listeners for that event
-type Hooks = Map TypeRep [Hook]
