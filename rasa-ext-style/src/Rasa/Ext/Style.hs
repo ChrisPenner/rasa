@@ -83,7 +83,7 @@ addStyle r st = styles %= (Span r st:)
 --
 -- e.g.
 --
--- > rasa [...] $ do
+-- > rasa $ do
 -- >    style
 -- >    ...
 style :: Scheduler ()

@@ -32,7 +32,7 @@ It should look something like this:
 import Rasa
 -- ... some other imports
 main :: IO ()
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   vim
   files
   cursors
@@ -57,7 +57,7 @@ helloWorld :: Action ()
 helloWorld = writeFile "hello-world.txt" "Hello, World!"
 
 main :: IO ()
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   -- some plugins...
   -- Add the new action here!
   helloWorld
@@ -132,7 +132,7 @@ Under the hood it just calls `eventListener` for the `Init` event which is dispa
 a nifty helper to make things simpler. Let's use it to schedule our `helloWorld` Action.
 
 ```haskell
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   -- other extensions
   onInit helloWorld
 ```
@@ -188,7 +188,7 @@ got our function from our event type (Keypress), so let's try embedding it
 using `eventListener`
 
 ```haskell
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   -- other extensions
   eventListener helloWorld
 ```
@@ -234,7 +234,7 @@ going to power through it!
 import Rasa.Ext.Cursors
 import Rasa.Control.Lens
 
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   -- other extensions
   cursors
   eventListener copyPasta
@@ -523,7 +523,7 @@ Okay fine! Let's listen for the events so we can see them coming through!
 copyListener :: Copied -> Action ()
 copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
 
-main = rasa [terminalEvents] $ do
+main = rasa $ do
   -- other extensions
   eventListener copyListener
 ```

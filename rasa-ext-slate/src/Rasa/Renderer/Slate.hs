@@ -12,7 +12,7 @@ import Control.Monad.IO.Class
 --
 -- e.g.
 --
--- > rasa [...] $ do
+-- > rasa $ do
 -- >    slate
 -- >    ...
 slate :: Scheduler ()
