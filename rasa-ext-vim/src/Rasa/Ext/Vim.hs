@@ -8,6 +8,7 @@ import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.StatusBar
 
+import Control.Monad.IO.Class
 import Control.Lens
 import Data.Text.Lens (packed)
 import Data.Default
@@ -36,7 +37,7 @@ setMode vimst = bufExt .= vimst
 --
 -- e.g.
 --
--- > rasa [keypressProvider] $ do
+-- > rasa $ do
 -- >    vim
 -- >    ...
 vim :: Scheduler ()
