@@ -80,6 +80,17 @@ Getting started
 Here's a great guide on building a copy-paste extension from scratch! I definitely
 recommend checking it out!
 
+### Configuring Rasa
+
+Rasa is designed to be easy to configure, both when adding extensions provided
+by the community, and when writing your own user-scripts.
+
+Rasa is written in Haskell, and the configuration is done in the Haskell
+language, don't let that scare you though, you can script Rasa and add
+extensions without knowing much haskell!
+
+Check out the [Example Config](https://github.com/ChrisPenner/rasa/tree/master/rasa-example-config) to get an idea of where to go next!
+
 ### [Building Your First Extension](https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md)
 
 \^ That guide will walk you through installation and getting running! Once
