@@ -7,7 +7,7 @@ import Rasa.Ext.Files
 import Rasa.Ext.StatusBar
 import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
-import Rasa.Renderer.Slate
+import Rasa.Ext.Slate
 
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants

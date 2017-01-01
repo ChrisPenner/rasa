@@ -1,9 +1,9 @@
-module Rasa.Renderer.Slate (slate) where
+module Rasa.Ext.Slate (slate) where
 
 import Rasa.Ext
-import Rasa.Renderer.Slate.Render (render)
-import Rasa.Renderer.Slate.Event (terminalEvents)
-import Rasa.Renderer.Slate.State (getVty)
+import Rasa.Ext.Slate.Internal.Render (render)
+import Rasa.Ext.Slate.Internal.Event (terminalEvents)
+import Rasa.Ext.Slate.Internal.State (getVty)
 
 import qualified Graphics.Vty as V
 import Control.Monad.IO.Class

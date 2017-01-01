@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Rasa.Renderer.Slate.Attributes where
+module Rasa.Ext.Slate.Internal.Attributes where
 
 import Rasa.Ext
 import Rasa.Ext.Style
