@@ -1,5 +1,6 @@
 Slate
 =====
+See the docs on [Hackage](hackage.haskell.org/package/rasa-ext-slate)
 
 **Slate** is a **Renderer** for Rasa, that basically means that it helps you
 see and interact with the editor. That all sounds impressive, but behind the

@@ -1,5 +1,6 @@
 Vim
 ===
+See the docs on [Hackage](hackage.haskell.org/package/rasa-ext-vim)
 
 This extension more-or-less describes a Vim-style keymapping for Rasa. It's
 also a good example of how to write your own keymap for Rasa.

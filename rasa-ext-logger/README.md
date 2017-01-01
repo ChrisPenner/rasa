@@ -1,5 +1,6 @@
 Logger
 ======
+See the docs on [Hackage](hackage.haskell.org/package/rasa-ext-logger)
 
 This is a basic logging extension, it's really quite useful for debugging when
 working on extensions. If you add `logger` to your configuration then logger will
