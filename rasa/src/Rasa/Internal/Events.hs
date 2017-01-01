@@ -37,6 +37,7 @@ data Keypress
   | Esc
   | BS
   | Enter
+  | Unknown
   deriving (Show, Eq, Typeable)
 
 -- | This represents each modifier key that could be pressed along with a key.

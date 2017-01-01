@@ -7,13 +7,14 @@ module Rasa.Ext.Logger
 import Rasa.Ext
 
 import Control.Monad.State
+import Control.Lens
 
 logger :: Scheduler ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
   afterRender $ do
-    editor <- get
-    liftIO $ appendFile "logs.log" (show editor)
+    ed <- use editor
+    liftIO $ appendFile "logs.log" (show ed)
 
 logInfo :: String -> Action ()
 logInfo msg = liftIO $ appendFile "info.log" ("INFO: " ++ msg ++ "\n")
