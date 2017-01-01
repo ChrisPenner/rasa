@@ -1,4 +1,4 @@
-module Rasa.Renderer.Slate.State (getVty) where
+module Rasa.Ext.Slate.Internal.State (getVty) where
 
 import Rasa.Ext
 import Control.Lens

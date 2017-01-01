@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-module Rasa.Renderer.Slate.Render (render) where
+module Rasa.Ext.Slate.Internal.Render (render) where
 
 import Rasa.Ext
 import Rasa.Ext.Style
 import Rasa.Ext.StatusBar (left, center, right)
-import Rasa.Renderer.Slate.State
-import Rasa.Renderer.Slate.Attributes
+import Rasa.Ext.Slate.Internal.State
+import Rasa.Ext.Slate.Internal.Attributes
 import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V

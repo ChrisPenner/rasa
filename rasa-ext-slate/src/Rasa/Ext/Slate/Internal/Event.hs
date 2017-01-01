@@ -1,8 +1,8 @@
-module Rasa.Renderer.Slate.Event (terminalEvents) where
+module Rasa.Ext.Slate.Internal.Event (terminalEvents) where
 
 import Rasa.Ext
 
-import Rasa.Renderer.Slate.State
+import Rasa.Ext.Slate.Internal.State
 
 import qualified Graphics.Vty as V
 
