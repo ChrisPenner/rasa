@@ -3,12 +3,13 @@
 module Rasa.Internal.Action where
 
 import Control.Lens
-import Control.Concurrent.Async
 import Control.Monad.State
 import Control.Monad.Reader
 import Data.Dynamic
 import Data.Map
-import Data.Default
+
+import Pipes
+import Pipes.Concurrent hiding (Buffer)
 
 import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
@@ -43,21 +44,15 @@ execAction actionState hooks action = flip runReaderT hooks . execStateT (runAct
 evalAction :: ActionState -> Hooks -> Action a -> IO a
 evalAction actionState hooks action  = flip runReaderT hooks $ evalStateT (runAct action) actionState
 
-type AsyncAction = Async (Action ())
+type ActionProducer = Producer (Action ()) IO ()
 data ActionState = ActionState
   { _ed :: Editor
-  , _asyncs :: [AsyncAction]
+  , _actionQueue :: Output (Action ())
   }
 makeClassy ''ActionState
 
 instance HasEditor ActionState where
   editor = ed
-
-instance Default ActionState where
-  def = ActionState
-    { _ed=def
-    , _asyncs=def
-    }
 
 -- | This is a monad-transformer stack for performing actions on a specific buffer.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'
