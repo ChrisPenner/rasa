@@ -1,9 +1,9 @@
 dependencies:
-  # cache_directories:
-  #   - "~/.stack"
-  #   - "~/.cabal"
-  #   - "~/.ghc"
-  #   - ".stack-work"
+  cache_directories:
+    - "~/.stack"
+    - "~/.cabal"
+    - "~/.ghc"
+    - ".stack-work"
   pre:
     - wget https://github.com/commercialhaskell/stack/releases/download/v0.1.2.0/stack-0.1.2.0-x86_64-linux.gz -O /tmp/stack.gz
     - gunzip /tmp/stack.gz && chmod +x /tmp/stack
