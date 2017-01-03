@@ -1,3 +1,7 @@
+machine:
+  ghc:
+    version: 7.10.2
+
 dependencies:
   cache_directories:
     - "~/.stack"
@@ -9,9 +13,9 @@ dependencies:
     - gunzip /tmp/stack.gz && chmod +x /tmp/stack
     - sudo mv /tmp/stack /usr/bin/stack
   override:
-    - stack setup --no-system-ghc
-    - stack build --no-system-ghc
+    - stack setup
+    - stack build
 
 test:
   override:
-    - stack test --no-system-ghc
+    - stack test
