@@ -1,4 +1,4 @@
-module Rasa.Internal.Async 
+module Rasa.Internal.Async
   ( doAsync
   , eventProvider
 ) where
@@ -6,10 +6,11 @@ module Rasa.Internal.Async
 import Rasa.Internal.Action
 import Rasa.Internal.Scheduler
 
+import Pipes
+import Pipes.Concurrent
+
 import Data.Typeable
-import Control.Concurrent.Async
 import Control.Lens
-import Control.Monad.IO.Class
 
 -- | This function takes an IO which results in some Event, it runs the IO
 -- asynchronously and dispatches the event, then repeats the process all over
@@ -17,10 +18,16 @@ import Control.Monad.IO.Class
 -- for some event (e.g. keypresses or network activity)
 
 eventProvider :: Typeable a => IO a -> Action ()
-eventProvider getEventIO = doAsync (dispatchAndRerun <$> getEventIO)
-    where dispatchAndRerun evt = do
-            dispatchEvent evt
-            eventProvider getEventIO
+eventProvider getEventIO = do
+  out <- use actionQueue
+  liftIO $ void $ forkIO $ do runEffect $ producer >-> toOutput out
+                              performGC
+  where
+    producer :: Producer (Action ()) IO ()
+    producer = do
+          evt <- lift getEventIO
+          yield (dispatchEvent evt)
+          producer
 
 -- | doAsync allows you to perform a task asynchronously and then apply the
 -- result. In @doAsync asyncAction@, @asyncAction@ is an IO which resolves to
@@ -55,5 +62,9 @@ eventProvider getEventIO = doAsync (dispatchAndRerun <$> getEventIO)
 
 doAsync ::  IO (Action ()) -> Action ()
 doAsync asyncIO = do
-  newAsync <- liftIO $ async asyncIO
-  asyncs <>= [newAsync]
+  queue <- use actionQueue
+  liftIO $ void $ forkIO $ do runEffect $ producer >-> toOutput queue
+                              performGC
+  where producer = do
+          action <- lift asyncIO
+          yield action
