@@ -1,15 +1,20 @@
-{-# language TemplateHaskell, DeriveFunctor #-}
-module Rasa.Ext.Viewports (getViewports, Dir(..), Viewports(..), Window(..), SplitInfo(..)) where
+{-# language DeriveFunctor #-}
+module Rasa.Ext.Viewports (getViewports, Dir(..), SplitRule(..), Viewports(..), Window(..), SplitInfo(..)) where
 
 import Rasa.Ext
 import Control.Lens
 
 import Data.Default
 
+data SplitRule = 
+  Percentage Double
+  | FromStart Int
+  | FromEnd Int
+  deriving (Show, Eq)
+
 data SplitInfo = SplitInfo
-  { splitPoint :: Double
+  { splitRule :: SplitRule
   } deriving Show
-makeLenses ''SplitInfo
 
 data Dir = Hor
          | Vert
@@ -25,9 +30,9 @@ data Viewports = Viewports
   } deriving Show
 
 instance Default Viewports where
-  def = Viewports $ Split Hor (SplitInfo 0.5)
+  def = Viewports $ Split Hor (SplitInfo $ FromEnd 3)
                               (Single 0)
-                              $ Split Vert (SplitInfo 0.5)
+                              $ Split Vert (SplitInfo $ Percentage 0.7)
                                   (Single 0)
                                   (Single 0)
 

@@ -56,25 +56,40 @@ collectBuffers = bufDo $ do
   atts <- fmap (fmap convertStyle) <$> use styles
   return [(txt, atts)]
 
+splitByRule :: SplitRule -> Int -> (Int, Int)
+splitByRule (Percentage p) sz = (start, end)
+  where
+    start = ceiling $ fromIntegral sz * p
+    end = floor $ fromIntegral sz * (1 - p)
+
+splitByRule (FromStart amt) sz = (start, end)
+  where
+    start = min sz amt
+    end = sz - start
+
+splitByRule (FromEnd amt) sz = (start, end)
+  where
+    start = sz - end
+    end = min sz amt
+
+
 renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow (width, height) (Split Vert (SplitInfo divider) left right) =
+renderWindow (width, height) (Split Vert (SplitInfo spRule) left right) =
            renderWindow (leftWidth, height) left
      V.<|> border
      V.<|> renderWindow (rightWidth, height) right
     where
       availWidth = fromIntegral (width - 1)
-      leftWidth = ceiling $ availWidth * divider
-      rightWidth = floor $ availWidth * (1 - divider)
+      (leftWidth, rightWidth) = splitByRule spRule availWidth
       border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
 
-renderWindow (width, height) (Split Hor (SplitInfo divider) top bottom) =
+renderWindow (width, height) (Split Hor (SplitInfo spRule) top bottom) =
         renderWindow (width, topHeight) top
   V.<-> border
   V.<-> renderWindow (width, bottomHeight) bottom
     where
       availHeight = fromIntegral (height - 1)
-      topHeight = ceiling $ availHeight * divider
-      bottomHeight = floor $ availHeight * (1 - divider)
+      (topHeight, bottomHeight) = splitByRule spRule availHeight
       border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
 
 renderWindow (width, height) (Single viewport) =
