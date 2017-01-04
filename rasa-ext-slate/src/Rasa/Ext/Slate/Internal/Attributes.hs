@@ -57,7 +57,7 @@ applyAttrs atts txt = applyAttrs' converted (Y.lines txt)
         converted = combined & traverse._2 %~ attr'
 
 applyAttrs' :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
-applyAttrs' atts lines' = vertCat $ uncurry attrLine <$> pairLines atts lines'
+applyAttrs' atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
   where
     vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
 
