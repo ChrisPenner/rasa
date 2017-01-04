@@ -57,13 +57,25 @@ collectBuffers = bufDo $ do
   return [(txt, atts)]
 
 renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow (width, height) (VSplit (SplitInfo divider) left right) =
-     renderWindow (ceiling $ fromIntegral width * divider, height) left
-  V.<|> renderWindow (floor $ fromIntegral width * (1 - divider), height) right
+renderWindow (width, height) (Split Vert (SplitInfo divider) left right) =
+           renderWindow (leftWidth, height) left
+     V.<|> border
+     V.<|> renderWindow (rightWidth, height) right
+    where
+      availWidth = fromIntegral (width - 1)
+      leftWidth = ceiling $ availWidth * divider
+      rightWidth = floor $ availWidth * (1 - divider)
+      border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
 
-renderWindow (width, height) (HSplit (SplitInfo divider) top bottom) =
-  renderWindow (width, ceiling $ fromIntegral height * divider) top
-  V.<-> renderWindow (width, floor $ fromIntegral height * (1 - divider)) bottom
+renderWindow (width, height) (Split Hor (SplitInfo divider) top bottom) =
+        renderWindow (width, topHeight) top
+  V.<-> border
+  V.<-> renderWindow (width, bottomHeight) bottom
+    where
+      availHeight = fromIntegral (height - 1)
+      topHeight = ceiling $ availHeight * divider
+      bottomHeight = floor $ availHeight * (1 - divider)
+      border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
 
 renderWindow (width, height) (Single viewport) =
   renderBuf (width, height) viewport
