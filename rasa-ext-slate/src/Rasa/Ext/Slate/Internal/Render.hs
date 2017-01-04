@@ -4,6 +4,7 @@ module Rasa.Ext.Slate.Internal.Render (render) where
 import Rasa.Ext
 import Rasa.Ext.Bufs
 import Rasa.Ext.Viewports
+import Rasa.Ext.Views
 import Rasa.Ext.Style
 -- import Rasa.Ext.StatusBar (left, center, right)
 import Rasa.Ext.Slate.Internal.State
@@ -40,7 +41,7 @@ getSize = do
 render :: Action ()
 render = do
   (width, height) <- getSize
-  Viewports vp <- getViewports
+  Views vp <- getViews
   bufs <- collectBuffers
   let img = renderWindow (width, height) $ fmap (bufs !!) vp
       pic = V.picForImage img
@@ -106,9 +107,9 @@ renderWindow (width, height) (Split Hor (SplitInfo spRule) top bottom) =
       (topHeight, bottomHeight) = splitByRule spRule availHeight
       border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
 
-renderWindow (width, height) (Single viewport) =
-  renderBuf (width, height) viewport
+renderWindow (width, height) (Single viewInfo viewport) =
+  renderView (width, height) viewInfo viewport
 
-renderBuf :: (Width, Height) -> (Y.YiString, [Span V.Attr]) -> V.Image
-renderBuf (width, height) (txt, atts)= V.resize width height $ applyAttrs atts txt
+renderView :: (Width, Height) -> ViewInfo -> (Y.YiString, [Span V.Attr]) -> V.Image
+renderView (width, height) viewInfo (txt, atts) = V.resize width height $ applyAttrs atts txt
 
