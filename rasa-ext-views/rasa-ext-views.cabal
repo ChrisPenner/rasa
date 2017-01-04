@@ -1,7 +1,7 @@
-name:                rasa-ext-viewports
+name:                rasa-ext-views
 version:             0.1.0.0
-synopsis:            Rasa Ext managing rendering viewports
-description:         Rasa Ext managing rendering viewports
+synopsis:            Rasa Ext managing rendering views
+description:         Rasa Ext managing rendering views
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Rasa.Ext.Viewports
+  exposed-modules:     Rasa.Ext.Views
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , lens

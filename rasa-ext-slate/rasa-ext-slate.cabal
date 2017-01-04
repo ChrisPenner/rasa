@@ -27,7 +27,7 @@ library
                      , rasa
                      , rasa-ext-style
                      , rasa-ext-status-bar
-                     , rasa-ext-viewports
+                     , rasa-ext-views
                      , text
                      , yi-rope
                      , lens
