@@ -17,7 +17,9 @@ import Data.Typeable
 import qualified Data.Text as T
 import qualified Yi.Rope as Y
 
-data VimSt = Normal | Insert
+data VimSt 
+  = Normal
+  | Insert
   deriving (Show, Typeable)
 
 instance Default VimSt where
