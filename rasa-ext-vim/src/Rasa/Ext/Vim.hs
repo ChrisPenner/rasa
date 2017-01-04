@@ -9,7 +9,6 @@ import Rasa.Ext.Cursors
 import Rasa.Ext.StatusBar
 
 import Control.Monad (unless)
-import Control.Monad.IO.Class
 import Control.Lens
 import Data.Text.Lens (packed)
 import Data.Default
