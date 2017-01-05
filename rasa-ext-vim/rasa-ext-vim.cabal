@@ -19,6 +19,7 @@ library
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , rasa-ext-files
+                     , rasa-ext-views
                      , rasa-ext-cursors
                      , rasa-ext-status-bar
                      , text

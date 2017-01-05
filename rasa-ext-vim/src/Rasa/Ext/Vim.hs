@@ -7,6 +7,7 @@ import Rasa.Ext
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.StatusBar
+import Rasa.Ext.Views
 
 import Control.Monad (unless)
 import Control.Lens
@@ -81,6 +82,8 @@ setStatus = focusDo $ do
 global :: VimMode -> Keypress -> Action ()
 global Normal (Keypress '+' _) = nextBuf
 global Normal (Keypress '-' _) = prevBuf
+global Normal (Keypress 'e' [Ctrl]) = scrollBy 1
+global Normal (Keypress 'y' [Ctrl]) = scrollBy (-1)
 global _ (Keypress 'c' [Ctrl]) = exit
 global _ _ = return ()
 

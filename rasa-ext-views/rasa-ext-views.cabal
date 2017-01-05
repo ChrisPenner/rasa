@@ -15,6 +15,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Views
+                       Rasa.Ext.Views.Internal.Actions
+                       Rasa.Ext.Views.Internal.Types
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , lens

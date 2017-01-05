@@ -10,8 +10,8 @@ import Rasa.Ext.Slate.Internal.Attributes
 import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V
-import qualified Yi.Rope as Y
 import Control.Lens
+import Control.Monad.State
 
 type Width = Int
 type Height = Int
@@ -26,12 +26,12 @@ getSize = do
 render :: Action ()
 render = do
   (width, height) <- getSize
-  Views vp <- getViews
-  bufs <- collectBuffers
-  let img = renderWindow (width, height) $ fmap (bufs !!) vp
+  wins <- use windows
+  bufs <- bufDo $ (:[]) <$> get
+  let addContext v = (bufs !! view bufIndex v, v)
+      img = renderWindow (width, height) $ fmap addContext wins
       pic = V.picForImage img
 
-  -- bufImg <- focusDo $ renderBuf (width, height - 1)
   -- statusBar <- renderStatus width
   -- let img = bufImg V.<-> statusBar
   v <- getVty
@@ -49,18 +49,11 @@ render = do
 --       fullLine = foldMap addSpacer joinedParts
 --   return $ V.text' V.defAttr fullLine
 
--- | Given a window size, creates a 'BufAction' which will return an image representing the buffer it's run in.
-collectBuffers :: Action [(Y.YiString, [Span V.Attr])]
-collectBuffers = bufDo $ do
-  txt <- use rope
-  atts <- fmap (fmap convertStyle) <$> use styles
-  return [(txt, atts)]
-
 splitByRule :: SplitRule -> Int -> (Int, Int)
-splitByRule (Percentage p) sz = (start, end)
+splitByRule (Ratio r) sz = (start, end)
   where
-    start = ceiling $ fromIntegral sz * p
-    end = floor $ fromIntegral sz * (1 - p)
+    start = ceiling $ fromIntegral sz * r
+    end = floor $ fromIntegral sz * (1 - r)
 
 splitByRule (FromStart amt) sz = (start, end)
   where
@@ -73,11 +66,11 @@ splitByRule (FromEnd amt) sz = (start, end)
     end = min sz amt
 
 
-renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
+renderWindow :: (Width, Height) -> Window (Buffer, View) -> V.Image
 renderWindow (width, height) (Split Vert (SplitInfo spRule) left right) =
-           renderWindow (leftWidth, height) left
-     V.<|> border
-     V.<|> renderWindow (rightWidth, height) right
+        renderWindow (leftWidth, height) left
+  V.<|> border
+  V.<|> renderWindow (rightWidth, height) right
     where
       availWidth = fromIntegral (width - 1)
       (leftWidth, rightWidth) = splitByRule spRule availWidth
@@ -92,9 +85,15 @@ renderWindow (width, height) (Split Hor (SplitInfo spRule) top bottom) =
       (topHeight, bottomHeight) = splitByRule spRule availHeight
       border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
 
-renderWindow (width, height) (Single viewInfo viewport) =
-  renderView (width, height) viewInfo viewport
+renderWindow (width, height) (Single (buffer, viewInfo)) =
+  renderView (width, height) viewInfo buffer
 
-renderView :: (Width, Height) -> ViewInfo -> (Y.YiString, [Span V.Attr]) -> V.Image
-renderView (width, height) viewInfo (txt, atts) = V.resize width height $ applyAttrs atts txt
-
+renderView :: (Width, Height) -> View -> Buffer -> V.Image
+renderView (width, height) (View _ (ScrollPos scroll) _) buffer = 
+  V.resize width height $ V.translateY (-transAmt) img
+    where
+      txt = buffer^.rope
+      atts = fmap convertStyle <$> buffer^.styles
+      img = applyAttrs atts txt
+      imHeight = V.imageHeight img
+      transAmt = min imHeight scroll
