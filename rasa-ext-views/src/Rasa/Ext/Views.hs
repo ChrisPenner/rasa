@@ -1,9 +1,11 @@
-{-# language DeriveFunctor #-}
-module Rasa.Ext.Views (getViews, Dir(..), SplitRule(..), Views(..), Window(..), ViewInfo(..), SplitInfo(..)) where
+{-# language DeriveFunctor, FlexibleInstances #-}
+module Rasa.Ext.Views (getViews, split, single, Dir(..), SplitRule(..), Views(..), Window(..), ViewInfo(..), SplitInfo(..), WindowF(Split, Single)) where
 
 import Rasa.Ext
-import Control.Lens
 
+import Data.Functor.Foldable
+import Prelude hiding (Foldable, succ)
+import Control.Lens
 import Data.Default
 
 data SplitRule =
@@ -24,21 +26,42 @@ data Dir = Hor
          | Vert
          deriving (Show)
 
-data Window a =
-  Split Dir SplitInfo (Window a) (Window a)
+data WindowF a r =
+  Split Dir SplitInfo r r
     | Single ViewInfo a
-    deriving (Show, Functor)
+    deriving (Functor)
+
+type Window a = Fix (WindowF a)
+
+-- instance Bifunctor WindowF where
+--   first f (Single viewInfo a) = Single viewInfo (f a)
+--   first f (Split dir splitInfo start end) = Split dir splitInfo (first f start) (first f end)
+--   second = fmap
+
+valMap :: (a -> b) -> Window a -> Window b
+valMap f = cata alg
+  where alg  (Single viewInfo a) = refix $ Single viewInfo (f a)
+        alg splt = splt
+
+split :: Show a => Dir -> SplitInfo -> Window a -> Window a -> Window a
+split dir splitInfo start end = Fix (Split dir splitInfo start end)
+
+single :: Show a => ViewInfo -> a -> Window a
+single viewInfo contents = Fix (Single viewInfo contents)
 
 data Views = Views
   { main :: Window Int
-  } deriving Show
+  }
+
+instance Show Views where
+  show _ = "Views"
 
 instance Default Views where
-  def = Views $ Split Hor (SplitInfo $ FromEnd 3)
-                              (Single (ViewInfo True) 0)
-                              $ Split Vert (SplitInfo $ Percentage 0.7)
-                                  (Single (ViewInfo False) 0)
-                                  (Single (ViewInfo False) 0)
+  def = Views $ split Hor (SplitInfo $ Percentage 0.5)
+                              (single (ViewInfo True) 0)
+                              $ split Vert (SplitInfo $ Percentage 0.5)
+                                  (single (ViewInfo False) 0)
+                                  (single (ViewInfo False) 0)
 
 getViews :: Action Views
 getViews = use ext

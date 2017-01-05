@@ -88,27 +88,44 @@ splitByRule (FromEnd amt) sz = (start, end)
     end = min sz amt
 
 
+-- renderWindow' :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
+-- renderWindow' (width, height) (Split Vert (SplitInfo spRule) left right) =
+--            renderWindow (leftWidth, height) left
+--      V.<|> border
+--      V.<|> renderWindow (rightWidth, height) right
+--     where
+--       availWidth = fromIntegral (width - 1)
+--       (leftWidth, rightWidth) = splitByRule spRule availWidth
+--       border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
+
+-- renderWindow (width, height) (Split Hor (SplitInfo spRule) top bottom) =
+--         renderWindow (width, topHeight) top
+--   V.<-> border
+--   V.<-> renderWindow (width, bottomHeight) bottom
+--     where
+--       availHeight = fromIntegral (height - 1)
+--       (topHeight, bottomHeight) = splitByRule spRule availHeight
+--       border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
+
+-- renderWindow (width, height) (Single viewInfo viewport) =
+--   renderView (width, height) viewInfo viewport
+
 renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow (width, height) (Split Vert (SplitInfo spRule) left right) =
-           renderWindow (leftWidth, height) left
-     V.<|> border
-     V.<|> renderWindow (rightWidth, height) right
-    where
-      availWidth = fromIntegral (width - 1)
-      (leftWidth, rightWidth) = splitByRule spRule availWidth
-      border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
+renderWindow sz window = cata alg window sz
+  where
+    alg (Split Vert (SplitInfo spRule) left right) = \(width, height) ->
+      let availWidth = fromIntegral (width - 1)
+          (leftWidth, rightWidth) = splitByRule spRule availWidth
+          border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
+       in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
 
-renderWindow (width, height) (Split Hor (SplitInfo spRule) top bottom) =
-        renderWindow (width, topHeight) top
-  V.<-> border
-  V.<-> renderWindow (width, bottomHeight) bottom
-    where
-      availHeight = fromIntegral (height - 1)
-      (topHeight, bottomHeight) = splitByRule spRule availHeight
-      border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
+    alg (Split Hor (SplitInfo spRule) top bottom) = \(width, height) ->
+      let availHeight = fromIntegral (height - 1)
+          (topHeight, bottomHeight) = splitByRule spRule availHeight
+          border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
+       in top (topHeight, height) V.<|> border V.<|> bottom (bottomHeight, height)
 
-renderWindow (width, height) (Single viewInfo viewport) =
-  renderView (width, height) viewInfo viewport
+    alg (Single viewInfo bufInfo) = \sz -> renderView sz viewInfo bufInfo
 
 renderView :: (Width, Height) -> ViewInfo -> (Y.YiString, [Span V.Attr]) -> V.Image
 renderView (width, height) viewInfo (txt, atts) = V.resize width height $ applyAttrs atts txt

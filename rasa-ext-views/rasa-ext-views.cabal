@@ -19,6 +19,7 @@ library
                      , rasa
                      , lens
                      , data-default
+                     , recursion-schemes
   default-language:    Haskell2010
 
   default-extensions:

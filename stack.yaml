@@ -17,6 +17,7 @@ packages:
 
 extra-deps:
 - vty-5.14
+- recursion-schemes-5.0.1
 
 extra-lib-dirs:
 - /usr/local/opt/icu4c/lib 
