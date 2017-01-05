@@ -16,7 +16,7 @@ import Data.Typeable
 import qualified Data.Text as T
 import qualified Yi.Rope as Y
 
-data VimSt 
+data VimSt
   = Normal
   | Insert
   deriving (Show, Typeable)
@@ -30,20 +30,16 @@ newtype VimHist = VimHist [Keypress]
 instance Default VimHist where
   def = VimHist []
 
--- | A helper to extract the vim state from the current buffer.
+-- | A helper to extract and set the vim state from the current buffer.
 -- Specifying the type is what allows it to work.
-getVim :: BufAction VimSt
-getVim = use bufExt
-
 vimSt :: Lens' Buffer VimSt
 vimSt = bufExt
 
--- | Same helper fuctions as VimSt but for VimHist
-
+-- | Same as vimSt but for VimHist
 vimHist :: Lens' Buffer VimHist
 vimHist = bufExt
 
--- | Adds a key to the VimHist
+-- | Adds a key to the end of VimHist
 addHist :: Keypress -> BufAction ()
 addHist key = do 
   VimHist hist <- use vimHist
@@ -82,7 +78,7 @@ handleKeypress keypress = do
 -- | Sets the status bar to the current mode and current VimHist
 setStatus :: Action ()
 setStatus = focusDo $ do
-  mode <- getVim
+  mode <- use vimSt
   hist <- use vimHist
   centerStatus $ show mode^.packed
   rightStatus $ show hist^.packed
