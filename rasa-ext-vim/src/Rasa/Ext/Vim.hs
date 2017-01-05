@@ -35,22 +35,19 @@ instance Default VimHist where
 getVim :: BufAction VimSt
 getVim = use bufExt
 
--- | A helper to set the current VimSt to the new mode
-setMode :: VimSt -> BufAction ()
-setMode vimst = bufExt .= vimst
+vimSt :: Lens' Buffer VimSt
+vimSt = bufExt
 
 -- | Same helper fuctions as VimSt but for VimHist
-getHist :: BufAction VimHist
-getHist = use bufExt
 
-setHist :: VimHist -> BufAction ()
-setHist vimhist = bufExt .= vimhist
+vimHist :: Lens' Buffer VimHist
+vimHist = bufExt
 
 -- | Adds a key to the VimHist
 addHist :: Keypress -> BufAction ()
 addHist key = do 
-  VimHist hist <- getHist
-  bufExt .= (VimHist (hist ++ [key]))
+  VimHist hist <- use vimHist
+  vimHist .= (VimHist (hist ++ [key]))
 
 
 -- | The main export for the vim keybinding extension. Add this to your user config.
@@ -71,14 +68,14 @@ vim = do
 handleKeypress :: Keypress -> Action ()
 handleKeypress keypress = do
   focMode <- focusDo $ do
-    mode <- getVim
-    VimHist hist <- getHist
+    mode <- use vimSt
+    VimHist hist <- use vimHist
     case mode of
       Normal -> normal $  hist ++ [keypress]
       Insert -> insert $  hist ++ [keypress]
-    VimHist hist2 <- getHist
+    VimHist hist2 <- use vimHist
     -- | If nothing changed than an action must have happened
-    unless (hist /= hist2) (setHist def)
+    unless (hist /= hist2) (vimHist .= def)
     return mode
   global focMode keypress
 
@@ -86,7 +83,7 @@ handleKeypress keypress = do
 setStatus :: Action ()
 setStatus = focusDo $ do
   mode <- getVim
-  hist <- getHist
+  hist <- use vimHist
   centerStatus $ show mode^.packed
   rightStatus $ show hist^.packed
 
@@ -99,7 +96,7 @@ global _ _ = return ()
 
 -- | Listeners for keypresses when in 'Insert' mode
 insert :: [Keypress] -> BufAction ()
-insert [Esc] = setMode Normal
+insert [Esc] = vimSt .= Normal
 insert [BS] = moveRangesByN (-1) >> delete
 insert [Enter] = insertText "\n"
 insert [Keypress c _] = insertText (T.singleton c) >> moveRangesByN 1
@@ -107,21 +104,21 @@ insert _ = return ()
 
 -- | Listeners for keypresses when in 'Normal' mode
 normal :: [Keypress] -> BufAction ()
-normal [Keypress 'i' _] = setMode Insert
-normal [Keypress 'I' _] = startOfLine >> setMode Insert
-normal [Keypress 'a' _] = moveRangesByN 1 >> setMode Insert
-normal [Keypress 'A' _] = endOfLine >> setMode Insert
+normal [Keypress 'i' _] = vimSt .= Insert
+normal [Keypress 'I' _] = startOfLine >> vimSt .= Insert
+normal [Keypress 'a' _] = moveRangesByN 1 >> vimSt .= Insert
+normal [Keypress 'A' _] = endOfLine >> vimSt .= Insert
 normal [Keypress '0' _] = startOfLine
 normal [Keypress '$' _] = endOfLine
-normal [Keypress 'g' _,Keypress 'g' _] = ranges .= [Range (Coord 0 0) (Coord 0 1)]
 normal [Keypress 'g' _] = addHist (Keypress 'g' [])
+normal [Keypress 'g' _,Keypress 'g' _] = ranges .= [Range (Coord 0 0) (Coord 0 1)]
 
 normal [Keypress 'G' _] = do
   txt <-use rope
   ranges.= [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
-normal [Keypress 'o' _] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> setMode Insert
-normal [Keypress 'O' _] = startOfLine >> insertText "\n" >> setMode Insert
+normal [Keypress 'o' _] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> vimSt .= Insert
+normal [Keypress 'O' _] = startOfLine >> insertText "\n" >> vimSt .= Insert
 normal [Keypress 'h' _] = moveRangesByN (-1)
 normal [Keypress 'l' _] = moveRangesByN 1
 normal [Keypress 'k' _] = moveRangesByC $ Coord (-1) 0
@@ -146,14 +143,14 @@ normal [Keypress 'B' _] = rangeDo_ addCursor
           newEnd = moveCursorByN 1 newStart
       addRange $ Range newStart newEnd
 
-normal [Keypress 'f' _,Keypress x []] = findNext $ T.singleton x
 normal [Keypress 'f' _] = addHist $ Keypress 'f' []
-normal [Keypress 't' _,Keypress x []] = findNext (T.singleton x) >> moveRangesByN (-1)
+normal [Keypress 'f' _,Keypress x []] = findNext $ T.singleton x
 normal [Keypress 't' _] = addHist $ Keypress 't' []
-normal [Keypress 'T' _,Keypress x []] = findNext (T.singleton x) >> moveRangesByN (-1)
+normal [Keypress 't' _,Keypress x []] = findNext (T.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'T' _] = addHist $ Keypress 'T' []
+normal [Keypress 'T' _,Keypress x []] = findNext (T.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'F' _] = addHist $ Keypress 'F' []
-normal [Keypress 'F' _,Keypress x []] = findPrev $ T.singleton x
+normal [Keypress 'F' _,Keypress x []] = findPrev (T.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'X' _] = moveRangesByN (-1) >> delete
 normal [Keypress 'x' _] = delete
 normal [Keypress 's' [Ctrl]] = save
