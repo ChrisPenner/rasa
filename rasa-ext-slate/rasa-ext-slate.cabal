@@ -27,6 +27,8 @@ library
                      , rasa
                      , rasa-ext-style
                      , rasa-ext-status-bar
+                     , rasa-ext-views
+                     , mtl
                      , text
                      , yi-rope
                      , lens

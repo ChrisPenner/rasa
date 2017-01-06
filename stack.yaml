@@ -9,6 +9,7 @@ packages:
 - ./rasa-ext-slate
 - ./rasa-ext-status-bar
 - ./rasa-ext-style
+- ./rasa-ext-views
 - ./rasa-ext-vim
 - ./rasa-example-config
 - ./text-lens
