@@ -3,7 +3,10 @@ module Rasa.Ext.Views
   , active
   , scrollPos
   , bufIndex
-  , Dir(..)
+  , A.closeView
+  , A.vSplit
+  , A.hSplit
+  , SplitDir(..)
   , SplitRule(..)
   , Views(..)
   , Window(..)
@@ -15,4 +18,4 @@ module Rasa.Ext.Views
   ) where
 
 import Rasa.Ext.Views.Internal.Types
-import Rasa.Ext.Views.Internal.Actions
+import Rasa.Ext.Views.Internal.Actions as A
