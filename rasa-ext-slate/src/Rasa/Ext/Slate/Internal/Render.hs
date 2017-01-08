@@ -11,6 +11,9 @@ import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 
 
+import Data.Functor.Foldable
+import Data.Bifunctor.Fix
+
 import qualified Graphics.Vty as V
 import qualified Yi.Rope as Y
 import Control.Lens
@@ -110,22 +113,23 @@ splitByRule (FromEnd amt) sz = (start, end)
 -- renderWindow (width, height) (Single viewInfo viewport) =
 --   renderView (width, height) viewInfo viewport
 
-renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow sz window = cata alg window sz
-  where
-    alg (Split Vert (SplitInfo spRule) left right) = \(width, height) ->
-      let availWidth = fromIntegral (width - 1)
-          (leftWidth, rightWidth) = splitByRule spRule availWidth
-          border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
-       in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
+-- renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
+renderWindow sz window = undefined
+  -- where
+    -- alg :: _
+    -- alg a = _ -- \(width, height) ->
+      -- let availWidth = fromIntegral (width - 1)
+      --     (leftWidth, rightWidth) = splitByRule spRule availWidth
+      --     border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
+      --  in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
 
-    alg (Split Hor (SplitInfo spRule) top bottom) = \(width, height) ->
-      let availHeight = fromIntegral (height - 1)
-          (topHeight, bottomHeight) = splitByRule spRule availHeight
-          border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
-       in top (topHeight, height) V.<|> border V.<|> bottom (bottomHeight, height)
+    -- alg (Split Hor (SplitInfo spRule) top bottom) = \(width, height) ->
+      -- let availHeight = fromIntegral (height - 1)
+      --     (topHeight, bottomHeight) = splitByRule spRule availHeight
+      --     border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
+      --  in top (topHeight, height) V.<|> border V.<|> bottom (bottomHeight, height)
 
-    alg (Single viewInfo bufInfo) = \sz -> renderView sz viewInfo bufInfo
+    -- alg (Single viewInfo bufInfo) = \sz -> renderView sz viewInfo bufInfo
 
 renderView :: (Width, Height) -> ViewInfo -> (Y.YiString, [Span V.Attr]) -> V.Image
 renderView (width, height) viewInfo (txt, atts) = V.resize width height $ applyAttrs atts txt

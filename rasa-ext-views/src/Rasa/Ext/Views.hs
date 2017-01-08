@@ -1,12 +1,22 @@
-{-# language DeriveFunctor, FlexibleInstances #-}
-module Rasa.Ext.Views (getViews, split, single, Dir(..), SplitRule(..), Views(..), Window(..), ViewInfo(..), SplitInfo(..), WindowF(Split, Single)) where
+{-# language DeriveFunctor, FlexibleInstances, StandaloneDeriving, ExistentialQuantification #-}
+module Rasa.Ext.Views 
+  (
+  -- getViews
+  -- , split
+  -- , single
+   Dir(..), SplitRule(..), Views(..), Window, ViewInfo(..), SplitInfo(..), WindowF(Split, Single)) where
 
 import Rasa.Ext
 
-import Data.Functor.Foldable
+import Data.Profunctor.Unsafe
+import Data.Coerce
+
+import Data.Bifunctor.Fix
 import Prelude hiding (Foldable, succ)
 import Control.Lens
 import Data.Default
+import Data.Monoid
+import Data.Functor.Foldable hiding (Fix)
 
 data SplitRule =
   Percentage Double
@@ -26,28 +36,45 @@ data Dir = Hor
          | Vert
          deriving (Show)
 
-data WindowF a r =
+data WindowF r a =
   Split Dir SplitInfo r r
     | Single ViewInfo a
-    deriving (Functor)
+    deriving (Show, Functor)
 
-type Window a = Fix (WindowF a)
+instance Bifunctor WindowF where
+  bimap f _g (Split dir si x y) = Split dir si (f x) (f y)
+  bimap _f g (Single vi a) = Single vi (g a)
 
--- instance Bifunctor WindowF where
---   first f (Single viewInfo a) = Single viewInfo (f a)
---   first f (Split dir splitInfo start end) = Split dir splitInfo (first f start) (first f end)
---   second = fmap
+newtype Window a = Window (Fix WindowF a) deriving Functor
+-- type Window a = Fix WindowF a
+-- type Window a = Fix WindowF a
 
-valMap :: (a -> b) -> Window a -> Window b
-valMap f = cata alg
-  where alg  (Single viewInfo a) = refix $ Single viewInfo (f a)
-        alg splt = splt
+-- split :: Dir -> SplitInfo -> Window a -> Window a -> Window a
+-- split dir splitInfo (Window start) (Window end) = Window $ In $ Split dir splitInfo start end
 
-split :: Show a => Dir -> SplitInfo -> Window a -> Window a -> Window a
-split dir splitInfo start end = Fix (Split dir splitInfo start end)
+-- single :: ViewInfo -> a -> Window a
+-- single viewInfo contents = Window $ In $ Single viewInfo contents
 
-single :: Show a => ViewInfo -> a -> Window a
-single viewInfo contents = Fix (Single viewInfo contents)
+
+newtype Flip p a b = Flip {unFlip :: p b a}
+
+instance Bifunctor p => Bifunctor (Flip p) where
+  bimap f g (Flip x) = Flip (bimap g f x)
+
+instance Bifunctor p => Functor (Flip p a) where
+  fmap = coerce (first :: (x -> y) -> p x a -> p y a)
+    :: forall x y . (x -> y) -> Flip p a x -> Flip p a y
+
+type instance Base (Fix p a) = Flip p a
+instance Bifunctor p => Recursive (Fix p a) where
+  project = Flip #. out
+  cata f = f . Flip . first (cata f) . out
+
+allTree :: Window Bool -> Bool
+allTree (Window w) = cata alg w
+  where
+    alg (In (Split _ _ x y)) = x && y
+    alg (In (Single _ x)) = x
 
 data Views = Views
   { main :: Window Int
@@ -56,12 +83,12 @@ data Views = Views
 instance Show Views where
   show _ = "Views"
 
-instance Default Views where
-  def = Views $ split Hor (SplitInfo $ Percentage 0.5)
-                              (single (ViewInfo True) 0)
-                              $ split Vert (SplitInfo $ Percentage 0.5)
-                                  (single (ViewInfo False) 0)
-                                  (single (ViewInfo False) 0)
+-- instance Default Views where
+--   def = Views $ split Hor (SplitInfo $ Percentage 0.5)
+--                               (single (ViewInfo True) 0)
+--                               $ split Vert (SplitInfo $ Percentage 0.5)
+--                                   (single (ViewInfo False) 0)
+--                                   (single (ViewInfo False) 0)
 
-getViews :: Action Views
-getViews = use ext
+-- getViews :: Action Views
+-- getViews = use ext
