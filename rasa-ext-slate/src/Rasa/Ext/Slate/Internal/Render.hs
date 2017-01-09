@@ -11,9 +11,6 @@ import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 
 
-import Data.Functor.Foldable
-import Data.Bifunctor.Fix
-
 import qualified Graphics.Vty as V
 import qualified Yi.Rope as Y
 import Control.Lens

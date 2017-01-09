@@ -20,7 +20,7 @@ library
                      , lens
                      , data-default
                      , bifunctors
-                     , profuctors
+                     , profunctors
                      , recursion-schemes
   default-language:    Haskell2010
 
