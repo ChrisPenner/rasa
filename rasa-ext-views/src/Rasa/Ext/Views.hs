@@ -2,9 +2,10 @@
 module Rasa.Ext.Views
   (
   getViews
+  , getWin
   -- , split
   -- , single
-   ,Dir(..), SplitRule(..), Views(..), Window, ViewInfo(..)) where
+  ,Dir(..), SplitRule(..), WindowF(..), SplitInfo(..), Views(..), Window, ViewInfo(..)) where
 
 import Rasa.Ext
 
@@ -48,6 +49,7 @@ newtype Window a = Window
 
 instance Functor Window where
   fmap f (Window (Fix (Single vw a))) = single vw (f a)
+  fmap f (Window (Fix (Split d si a b))) = split d si (f <$> Window a) (f <$> Window b)
 
 data Views = Views
   { main :: Window Int
