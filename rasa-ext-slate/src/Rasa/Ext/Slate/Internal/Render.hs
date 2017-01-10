@@ -44,7 +44,7 @@ render = do
   (width, height) <- getSize
   Views vp <- getViews
   bufs <- collectBuffers
-  let img = renderWindow (width, height) $ fmap ((bufs !!) . bufIndex) vp
+  let img = renderWindow (width, height) $ fmap ((bufs !!) . view bufIndex) vp
       pic = V.picForImage img
   v <- getVty
   liftIO $ V.update v pic

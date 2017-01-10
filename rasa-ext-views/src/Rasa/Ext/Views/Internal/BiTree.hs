@@ -5,7 +5,3 @@ data BiTreeF b l r =
   Branch b r r
     | Leaf l
     deriving (Show, Functor)
-
-
-
-
