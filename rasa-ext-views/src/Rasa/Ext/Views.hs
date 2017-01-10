@@ -52,11 +52,11 @@ makeLenses ''View
 instance Default View where
   def = View True 0
 
-branch :: Split -> Window -> Window -> Window
-branch = Branch
+split :: Dir -> SplitRule -> Window -> Window -> Window
+split d sr = Branch (Split d sr)
 
-leaf :: View -> Window
-leaf = Leaf
+viewport :: Bool -> Int -> Window
+viewport act bi = Leaf $ View act bi
 
 type Window = BiTree Split View
 
@@ -68,11 +68,11 @@ instance Show Views where
   show _ = "Views"
 
 instance Default Views where
-  def = Views $ branch (Split Vert $ Percentage 0.5)
-                              (leaf $ View True 0)
-                              $ branch (Split Hor $ Percentage 0.5)
-                                  (leaf $ View False 1)
-                                  (leaf $ View False 1)
+  def = Views $ split Vert (Percentage 0.5)
+                              (viewport True 0)
+                              $ split Hor (Percentage 0.5)
+                                  (viewport False 1)
+                                  (viewport False 1)
 
 rotate :: Window -> Window
 rotate = cata alg
