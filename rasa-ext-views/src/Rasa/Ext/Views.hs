@@ -8,7 +8,13 @@ module Rasa.Ext.Views
   , active
   , closeBy
   , moveRight
-  ,Dir(..), SplitRule(..), Window(..), Split(..), Views(..), View(..)
+  , Dir(..)
+  , SplitRule(..)
+  , Window
+  , Split(..)
+  , Views(..)
+  , View(..)
+  , BiTree(..)
   , BiTreeF(..)
   ) where
 
@@ -46,31 +52,16 @@ makeLenses ''View
 instance Default View where
   def = View True 0
 
-branch :: b -> Window b l -> Window b l -> Window b l
-branch b (Window start) (Window end) = Window $ Fix $ Branch b start end
+branch :: Split -> Window -> Window -> Window
+branch = Branch
 
-leaf :: b -> Window a b
-leaf contents = Window $ Fix $ Leaf contents
+leaf :: View -> Window
+leaf = Leaf
 
-newtype Window a b = Window
-  { getWin :: Fix (BiTreeF a b)
-  }
-
-instance Functor (Window a) where
-  fmap f (Window (Fix (Leaf vw))) = leaf $ f vw
-  fmap f (Window (Fix (Branch s a b))) = branch s (f <$> Window a) (f <$> Window b)
-
-instance Traversable (Window a) where
-  traverse f (Window (Fix (Leaf vw))) = Window . Fix . Leaf <$> f vw
-  traverse f (Window (Fix (Branch s a b))) = mkBranch <$> (getWin <$> traverse f (Window a)) <*> (getWin <$> traverse f (Window b))
-    where mkBranch a' b' = Window $ Fix $ Branch s a' b'
-
-instance Foldable (Window a) where
-  foldMap f (Window (Fix (Leaf vw))) = f vw
-  foldMap f (Window (Fix (Branch _ a b))) = foldMap f (Window a) `mappend` foldMap f (Window b)
+type Window = BiTree Split View
 
 data Views = Views
-  { main :: Window Split View
+  { main :: Window
   }
 
 instance Show Views where
@@ -83,38 +74,37 @@ instance Default Views where
                                   (leaf $ View False 1)
                                   (leaf $ View False 1)
 
-
-rotate :: Window Split View -> Window Split View
-rotate (Window w) = Window $ cata alg w
-  where alg l@(Leaf _) = Fix l
-        alg (Branch sp s e) = Fix (Branch (sp & dir %~ rotDir) s e)
+rotate :: Window -> Window
+rotate = cata alg
+  where alg (LeafF vw) = Leaf vw
+        alg (BranchF sp s e) = Branch (sp & dir %~ rotDir) s e
         rotDir Hor = Vert
         rotDir Vert = Hor
 
-closeBy :: (View -> Bool) -> Window Split View -> Window Split View
-closeBy p  (Window w) = Window $ zygo par alg w
+closeBy :: (View -> Bool) -> Window -> Window
+closeBy p = zygo par alg
   where
-    par (Leaf vw) = not $ p vw
-    par (Branch _ l r) = l || r
-    alg (Leaf vw) = Fix (Leaf vw)
-    alg (Branch sp (keepLeft, al) (keepRight, ar))
-      | keepLeft && keepRight = Fix $ Branch sp al ar
+    par (LeafF vw) = not $ p vw
+    par (BranchF _ l r) = l || r
+    alg (LeafF vw) = Leaf vw
+    alg (BranchF sp (keepLeft, al) (keepRight, ar))
+      | keepLeft && keepRight = Branch sp al ar
       | keepLeft = al
       | keepRight = ar
-      | otherwise = Fix (Leaf def)
+      | otherwise = Leaf def
 
-moveRight :: Window Split View -> Window Split View
-moveRight (Window w) = Window $ zygo par alg w
+moveRight :: Window -> Window
+moveRight = zygo par alg
   where
-    par (Leaf vw) = vw^.active
-    par (Branch (Split Hor _) l r) = l || r
-    par (Branch (Split Vert _) _ r) = r
-    alg (Leaf vw) = Fix $ Leaf vw
-    alg (Branch sp@(Split Hor _) (_, al) (_, ar)) = Fix $ Branch sp al ar
-    alg (Branch sp@(Split Vert _) (fromLeft, al) (_, ar)) =
-      Fix $ Branch sp al right
+    par (LeafF vw) = vw^.active
+    par (BranchF (Split Hor _) l r) = l || r
+    par (BranchF (Split Vert _) _ r) = r
+    alg (LeafF vw) = Leaf vw
+    alg (BranchF sp@(Split Hor _) (_, al) (_, ar)) = Branch sp al ar
+    alg (BranchF sp@(Split Vert _) (fromLeft, al) (_, ar)) =
+      Branch sp al right
         where right = if fromLeft
-                         then Window ar & taking 1 traverse . active .~ True & getWin
+                         then ar & taking 1 traverse . active .~ True
                          else ar
 
 getViews :: Action Views
