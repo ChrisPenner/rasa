@@ -72,22 +72,22 @@ splitByRule (FromEnd amt) sz = (start, end)
     start = sz - end
     end = min sz amt
 
-renderWindow :: (Width, Height) -> Window Split (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow sz win = cata alg (getWin win) sz
+renderWindow :: (Width, Height) -> BiTree Split (Y.YiString, [Span V.Attr]) -> V.Image
+renderWindow sz win = cata alg win sz
   where
-    alg (Branch (Split Vert spRule) left right) = \(width, height) ->
+    alg (BranchF (Split Vert spRule) left right) = \(width, height) ->
       let availWidth = fromIntegral (width - 1)
           (leftWidth, rightWidth) = splitByRule spRule availWidth
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
        in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
 
-    alg (Branch (Split Hor spRule) top bottom) = \(width, height) ->
+    alg (BranchF (Split Hor spRule) top bottom) = \(width, height) ->
       let availHeight = fromIntegral (height - 1)
           (topHeight, bottomHeight) = splitByRule spRule availHeight
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
        in top (width, topHeight) V.<-> border V.<-> bottom (width, bottomHeight)
 
-    alg (Leaf bufInfo) = \(width, height) -> renderView (width, height) bufInfo
+    alg (LeafF bufInfo) = \(width, height) -> renderView (width, height) bufInfo
 
 renderView :: (Width, Height) -> (Y.YiString, [Span V.Attr]) -> V.Image
 renderView (width, height) (txt, atts) = V.resize width height $ applyAttrs atts txt
