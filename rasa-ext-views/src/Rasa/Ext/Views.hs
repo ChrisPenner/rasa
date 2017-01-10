@@ -1,13 +1,15 @@
-{-# language DeriveFunctor, FlexibleInstances, StandaloneDeriving, ExistentialQuantification #-}
+{-# language FlexibleInstances #-}
 module Rasa.Ext.Views
   (
   getViews
-  , getWin
   -- , split
   -- , single
-  ,Dir(..), SplitRule(..), WindowF(..), SplitInfo(..), Views(..), Window, ViewInfo(..)) where
+  ,Dir(..), SplitRule(..), Window(..), Split(..), Views(..), View(..)
+  , BiTreeF(..)
+  ) where
 
 import Rasa.Ext
+import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
 import Data.Default
@@ -20,50 +22,47 @@ data SplitRule =
   | FromEnd Int
   deriving (Show)
 
-data SplitInfo = SplitInfo
-  { splitRule :: SplitRule
+data Split = Split
+  { dir :: Dir
+  , splitRule :: SplitRule
   } deriving (Show)
 
-data ViewInfo = ViewInfo
+data View = View
   { active :: Bool
+  , bufIndex :: Int
   } deriving (Show)
 
 data Dir = Hor
          | Vert
          deriving (Show)
 
-data WindowF a r =
-  Split Dir SplitInfo r r
-    | Single ViewInfo a
-    deriving (Functor)
+branch :: b -> Window b l -> Window b l -> Window b l
+branch b (Window start) (Window end) = Window $ Fix $ Branch b start end
 
-split :: Dir -> SplitInfo -> Window a -> Window a -> Window a
-split dir splitInfo (Window start) (Window end) = Window $ Fix $ Split dir splitInfo start end
+leaf :: b -> Window a b
+leaf contents = Window $ Fix $ Leaf contents
 
-single :: ViewInfo -> a -> Window a
-single viewInfo contents = Window $ Fix $ Single viewInfo contents
-
-newtype Window a = Window
-  { getWin :: Fix (WindowF a)
+newtype Window a b = Window 
+  { getWin :: Fix (BiTreeF a b)
   }
 
-instance Functor Window where
-  fmap f (Window (Fix (Single vw a))) = single vw (f a)
-  fmap f (Window (Fix (Split d si a b))) = split d si (f <$> Window a) (f <$> Window b)
+instance Functor (Window a) where
+  fmap f (Window (Fix (Leaf vw))) = leaf $ f vw
+  fmap f (Window (Fix (Branch s a b))) = branch s (f <$> Window a) (f <$> Window b)
 
 data Views = Views
-  { main :: Window Int
+  { main :: Window Split View
   }
 
 instance Show Views where
   show _ = "Views"
 
 instance Default Views where
-  def = Views $ split Hor (SplitInfo $ Percentage 0.5)
-                              (single (ViewInfo True) 0)
-                              $ split Vert (SplitInfo $ Percentage 0.5)
-                                  (single (ViewInfo False) 0)
-                                  (single (ViewInfo False) 0)
+  def = Views $ branch (Split Hor $ Percentage 0.5)
+                              (leaf $ View True 0)
+                              $ branch (Split Vert $ Percentage 0.5)
+                                  (leaf $ View False 0)
+                                  (leaf $ View False 0)
 
 getViews :: Action Views
 getViews = use ext

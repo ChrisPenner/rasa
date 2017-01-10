@@ -44,7 +44,7 @@ render = do
   (width, height) <- getSize
   Views vp <- getViews
   bufs <- collectBuffers
-  let img = renderWindow (width, height) $ fmap (bufs !!) vp
+  let img = renderWindow (width, height) $ fmap ((bufs !!) . bufIndex) vp
       pic = V.picForImage img
   v <- getVty
   liftIO $ V.update v pic
@@ -72,23 +72,22 @@ splitByRule (FromEnd amt) sz = (start, end)
     start = sz - end
     end = min sz amt
 
-
-renderWindow :: (Width, Height) -> Window (Y.YiString, [Span V.Attr]) -> V.Image
-renderWindow sz = ($ sz) . cata alg . getWin
+renderWindow :: (Width, Height) -> Window Split (Y.YiString, [Span V.Attr]) -> V.Image
+renderWindow sz win = cata alg (getWin win) sz
   where
-    alg (Split Vert (SplitInfo spRule) left right) = \(width, height) ->
+    alg (Branch (Split Vert spRule) left right) = \(width, height) ->
       let availWidth = fromIntegral (width - 1)
           (leftWidth, rightWidth) = splitByRule spRule availWidth
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
        in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
 
-    alg (Split Hor (SplitInfo spRule) top bottom) = \(width, height) ->
+    alg (Branch (Split Hor spRule) top bottom) = \(width, height) ->
       let availHeight = fromIntegral (height - 1)
           (topHeight, bottomHeight) = splitByRule spRule availHeight
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
        in top (width, topHeight) V.<-> border V.<-> bottom (width, bottomHeight)
 
-    alg (Single viewInfo bufInfo) = \(width, height) -> renderView (width, height) viewInfo bufInfo
+    alg (Leaf bufInfo) = \(width, height) -> renderView (width, height) bufInfo
 
-renderView :: (Width, Height) -> ViewInfo -> (Y.YiString, [Span V.Attr]) -> V.Image
-renderView (width, height) _ (txt, atts) = V.resize width height $ applyAttrs atts txt
+renderView :: (Width, Height) -> (Y.YiString, [Span V.Attr]) -> V.Image
+renderView (width, height) (txt, atts) = V.resize width height $ applyAttrs atts txt
