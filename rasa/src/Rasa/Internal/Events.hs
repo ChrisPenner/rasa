@@ -48,10 +48,14 @@ data BufAdded = BufAdded BufRef deriving (Show, Eq, Typeable)
 data Keypress
   = Keypress Char
              [Mod]
-  | Esc
-  | BS
-  | Enter
-  | Unknown
+  | KEsc
+  | KBS
+  | KEnter
+  | KUnknown
+  | KLeft
+  | KRight
+  | KUp
+  | KDown
   deriving (Show, Eq, Typeable)
 
 -- | This represents each modifier key that could be pressed along with a key.

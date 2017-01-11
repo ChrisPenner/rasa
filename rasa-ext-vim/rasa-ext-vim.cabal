@@ -20,6 +20,7 @@ library
                      , rasa
                      , rasa-ext-bufs
                      , rasa-ext-files
+                     , rasa-ext-views
                      , rasa-ext-cursors
                      , rasa-ext-status-bar
                      , text

@@ -16,6 +16,8 @@ library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Views
                        Rasa.Ext.Views.Internal.BiTree
+                       Rasa.Ext.Views.Internal.Views
+                       Rasa.Ext.Views.Internal.Actions
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , lens

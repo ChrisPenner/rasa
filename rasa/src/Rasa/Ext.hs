@@ -103,6 +103,8 @@ module Rasa.Ext
   , ext
   , bufExt
 
+  , HasEditor
+
    -- * Accessing/Editing Context
   , Buffer
   , BufRef
