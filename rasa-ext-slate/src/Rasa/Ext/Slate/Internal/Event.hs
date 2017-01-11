@@ -15,15 +15,19 @@ terminalEvents = do
 -- | Converts a 'V.Event' into a keypress if possible.
 convertEvent :: V.Event -> Keypress
 convertEvent (V.EvKey e mods) = convertKeypress e mods
-convertEvent _ = Unknown
+convertEvent _ = KUnknown
 
 -- | Converts a 'V.Event' into a keypress if possible.
 convertKeypress :: V.Key -> [V.Modifier] -> Keypress
-convertKeypress V.KEnter _ = Enter
-convertKeypress V.KBS _ = BS
-convertKeypress V.KEsc _ = Esc
+convertKeypress V.KEnter _ = KEnter
+convertKeypress V.KBS _ = KBS
+convertKeypress V.KEsc _ = KEsc
+convertKeypress V.KLeft _ = KLeft
+convertKeypress V.KRight _ = KRight
+convertKeypress V.KUp _ = KUp
+convertKeypress V.KDown _ = KDown
 convertKeypress (V.KChar c) mods  = Keypress c (fmap convertMod mods)
-convertKeypress _ _ = Unknown
+convertKeypress _ _ = KUnknown
 
 -- | Converts a 'V.Modifier' into a 'Mod'.
 convertMod :: V.Modifier -> Mod

@@ -31,6 +31,7 @@ library
                      , rasa-ext-views
                      , recursion-schemes
                      , text
+                     , mtl
                      , yi-rope
                      , lens
                      , vty >= 5.14
