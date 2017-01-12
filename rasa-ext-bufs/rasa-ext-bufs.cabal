@@ -1,7 +1,7 @@
-name:                rasa-ext-cursors
+name:                rasa-ext-bufs
 version:             0.1.1
-synopsis:            Rasa Ext adding cursor(s)
-description:         Rasa Ext adding cursor(s)
+synopsis:            Rasa Ext for useful buffer utilities
+description:         Rasa Ext for useful buffer utilities
 homepage:            https://github.com/ChrisPenner/rasa/
 license:             MIT
 license-file:        LICENSE
@@ -15,22 +15,16 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Rasa.Ext.Cursors
-  other-modules:
-                       Rasa.Ext.Cursors.Actions
-                       Rasa.Ext.Cursors.Base
+  exposed-modules:
+                       Rasa.Ext.Bufs
+
   build-depends:       base >= 4.8 && < 5
                      , rasa
-                     , rasa-ext-style
-                     , text-lens
-                     , lens
-                     , mtl
-                     , text
-                     , yi-rope
                      , data-default
+                     , lens
+                     , text
+                     , containers
   default-language:    Haskell2010
-
-  default-extensions:
 
   ghc-options:         -Wall
 

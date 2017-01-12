@@ -15,11 +15,13 @@ module Rasa.Internal.Scheduler
   , onExit
   , onInit
   , onRender
+  , onBufAdded
   ) where
 
 
 import Rasa.Internal.Action
 import Rasa.Internal.Events
+import Rasa.Internal.Editor
 
 import Control.Lens
 import Control.Monad.Reader
@@ -119,3 +121,10 @@ afterRender action = eventListener (const action :: AfterRender -> Action ())
 onExit :: Action () -> Scheduler ()
 onExit action = eventListener (const action :: Exit -> Action ())
 
+-- | Registers an action to be performed after a new buffer is added.
+-- 
+-- The supplied function will be called with a 'BufRef' to the new buffer, and the resulting 'Action' will be run.
+onBufAdded :: (BufRef -> Action ()) -> Scheduler ()
+onBufAdded f = eventListener listener
+  where
+    listener (BufAdded bRef) = f bRef

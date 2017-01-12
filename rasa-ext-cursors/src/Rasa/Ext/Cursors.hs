@@ -28,4 +28,4 @@ import Rasa.Ext
 
 -- | Registers hooks for the extension. The user should add this to their config.
 cursors :: Scheduler ()
-cursors = beforeRender $ bufDo displayRange
+cursors = beforeRender $ buffersDo_ displayRange

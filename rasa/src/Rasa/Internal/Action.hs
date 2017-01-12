@@ -35,6 +35,7 @@ newtype Action a = Action
   { runAct :: StateT ActionState (ReaderT Hooks IO) a
   } deriving (Functor, Applicative, Monad, MonadState ActionState, MonadReader Hooks, MonadIO)
 
+
 -- | Unwrap and execute an Action (returning the editor state)
 execAction :: ActionState -> Hooks -> Action () -> IO ActionState
 execAction actionState hooks action = flip runReaderT hooks . execStateT (runAct action) $ actionState
@@ -59,6 +60,9 @@ instance Default ActionState where
     , _asyncs=def
     }
 
+instance Show ActionState where
+  show as = show (_ed as)
+
 -- | This is a monad-transformer stack for performing actions on a specific buffer.
 -- You register BufActions to be run by embedding them in a scheduled 'Action' via 'bufferDo' or 'focusDo'
 --
@@ -72,4 +76,17 @@ instance Default ActionState where
 newtype BufAction a = BufAction
   { getBufAction::StateT Buffer (ReaderT Hooks IO) a
   } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader Hooks, MonadIO)
+
+-- | This lifts up a bufAction into an Action which performs the 'BufAction'
+-- over the referenced buffer and returns the result (if the buffer existed)
+liftBuf :: BufAction a -> BufRef -> Action (Maybe a)
+liftBuf bufAct (BufRef bufRef) = do
+  mBuf <- use (buffers.at bufRef)
+  case mBuf of
+    Nothing -> return Nothing
+    Just buf -> do
+      hooks <- ask
+      (val, newBuf) <- liftIO $ flip runReaderT hooks . flip runStateT buf . getBufAction $ bufAct
+      buffers.at bufRef ?= newBuf
+      return . Just $ val
 

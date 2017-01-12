@@ -9,6 +9,7 @@ module Rasa.Ext.Cursors.Actions
   , moveRangesByC
   ) where
 
+import qualified Yi.Rope as Y
 import qualified Data.Text as T
 
 import Control.Lens
@@ -33,13 +34,13 @@ delete = rangeDo_ $ \r -> do
   moveSameLineRangesBy r (negate $ sizeOfR r)
 
 -- | Insert text at the beginning of all ranges in the buffer.
-insertText :: T.Text -> BufAction ()
+insertText :: Y.YiString -> BufAction ()
 insertText txt = rangeDo_ $ \r@(Range s _) -> do
   insertAt s txt
-  moveSameLineRangesBy r (Coord 0 (T.length txt))
+  moveSameLineRangesBy r (Coord 0 (Y.length txt))
 
 -- | Move all ranges to the location of the next occurence of the given text.
-findNext :: T.Text -> BufAction ()
+findNext :: Y.YiString -> BufAction ()
 findNext pat = do
   res <- rangeDo $ \(Range _ e) -> do
     off <- findNextFrom pat e
@@ -48,13 +49,13 @@ findNext pat = do
   ranges .= res
 
 -- | Get the 'Coord' of the next occurence of the given text after the given 'Coord'
-findNextFrom :: T.Text -> Coord -> BufAction Coord
+findNextFrom :: Y.YiString -> Coord -> BufAction Coord
 findNextFrom pat c = do
-  distance <- use (rope . afterC c . asText . tillNext pat . from asText . to sizeOf)
+  distance <- use (text . afterC c . asText . tillNext (Y.toText pat) . from asText . to sizeOf)
   return (distance + c)
 
 -- | Move all ranges to the location of the previous occurence of the given text.
-findPrev :: T.Text -> BufAction ()
+findPrev :: Y.YiString -> BufAction ()
 findPrev pat = do
   res <- rangeDo $ \(Range s _) -> do
     off <- findPrevFrom pat s
@@ -63,11 +64,11 @@ findPrev pat = do
   ranges .= res
 
 -- | Get the 'Coord' of the previous occurence of the given text before the given 'Coord'
-findPrevFrom :: T.Text -> Coord -> BufAction Coord
+findPrevFrom :: Y.YiString -> Coord -> BufAction Coord
 findPrevFrom pat c = do
-  txt <- use rope
+  txt <- use text
   let Offset o = c^.from (asCoord txt)
-  distance <- use (text . before o . tillPrev pat . to T.length .to negate)
+  distance <- use (text . asText . before o . tillPrev (Y.toText pat) . to T.length .to negate)
   return ((Offset $ distance + o)^.asCoord txt)
 
 -- | Move all ranges by the given number of columns

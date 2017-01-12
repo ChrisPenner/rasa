@@ -9,10 +9,6 @@ module Rasa.Internal.Editor
   Editor
   , HasEditor
   , editor
-
-  , focused
--- | 'focused' is the index of the currently selected buffer (this will likely change)
-
   , buffers
 
 -- |'buffers' is a lens into all buffers.
@@ -24,10 +20,10 @@ module Rasa.Internal.Editor
 -- > exiting .= True
 
   , ext
-  , allBufExt
   , bufExt
-  , focusedBuf
+  , nextBufId
   , range
+  , BufRef(..)
   ) where
 
 import Rasa.Internal.Buffer
@@ -38,15 +34,24 @@ import Unsafe.Coerce
 import Data.Dynamic
 import Data.Default
 import Data.Maybe
+import Data.IntMap
 import Control.Lens
 import qualified Yi.Rope as Y
 
+-- | An opaque reference to a buffer (The contained Int is not meant to be
+-- altered). It is possible for references to become stale if buffers are
+-- deleted. Operations over invalid BufRef's are simply ignored and return
+-- 'Nothing' if a value was expected.
+newtype BufRef =
+  BufRef Int
+  deriving (Show, Eq)
+
 -- | This is the primary state of the editor.
 data Editor = Editor
-  { _buffers :: [Buffer]
-  , _focused :: Int
+  { _buffers :: IntMap Buffer
   , _exiting :: Bool
   , _extState :: ExtMap
+  , _nextBufId :: Int
   }
 makeClassy ''Editor
 
@@ -61,22 +66,10 @@ instance Default Editor where
   def =
     Editor
     { _extState = def
-    , _buffers=fmap newBuffer [ "Buffer 0\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?"
-                            , "Buffer 1\nHey! How's it going over there?\nI'm having just a splended time!\nAnother line for you sir?" ]
-    , _focused=0
+    , _buffers=empty
     , _exiting=False
+    , _nextBufId=0
     }
-
--- | A lens over the extensions of all buffers.
--- This is useful for setting defaults or altering extension state across all buffers.
-allBufExt
-  :: forall a e.
-    (Show a, Typeable a, HasEditor e)
-  => Traversal' e (Maybe a)
-allBufExt =
-  buffers . traverse . bufExts . at (typeRep (Proxy :: Proxy a)) . mapping coerce
-  where
-    coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
 -- | 'bufExt' is a lens which will focus a given extension's state within a
 -- buffer (within a 'Data.Action.BufAction'). The lens will automagically focus
@@ -126,20 +119,8 @@ ext = lens getter setter
         ed
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
--- | 'focusedBuf' is a lens which focuses the currently selected buffer.
-focusedBuf :: HasEditor e => Lens' e Buffer
-focusedBuf = lens getter setter
-  where
-    getter ed =
-      let foc = ed ^. focused
-      in ed ^?! buffers . ix foc
-    setter ed new =
-      let foc = ed ^. focused
-      in ed & buffers . ix foc .~ new
-
 -- | A lens over text which is encompassed by a 'Range'
 range :: Range -> Lens' Buffer Y.YiString
 range (Range start end) = lens getter setter
-  where getter = view (rope . beforeC end . afterC start)
-        setter old new = old & rope . beforeC end . afterC start .~ new
-
+  where getter = view (text . beforeC end . afterC start)
+        setter old new = old & text . beforeC end . afterC start .~ new

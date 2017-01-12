@@ -1,5 +1,5 @@
 name:                rasa-ext-cmd
-version:             0.1.0.0
+version:             0.1.1
 synopsis:            Rasa Ext for running commands
 description:         Rasa Ext for running commands
 homepage:            https://github.com/ChrisPenner/rasa/

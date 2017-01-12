@@ -47,22 +47,27 @@ module Rasa.Ext
     Action
   , doAsync
   , exit
-  , addBuffer
-  , addBufferThen
-  , nextBuf
-  , prevBuf
 
-  -- * Buffer Actions
+  -- * Managing Buffers
+  , newBuffer
+  , nextBufRef
+  , prevBufRef
+
+  -- * Working with Buffers
   , BufAction
   , bufDo
-  , focusDo
+  , bufDo_
+  , buffersDo
+  , buffersDo_
+
+  -- * Working with Text
   , overRange
   , replaceRange
   , deleteRange
   , insertAt
   , sizeOf
 
-  -- * Persisting Extension State
+  -- * Working with Extensions
   -- | Extension states for ALL the extensions installed are stored in the same
   -- map keyed by their 'Data.Typeable.TypeRep' so if more than one extension
   -- uses the same type then they'll conflict. This is easily solved by simply
@@ -98,23 +103,14 @@ module Rasa.Ext
   , ext
   , bufExt
 
-  , editor
-
    -- * Accessing/Editing Context
   , Buffer
+  , BufRef
+  , HasEditor
   , text
-  -- | A lens over the buffer's 'Data.Text.Text'. Use within a 'BufAction' as
+  -- | A lens over the buffer's Text as a 'Yi.Rope.YiString'. Use within a 'BufAction':
   --
   -- > txt <- use text
-
-  , exiting
-  -- | A lens over the current 'exit' status of the editor, allows an extension to
-  -- signal the editor to shutdown. If this is set the current events will finish processing, then the
-  --
-  -- 'Rasa.Ext.Events.Exit' event will be dispatched, then the editor will exit.
-  -- Use within an 'Action'
-  --
-  -- > exiting .= True
 
   -- * Events
   , Keypress(..)
@@ -135,6 +131,7 @@ module Rasa.Ext
   , onRender
   , afterRender
   , onExit
+  , onBufAdded
 
    -- * Ranges
   , Range(..)
@@ -157,7 +154,6 @@ module Rasa.Ext
   , asText
   , asString
   , asLines
-  , rope
   , clamp
   ) where
 

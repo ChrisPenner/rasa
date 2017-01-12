@@ -11,10 +11,9 @@ import Control.Lens
 import Data.Map
 import Data.Default
 import Data.Typeable
-import qualified Data.Text as T
 
 data Cmd = Cmd
-  { _commands :: Map T.Text (T.Text -> Action ())
+  { _commands :: Map String (String -> Action ())
   } deriving (Typeable)
 
 instance Show Cmd where
@@ -29,10 +28,10 @@ instance Default Cmd where
 
 -- It would be nice to make this a little more generic, but I'm not sure how right now.
 -- TODO try switching to T.Text -> (T.Text -> a) -> Action ()
-addCmd :: T.Text -> (T.Text -> Action ()) -> Action ()
+addCmd :: String -> (String -> Action ()) -> Action ()
 addCmd alias mkEvent = ext.commands.at alias ?= mkEvent
 
-runCmd :: T.Text -> T.Text -> Action ()
+runCmd :: String -> String -> Action ()
 runCmd alias args = do
   mCmd <- use (ext.commands.at alias)
   case mCmd of

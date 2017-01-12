@@ -48,7 +48,7 @@ cleanRanges txt = fmap (ensureSize . clampRange txt) . reverse . nub . sort
 ranges :: Lens' Buffer [Range]
 ranges = lens getter setter
   where getter buf = buf^.bufExt.cursors
-        setter buf new = let txt = buf^.rope
+        setter buf new = let txt = buf^.text
                           in buf & bufExt.cursors .~ cleanRanges txt new
 
 -- | A Traversal over each Range for the given buffer.

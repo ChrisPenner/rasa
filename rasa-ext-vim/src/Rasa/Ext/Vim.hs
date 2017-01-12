@@ -4,16 +4,15 @@ module Rasa.Ext.Vim
   ) where
 
 import Rasa.Ext
+import Rasa.Ext.Bufs
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.StatusBar
 
-import Control.Monad (unless)
+import Control.Monad (unless, void)
 import Control.Lens
-import Data.Text.Lens (packed)
 import Data.Default
 import Data.Typeable
-import qualified Data.Text as T
 import qualified Yi.Rope as Y
 
 data VimMode
@@ -67,13 +66,13 @@ handleKeypress keypress = do
     -- | If nothing changed than an action must have happened
     unless (preHist /= postHist) (hist .= [])
     return mode'
-  global focVimMode keypress
+  maybe (return ()) (`global` keypress) focVimMode
 
 -- | Sets the status bar to the current mode and current VimHist
 setStatus :: Action ()
-setStatus = focusDo $ do
-  modeDisp <- use (mode.to show.packed)
-  histDisp <- use (hist.to show.packed)
+setStatus = void . focusDo $ do
+  modeDisp <- use (mode.to show.to Y.fromString)
+  histDisp <- use (hist.to show.to Y.fromString)
   centerStatus modeDisp
   rightStatus histDisp
 
@@ -89,7 +88,7 @@ insert :: [Keypress] -> BufAction ()
 insert [Esc] = mode .= Normal
 insert [BS] = moveRangesByN (-1) >> delete
 insert [Enter] = insertText "\n"
-insert [Keypress c _] = insertText (T.singleton c) >> moveRangesByN 1
+insert [Keypress c _] = insertText (Y.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
 -- | Listeners for keypresses when in 'Normal' mode
@@ -104,7 +103,7 @@ normal [Keypress 'g' _] = hist <>= [Keypress 'g' []]
 normal [Keypress 'g' _,Keypress 'g' _] = ranges .= [Range (Coord 0 0) (Coord 0 1)]
 
 normal [Keypress 'G' _] = do
-  txt <-use rope
+  txt <- use text
   ranges.= [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
 normal [Keypress 'o' _] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> mode .= Insert
@@ -134,13 +133,13 @@ normal [Keypress 'B' _] = rangeDo_ addCursor
       addRange $ Range newStart newEnd
 
 normal [Keypress 'f' _] = hist <>= [Keypress 'f' []]
-normal [Keypress 'f' _,Keypress x []] = findNext $ T.singleton x
+normal [Keypress 'f' _,Keypress x []] = findNext $ Y.singleton x
 normal [Keypress 't' _] = hist <>= [Keypress 't' []]
-normal [Keypress 't' _,Keypress x []] = findNext (T.singleton x) >> moveRangesByN (-1)
+normal [Keypress 't' _,Keypress x []] = findNext (Y.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'T' _] = hist <>= [Keypress 'T' []]
-normal [Keypress 'T' _,Keypress x []] = findPrev (T.singleton x)
+normal [Keypress 'T' _,Keypress x []] = findPrev (Y.singleton x)
 normal [Keypress 'F' _] = hist <>= [Keypress 'F' []]
-normal [Keypress 'F' _,Keypress x []] = findPrev (T.singleton x) >> moveRangesByN (-1)
+normal [Keypress 'F' _,Keypress x []] = findPrev (Y.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'X' _] = moveRangesByN (-1) >> delete
 normal [Keypress 'x' _] = delete
 normal [Keypress 's' [Ctrl]] = save

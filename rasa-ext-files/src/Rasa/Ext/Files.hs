@@ -14,15 +14,17 @@ import Data.Typeable
 import Data.Default 
 import Data.Monoid
 
+import Control.Monad
 import Control.Monad.IO.Class
-import qualified Data.Text as T
+import qualified Yi.Rope as Y
 
 import Rasa.Ext
+import Rasa.Ext.Bufs
 import Rasa.Ext.Cmd
 import Rasa.Ext.StatusBar
 
 data FileInfo = FileInfo
-  { _filename :: Maybe T.Text
+  { _filename :: Maybe Y.YiString
   } deriving (Typeable, Show, Eq)
 
 makeLenses ''FileInfo
@@ -36,17 +38,17 @@ files :: Scheduler ()
 files = do
   onInit $ do
     loadFiles
-    addCmd "save" $ focusDo . saveAs
+    addCmd "save" $ void . focusDo . saveAs . Y.fromString
   beforeRender showFilename
 
 showFilename :: Action ()
-showFilename = focusDo $ do
+showFilename = void . focusDo $ do
   mName <- use $ bufExt.filename
   traverse_ (leftStatus . disp) mName
       where disp name = "<" <> name <> ">"
 
-saveAs :: T.Text -> BufAction ()
-saveAs fName = use text >>= liftIO . TIO.writeFile (T.unpack fName)
+saveAs :: Y.YiString -> BufAction ()
+saveAs fName = use text >>= liftIO . TIO.writeFile (Y.toString fName) . Y.toText
 
 save :: BufAction ()
 save = do
@@ -55,14 +57,16 @@ save = do
     Just fName -> saveAs fName
     Nothing -> return ()
 
-setFilename :: T.Text -> BufAction ()
+setFilename :: Y.YiString -> BufAction ()
 setFilename fname = bufExt.filename ?= fname
 
-addFile :: T.Text -> T.Text -> Action ()
-addFile fname txt = addBufferThen txt (setFilename fname)
+addFile :: Y.YiString -> Y.YiString -> Action ()
+addFile fname txt = do
+  newBuf <- newBuffer txt
+  bufDo_ newBuf (setFilename fname)
 
 loadFiles :: Action ()
 loadFiles = do
   fileNames <- liftIO getArgs
   fileTexts <- liftIO $ traverse TIO.readFile fileNames
-  mapM_ (uncurry addFile) $ zip (T.pack <$> fileNames) fileTexts
+  mapM_ (uncurry addFile) $ zip (Y.fromString <$> fileNames) (Y.fromText <$> fileTexts)

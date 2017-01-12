@@ -3,14 +3,16 @@ module Rasa.Internal.Directive
   (
   -- * Performing Actions on Buffers
     bufDo
-  , focusDo
+  , bufDo_
+  , buffersDo
+  , buffersDo_
 
   -- * Editor Actions
   , exit
-  , addBuffer
-  , addBufferThen
-  , nextBuf
-  , prevBuf
+  , newBuffer
+  , getBufRefs
+  , nextBufRef
+  , prevBufRef
 
   -- * Buffer Actions
   , overRange
@@ -24,35 +26,75 @@ import Rasa.Internal.Text
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Range
+import Rasa.Internal.Scheduler
+import Rasa.Internal.Events
 import Rasa.Internal.Buffer as B
 
 import Control.Lens
-import qualified Data.Text as T
+import Control.Monad
+import Data.Maybe
+import Data.IntMap as M
+import qualified Yi.Rope as Y
 
--- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
--- performs the 'Rasa.Action.BufAction' on the focused buffer.
-
-focusDo :: BufAction a -> Action a
-focusDo = Action . zoom focusedBuf . getBufAction
 
 -- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
 -- performs the 'Rasa.Action.BufAction' on every buffer and collects the return
--- values via 'mappend'
+-- values as a list.
 
-bufDo :: Monoid a => BufAction a -> Action a
-bufDo = Action . zoom (buffers . traverse) . getBufAction
+buffersDo :: BufAction a -> Action [a]
+buffersDo bufAct = do
+  bufRefs <- getBufRefs
+  catMaybes . foldMap (:[]) <$> mapM (liftBuf bufAct) bufRefs
+
+buffersDo_ :: BufAction a -> Action ()
+buffersDo_ = void . buffersDo
+
+-- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
+-- performs the 'Rasa.Action.BufAction' on the buffer referred to by the 'BufRef'
+-- If the buffer referred to no longer exists this returns @Action Nothing@.
+bufDo :: BufRef -> BufAction a -> Action (Maybe a)
+bufDo bufRef bufAct = liftBuf bufAct bufRef
+
+bufDo_ :: BufRef -> BufAction a -> Action ()
+bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
 
 -- | This adds a new buffer with the given text.
+newBuffer :: Y.YiString -> Action BufRef
+newBuffer txt = do
+  n <- nextBufId <<+= 1
+  buffers %= insert n (mkBuffer txt)
+  let bufRef = BufRef n
+  dispatchEvent (BufAdded bufRef)
+  return bufRef
 
-addBuffer :: T.Text -> Action ()
-addBuffer txt = buffers <>= [newBuffer txt]
+-- | Returns an up-to-date list of all 'BufRef's
+getBufRefs :: Action [BufRef]
+getBufRefs = fmap BufRef <$> use (buffers.to keys)
 
--- | This adds a new buffer with the given text then performs the given
--- 'Rasa.Action.BufAction' agains that buffer.
-addBufferThen :: T.Text -> BufAction a -> Action a
-addBufferThen txt act = do
-  buffers <>= [newBuffer txt]
-  fmap (!! 0) . Action . zoom (buffers._last) . fmap (:[]) . getBufAction $ act
+-- | Gets 'BufRef' that comes after the one provided
+nextBufRef :: BufRef -> Action BufRef
+nextBufRef br@(BufRef bufInt) = do
+  bufMap <- use buffers
+  if M.null bufMap
+     then return br
+     else do
+       let mGreaterInd = lookupGT bufInt bufMap
+       case mGreaterInd of
+         Just (greaterInd, _) -> return $ BufRef greaterInd
+         Nothing -> return . BufRef . fst . findMin $ bufMap
+
+-- | Gets 'BufRef' that comes before the one provided
+prevBufRef :: BufRef -> Action BufRef
+prevBufRef br@(BufRef bufInt) = do
+  bufMap <- use buffers
+  if M.null bufMap
+     then return br
+     else do
+       let mLesserInd = lookupGT bufInt bufMap
+       case mLesserInd of
+         Just (lesserInd, _) -> return $ BufRef lesserInd
+         Nothing -> return . BufRef . fst . findMax $ bufMap
+
 
 -- | This signals to the editor that you'd like to shutdown. The current events
 -- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' hook will run,
@@ -61,31 +103,19 @@ addBufferThen txt act = do
 exit :: Action ()
 exit = exiting .= True
 
--- | Switches focus to the next buffer
-nextBuf :: Action ()
-nextBuf = do
-  numBuffers <- use (buffers.to length)
-  focused %= (`mod` numBuffers) . (+1)
-
--- | Switches focus to the previous buffer
-prevBuf :: Action ()
-prevBuf = do
-  numBuffers <- use (buffers.to length)
-  focused %= (`mod` numBuffers) . subtract 1
-
 -- | Deletes the text in the given range from the buffer.
 deleteRange :: Range -> BufAction ()
 deleteRange r = range r.asText .= ""
 
 -- | Replaces the text in the given range from the buffer.
-replaceRange :: Range -> T.Text -> BufAction ()
-replaceRange r txt = range r.asText .= txt
+replaceRange :: Range -> Y.YiString -> BufAction ()
+replaceRange r txt = range r .= txt
 
 -- | Inserts text into the buffer at the given Coord.
-insertAt :: Coord -> T.Text -> BufAction ()
-insertAt c txt = range (Range c c).asText .= txt
+insertAt :: Coord -> Y.YiString -> BufAction ()
+insertAt c txt = range (Range c c) .= txt
 
 -- | Runs the given function over the text in the range, replacing it with the results.
-overRange :: Range -> (T.Text -> T.Text) -> BufAction ()
-overRange r f = range r.asText %= f
+overRange :: Range -> (Y.YiString -> Y.YiString) -> BufAction ()
+overRange r f = range r %= f
 

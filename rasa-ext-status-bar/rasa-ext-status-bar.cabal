@@ -1,5 +1,5 @@
 name:                rasa-ext-status-bar
-version:             0.1.0.0
+version:             0.1.1
 synopsis:            Rasa Ext for populating status-bar
 description:         Rasa Ext for populating status-status-bar
 homepage:            https://github.com/ChrisPenner/rasa/
@@ -22,7 +22,7 @@ library
                      , rasa
                      , data-default
                      , lens
-                     , text
+                     , yi-rope
   default-language:    Haskell2010
 
   ghc-options:         -Wall
