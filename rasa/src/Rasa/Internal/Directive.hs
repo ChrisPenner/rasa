@@ -98,11 +98,10 @@ prevBufRef br@(BufRef bufInt) = do
   if M.null bufMap
      then return br
      else do
-       let mLesserInd = lookupGT bufInt bufMap
+       let mLesserInd = lookupLT bufInt bufMap
        case mLesserInd of
          Just (lesserInd, _) -> return $ BufRef lesserInd
          Nothing -> return . BufRef . fst . findMax $ bufMap
-
 
 -- | This signals to the editor that you'd like to shutdown. The current events
 -- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' hook will run,

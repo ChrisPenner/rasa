@@ -15,6 +15,10 @@ module Rasa.Ext.Views
   , A.hSplit
   , A.vSplit
   , A.addSplit
+  , A.nextBuf
+  , A.prevBuf
+  , A.focusDo
+  , A.focusedBufs
   , getBufferViews
   , Dir(..)
   , SplitRule(..)

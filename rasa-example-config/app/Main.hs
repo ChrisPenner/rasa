@@ -5,7 +5,6 @@ import Rasa (rasa)
 import Rasa.Ext
 import Rasa.Ext.Views
 import Rasa.Ext.Style
-import Rasa.Ext.Bufs
 import Rasa.Ext.Vim
 import Rasa.Ext.Files
 import Rasa.Ext.StatusBar
@@ -24,7 +23,6 @@ main :: IO ()
 main = rasa $ do
   onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
   views
-  bufs
   vim
   statusBar
   files
