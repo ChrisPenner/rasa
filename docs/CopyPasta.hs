@@ -4,13 +4,14 @@ module Main where
 
 import Rasa (rasa)
 import Rasa.Ext
-import Rasa.Ext.Style
-import Rasa.Ext.Vim
-import Rasa.Ext.Files
-import Rasa.Ext.StatusBar
-import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
-import Rasa.Renderer.Slate
+import Rasa.Ext.Files
+import Rasa.Ext.Logger
+import Rasa.Ext.Slate
+import Rasa.Ext.StatusBar
+import Rasa.Ext.Style
+import Rasa.Ext.Views
+import Rasa.Ext.Vim
 
 import Control.Monad.IO.Class
 import Control.Lens

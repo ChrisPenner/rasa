@@ -5,6 +5,7 @@ import qualified Rasa.Ext.Views.Internal.Views as V
 import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
+import Control.Monad
 import Data.Maybe
 import Data.List
 
@@ -56,31 +57,25 @@ addSplit bRef = do
 nextBuf :: Action ()
 nextBuf = do
   mWin <- use V.windows
-  case mWin of
-    Nothing -> return ()
-    Just win -> V.windows._Just <~ traverse next win
+  forM_ mWin $ \w -> V.windows._Just <~ traverse next w
   where
-    next vw =
-      if vw ^. V.active
-          then do
+    next vw 
+      | vw ^. V.active = do
             newBufRef <- nextBufRef (vw ^. V.bufRef)
             return (vw & V.bufRef .~ newBufRef)
-          else return vw
+      | otherwise = return vw
 
 -- | Select the previous buffer in any active viewports
 prevBuf :: Action ()
 prevBuf = do
   mWin <- use V.windows
-  case mWin of
-    Nothing -> return ()
-    Just win -> V.windows._Just <~ traverse prev win
+  forM_ mWin $ \w -> V.windows._Just <~ traverse prev w
   where
-    prev vw =
-      if vw ^. V.active
-         then do
+    prev vw 
+      | vw ^. V.active = do
            newBufRef <- prevBufRef (vw ^. V.bufRef)
            return (vw & V.bufRef .~ newBufRef)
-         else return vw
+      | otherwise = return vw
 
 -- | Get bufRefs for all buffers that are selected in at least one viewport
 focusedBufs :: Action [BufRef]

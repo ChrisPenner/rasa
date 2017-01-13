@@ -1,7 +1,6 @@
 module Rasa.Ext.Views
   (
   views
-  , getViews
   , getBufferViews
   , bufRef
   , splitRule

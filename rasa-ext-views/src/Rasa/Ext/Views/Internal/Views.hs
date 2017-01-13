@@ -1,7 +1,6 @@
 {-# language FlexibleInstances, TemplateHaskell, DeriveFunctor #-}
 module Rasa.Ext.Views.Internal.Views
-  ( getViews
-  , rotate
+  ( rotate
   , splitRule
   , active
   , bufRef
@@ -29,7 +28,6 @@ import Rasa.Ext
 import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
-import Control.Monad.State
 import Data.Default
 import Data.Functor.Foldable
 
@@ -206,18 +204,14 @@ ensureOneActive w = if not $ anyOf traverse _active w
                        then w & taking 1 traverse . active .~ True
                        else w
 
--- | Retrieve Views.
-getViews :: Action Views
-getViews = use ext
-
 -- | Retrieve a tree populated with views and their associated buffer
 getBufferViews :: Action (Maybe (BiTree Split (View, Buffer)))
 getBufferViews = do
-  Views mWin <- getViews
+  mWin <- use windows
   case mWin of
     Nothing -> return Nothing
     Just win -> sequence <$> mapM collect win
   where
     collect vw = do
-      buf <- bufDo (vw^.bufRef) get
+      buf <- getBuffer (vw^.bufRef)
       return $ (,) vw <$> buf

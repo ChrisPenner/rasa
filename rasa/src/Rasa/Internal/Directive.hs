@@ -12,6 +12,7 @@ module Rasa.Internal.Directive
   , newBuffer
   , getBufRefs
   , getBuffers
+  , getBuffer
   , nextBufRef
   , prevBufRef
 
@@ -73,8 +74,14 @@ newBuffer txt = do
 getBufRefs :: Action [BufRef]
 getBufRefs = fmap BufRef <$> use (buffers.to keys)
 
+-- | Returns the 'Buffer' for a BufRef if it still exists.
+-- This is read-only; altering the buffer has no effect on the stored buffer.
+-- This function is useful for renderers.
+getBuffer :: BufRef -> Action (Maybe Buffer)
+getBuffer (BufRef bufInt) = use (buffers.at bufInt)
+
 -- | Returns an up-to-date list of all 'Buffer's, returned values
--- are read-only; altering them has no effect on the actual stored bufferrs.
+-- are read-only; altering them has no effect on the actual stored buffers.
 -- This function is useful for renderers.
 getBuffers :: Action [(BufRef, Buffer)]
 getBuffers = fmap (first BufRef) <$> use (buffers.to assocs)

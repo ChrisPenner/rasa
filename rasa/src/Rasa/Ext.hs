@@ -54,6 +54,7 @@ module Rasa.Ext
   , prevBufRef
   , getBufRefs
   , getBuffers
+  , getBuffer
 
   -- * Working with Buffers
   , BufAction
