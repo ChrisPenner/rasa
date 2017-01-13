@@ -1,8 +1,9 @@
 module Rasa.Ext.Views
   (
-  getViews
+  views
+  , getViews
   , rotate
-  , viewPayload
+  , bufRef
   , splitRule
   , active
   , A.refocusView
@@ -13,6 +14,8 @@ module Rasa.Ext.Views
   , A.focusViewBelow
   , A.hSplit
   , A.vSplit
+  , A.addSplit
+  , getBufferViews
   , Dir(..)
   , SplitRule(..)
   , Window

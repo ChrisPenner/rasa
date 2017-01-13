@@ -4,9 +4,9 @@ module Rasa.Ext.Views.Internal.Views
   getViews
   , refocusView
   , rotate
-  , viewPayload
   , splitRule
   , active
+  , bufRef
   , closeBy
   , focusViewLeft
   , focusViewRight
@@ -15,6 +15,8 @@ module Rasa.Ext.Views.Internal.Views
   , windows
   , hSplit
   , vSplit
+  , addSplit
+  , getBufferViews
   , Dir(..)
   , SplitRule(..)
   , Window
@@ -29,6 +31,7 @@ import Rasa.Ext
 import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
+import Control.Monad.State
 import Data.Default
 import Data.Functor.Foldable
 
@@ -57,41 +60,33 @@ makeLenses ''Split
 instance Default Split where
   def = Split def def
 
-data View a = View
+data View = View
   { _active :: Bool
-  , _viewPayload :: a
-  } deriving (Show, Functor)
-
+  , _bufRef :: BufRef
+  } deriving (Show)
 makeLenses ''View
 
-instance Default (View Int) where
-  def = View True 0
+-- split :: Dir -> SplitRule -> Window -> Window -> Window
+-- split d sr = Branch (Split d sr)
 
-split :: Dir -> SplitRule -> Window -> Window -> Window
-split d sr = Branch (Split d sr)
+-- viewport :: Bool -> BufRef -> Window
+-- viewport act bi = Leaf $ View act bi
 
-viewport :: Bool -> Int -> Window
-viewport act bi = Leaf $ View act bi
-
-type Window = BiTree Split (View Int)
+type Window = BiTree Split View
 
 data Views = Views
-  { _windows' :: Window
+  { _windows' :: Maybe Window
   }
 makeLenses ''Views
 
-windows :: HasEditor e => Lens' e Window
+windows :: HasEditor e => Lens' e (Maybe Window)
 windows = ext.windows'
 
 instance Show Views where
   show _ = "Views"
 
 instance Default Views where
-  def = Views $ split Vert (Ratio 0.5)
-                              (viewport True 0)
-                              $ split Hor (Ratio 0.5)
-                                  (viewport False 1)
-                                  (viewport False 1)
+  def = Views Nothing
 
 rotate :: Window -> Window
 rotate = cata alg
@@ -111,17 +106,20 @@ hSplit, vSplit :: Window -> Window
 hSplit = splitView Hor
 vSplit = splitView Vert
 
-closeBy :: (View Int -> Bool) -> Window -> Window
+addSplit :: Dir -> BufRef -> Window -> Window
+addSplit d bRef = Branch (def & dir .~ d) (Leaf $ View False bRef)
+
+closeBy :: (View -> Bool) -> Window -> Maybe Window
 closeBy p = zygo par alg
   where
     par (LeafF vw) = not $ p vw
     par (BranchF _ l r) = l || r
-    alg (LeafF vw) = Leaf vw
+    alg (LeafF vw) = Just $ Leaf vw
     alg (BranchF sp (keepLeft, l) (keepRight, r))
-      | keepLeft && keepRight = Branch sp l r
+      | keepLeft && keepRight = Branch sp <$> l <*> r
       | keepLeft = l
       | keepRight = r
-      | otherwise = Leaf def
+      | otherwise = Nothing
 
 focusViewLeft :: Window -> Window
 focusViewLeft = zygo par alg
@@ -184,3 +182,14 @@ refocusView = taking 1 traverse . active .~ True
 
 getViews :: Action Views
 getViews = use ext
+
+getBufferViews :: Action (Maybe (BiTree Split (View, Buffer)))
+getBufferViews = do
+  Views mWin <- getViews
+  case mWin of
+    Nothing -> return Nothing
+    Just win -> sequence <$> mapM collect win
+  where
+    collect vw = do
+      buf <- bufDo (vw^.bufRef) get
+      return $ (,) vw <$> buf

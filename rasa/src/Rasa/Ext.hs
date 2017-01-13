@@ -52,6 +52,8 @@ module Rasa.Ext
   , newBuffer
   , nextBufRef
   , prevBufRef
+  , getBufRefs
+  , getBuffers
 
   -- * Working with Buffers
   , BufAction
@@ -102,8 +104,6 @@ module Rasa.Ext
 
   , ext
   , bufExt
-
-  , HasEditor
 
    -- * Accessing/Editing Context
   , Buffer

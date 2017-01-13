@@ -11,6 +11,7 @@ module Rasa.Internal.Directive
   , exit
   , newBuffer
   , getBufRefs
+  , getBuffers
   , nextBufRef
   , prevBufRef
 
@@ -32,6 +33,7 @@ import Rasa.Internal.Buffer as B
 
 import Control.Lens
 import Control.Monad
+import Control.Arrow (first)
 import Data.Maybe
 import Data.IntMap as M
 import qualified Yi.Rope as Y
@@ -70,6 +72,12 @@ newBuffer txt = do
 -- | Returns an up-to-date list of all 'BufRef's
 getBufRefs :: Action [BufRef]
 getBufRefs = fmap BufRef <$> use (buffers.to keys)
+
+-- | Returns an up-to-date list of all 'Buffer's, returned values
+-- are read-only; altering them has no effect on the actual stored bufferrs.
+-- This function is useful for renderers.
+getBuffers :: Action [(BufRef, Buffer)]
+getBuffers = fmap (first BufRef) <$> use (buffers.to assocs)
 
 -- | Gets 'BufRef' that comes after the one provided
 nextBufRef :: BufRef -> Action BufRef
