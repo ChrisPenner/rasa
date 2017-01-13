@@ -44,7 +44,7 @@ import qualified Yi.Rope as Y
 -- 'Nothing' if a value was expected.
 newtype BufRef =
   BufRef Int
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | This is the primary state of the editor.
 data Editor = Editor
