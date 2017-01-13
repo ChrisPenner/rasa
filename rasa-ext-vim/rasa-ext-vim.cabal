@@ -18,7 +18,6 @@ library
   exposed-modules:     Rasa.Ext.Vim
   build-depends:       base >= 4.8 && < 5
                      , rasa
-                     , rasa-ext-bufs
                      , rasa-ext-files
                      , rasa-ext-views
                      , rasa-ext-cursors

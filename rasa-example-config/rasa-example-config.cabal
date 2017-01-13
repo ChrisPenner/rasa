@@ -19,7 +19,6 @@ executable rasa
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , rasa-ext-views
-                     , rasa-ext-bufs
                      , rasa-ext-vim
                      , rasa-ext-style
                      , rasa-ext-cursors

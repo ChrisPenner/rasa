@@ -1,7 +1,6 @@
 {-# language FlexibleInstances, TemplateHaskell, DeriveFunctor #-}
 module Rasa.Ext.Views.Internal.Views
-  (
-  getViews
+  ( getViews
   , refocusView
   , rotate
   , splitRule
@@ -66,12 +65,6 @@ data View = View
   } deriving (Show)
 makeLenses ''View
 
--- split :: Dir -> SplitRule -> Window -> Window -> Window
--- split d sr = Branch (Split d sr)
-
--- viewport :: Bool -> BufRef -> Window
--- viewport act bi = Leaf $ View act bi
-
 type Window = BiTree Split View
 
 data Views = Views
@@ -122,7 +115,7 @@ closeBy p = zygo par alg
       | otherwise = Nothing
 
 focusViewLeft :: Window -> Window
-focusViewLeft = zygo par alg
+focusViewLeft = ensureOneActive . zygo par alg
   where
     par (LeafF vw) = vw^.active
     par (BranchF (Split Hor _) l r) = l || r
@@ -136,7 +129,7 @@ focusViewLeft = zygo par alg
                         else l
 
 focusViewRight :: Window -> Window
-focusViewRight = zygo par alg
+focusViewRight = ensureOneActive . zygo par alg
   where
     par (LeafF vw) = vw^.active
     par (BranchF (Split Hor _) l r) = l || r
@@ -150,7 +143,7 @@ focusViewRight = zygo par alg
                          else r
 
 focusViewAbove :: Window -> Window
-focusViewAbove = zygo par alg
+focusViewAbove = ensureOneActive . zygo par alg
   where
     par (LeafF vw) = vw^.active
     par (BranchF (Split Vert _) u d) = u || d
@@ -164,7 +157,7 @@ focusViewAbove = zygo par alg
                         else u
 
 focusViewBelow :: Window -> Window
-focusViewBelow = zygo par alg
+focusViewBelow = ensureOneActive . zygo par alg
   where
     par (LeafF vw) = vw^.active
     par (BranchF (Split Vert _) u d) = u || d
@@ -176,6 +169,11 @@ focusViewBelow = zygo par alg
         where bottom = if fromTop
                          then d & taking 1 traverse . active .~ True
                          else d
+
+ensureOneActive :: Window -> Window
+ensureOneActive w = if not $ anyOf traverse _active w
+                       then w & taking 1 traverse . active .~ True
+                       else w
 
 refocusView :: Window -> Window
 refocusView = taking 1 traverse . active .~ True

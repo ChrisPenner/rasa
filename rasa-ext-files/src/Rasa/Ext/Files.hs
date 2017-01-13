@@ -11,7 +11,7 @@ import System.Environment
 
 import Data.Foldable
 import Data.Typeable
-import Data.Default 
+import Data.Default
 import Data.Monoid
 
 import Control.Monad
@@ -19,7 +19,7 @@ import Control.Monad.IO.Class
 import qualified Yi.Rope as Y
 
 import Rasa.Ext
-import Rasa.Ext.Bufs
+import Rasa.Ext.Views
 import Rasa.Ext.Cmd
 import Rasa.Ext.StatusBar
 

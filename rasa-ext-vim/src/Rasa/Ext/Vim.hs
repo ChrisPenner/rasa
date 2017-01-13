@@ -4,7 +4,6 @@ module Rasa.Ext.Vim
   ) where
 
 import Rasa.Ext
-import Rasa.Ext.Bufs
 import Rasa.Ext.Views
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
@@ -67,7 +66,7 @@ handleKeypress keypress = do
     -- | If nothing changed than an action must have happened
     unless (preHist /= postHist) (hist .= [])
     return mode'
-  maybe (return ()) (`global` keypress) focVimMode
+  mapM_ (`global` keypress) focVimMode
 
 -- | Sets the status bar to the current mode and current VimHist
 setStatus :: Action ()
