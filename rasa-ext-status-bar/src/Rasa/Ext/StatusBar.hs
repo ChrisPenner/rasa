@@ -35,7 +35,7 @@ instance Default StatusBar where
     , _right=[]
     }
 
-statusBar :: Scheduler ()
+statusBar :: Action ()
 statusBar = beforeEvent $ buffersDo_ clearStatus
 
 clearStatus :: BufAction ()

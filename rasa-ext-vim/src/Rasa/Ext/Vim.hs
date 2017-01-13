@@ -46,7 +46,7 @@ hist = bufExt.histKeys
 -- > rasa $ do
 -- >    vim
 -- >    ...
-vim :: Scheduler ()
+vim :: Action ()
 vim = do
   -- Register to listen for keypresses
   eventListener handleKeypress

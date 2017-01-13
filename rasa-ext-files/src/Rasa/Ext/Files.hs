@@ -34,12 +34,12 @@ instance Default FileInfo where
   _filename=Nothing
 }
 
-files :: Scheduler ()
-files = do
+files :: Action ()
+files = do 
+  beforeRender showFilename
   onInit $ do
     loadFiles
     addCmd "save" $ void . focusDo . saveAs . Y.fromString
-  beforeRender showFilename
 
 showFilename :: Action ()
 showFilename = void . focusDo $ do

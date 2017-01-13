@@ -10,7 +10,7 @@ import Data.Maybe
 import Data.List
 
 -- | Main export from the views extension, add this to your rasa config.
-views :: Scheduler ()
+views :: Action ()
 views = onBufAdded addSplit
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.

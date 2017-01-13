@@ -27,5 +27,5 @@ import Rasa.Ext.Cursors.Actions
 import Rasa.Ext
 
 -- | Registers hooks for the extension. The user should add this to their config.
-cursors :: Scheduler ()
+cursors :: Action ()
 cursors = beforeRender $ buffersDo_ displayRange

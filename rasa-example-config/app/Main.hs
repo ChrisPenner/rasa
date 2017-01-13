@@ -21,7 +21,6 @@ import Control.Monad
 
 main :: IO ()
 main = rasa $ do
-  onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
   views
   vim
   statusBar
@@ -30,3 +29,4 @@ main = rasa $ do
   logger
   slate
   style
+  void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

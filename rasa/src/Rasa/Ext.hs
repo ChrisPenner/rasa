@@ -120,7 +120,6 @@ module Rasa.Ext
   , Mod(..)
 
   -- * Dealing with events
-  , Scheduler
   , Hooks
   , Hook
   , dispatchEvent
@@ -128,11 +127,11 @@ module Rasa.Ext
   , eventProvider
 
   -- * Built-in Event Hooks
-  , onInit
   , beforeEvent
   , beforeRender
   , onRender
   , afterRender
+  , onInit
   , onExit
   , onBufAdded
 

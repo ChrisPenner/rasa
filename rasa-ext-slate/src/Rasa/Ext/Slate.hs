@@ -15,7 +15,7 @@ import Control.Monad.IO.Class
 -- > rasa $ do
 -- >    slate
 -- >    ...
-slate :: Scheduler ()
+slate :: Action ()
 slate = do
   onInit terminalEvents
   onRender render

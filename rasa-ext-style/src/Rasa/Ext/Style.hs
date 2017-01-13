@@ -86,5 +86,5 @@ addStyle r st = styles %= (Span r st:)
 -- > rasa $ do
 -- >    style
 -- >    ...
-style :: Scheduler ()
+style :: Action ()
 style = afterRender $ buffersDo_ $ styles .= []
