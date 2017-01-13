@@ -21,11 +21,12 @@ module Rasa.Ext.Cursors
   , moveRangesByC
   ) where
 
+import Rasa.Ext
 import Rasa.Ext.Cursors.Base
 import Rasa.Ext.Cursors.Actions
 
-import Rasa.Ext
+import Control.Monad
 
 -- | Registers hooks for the extension. The user should add this to their config.
-cursors :: Scheduler ()
-cursors = beforeRender $ buffersDo_ displayRange
+cursors :: Action ()
+cursors = void . beforeRender $ buffersDo_ displayRange

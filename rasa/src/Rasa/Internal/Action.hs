@@ -5,7 +5,6 @@ module Rasa.Internal.Action where
 import Control.Lens
 import Control.Concurrent.Async
 import Control.Monad.State
-import Control.Monad.Reader
 import Data.Dynamic
 import Data.Map
 import Data.Default
@@ -15,7 +14,12 @@ import Rasa.Internal.Editor
 
 
 -- | A wrapper around event listeners so they can be stored in 'Hooks'.
-data Hook = forall a. Hook a
+data Hook = forall a. Hook HookId a
+data HookId =
+  HookId Int TypeRep
+
+instance Eq HookId where
+  HookId a _ == HookId b _ = a == b
 
 -- | A map of Event types to a list of listeners for that event
 type Hooks = Map TypeRep [Hook]
@@ -32,22 +36,24 @@ type Hooks = Map TypeRep [Hook]
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Internal.Ext.Directive' module.
 
 newtype Action a = Action
-  { runAct :: StateT ActionState (ReaderT Hooks IO) a
-  } deriving (Functor, Applicative, Monad, MonadState ActionState, MonadReader Hooks, MonadIO)
+  { runAct :: StateT ActionState IO a
+  } deriving (Functor, Applicative, Monad, MonadState ActionState, MonadIO)
 
 
 -- | Unwrap and execute an Action (returning the editor state)
-execAction :: ActionState -> Hooks -> Action () -> IO ActionState
-execAction actionState hooks action = flip runReaderT hooks . execStateT (runAct action) $ actionState
+execAction :: ActionState ->  Action () -> IO ActionState
+execAction actionState action = execStateT (runAct action) actionState
 
 -- | Unwrap and evaluate an Action (returning the value)
-evalAction :: ActionState -> Hooks -> Action a -> IO a
-evalAction actionState hooks action  = flip runReaderT hooks $ evalStateT (runAct action) actionState
+evalAction :: ActionState -> Action a -> IO a
+evalAction actionState action  = evalStateT (runAct action) actionState
 
 type AsyncAction = Async (Action ())
 data ActionState = ActionState
   { _ed :: Editor
   , _asyncs :: [AsyncAction]
+  , _hooks :: Hooks
+  , _nextHook :: Int
   }
 makeClassy ''ActionState
 
@@ -58,6 +64,8 @@ instance Default ActionState where
   def = ActionState
     { _ed=def
     , _asyncs=def
+    , _hooks=def
+    , _nextHook=0
     }
 
 instance Show ActionState where
@@ -74,8 +82,8 @@ instance Show ActionState where
 --      * Access/Edit the buffer's 'text'
 --
 newtype BufAction a = BufAction
-  { getBufAction::StateT Buffer (ReaderT Hooks IO) a
-  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadReader Hooks, MonadIO)
+  { getBufAction::StateT Buffer IO a
+  } deriving (Functor, Applicative, Monad, MonadState Buffer, MonadIO)
 
 -- | This lifts up a bufAction into an Action which performs the 'BufAction'
 -- over the referenced buffer and returns the result (if the buffer existed)
@@ -85,8 +93,7 @@ liftBuf bufAct (BufRef bufRef) = do
   case mBuf of
     Nothing -> return Nothing
     Just buf -> do
-      hooks <- ask
-      (val, newBuf) <- liftIO $ flip runReaderT hooks . flip runStateT buf . getBufAction $ bufAct
+      (val, newBuf) <- liftIO $ flip runStateT buf . getBufAction $ bufAct
       buffers.at bufRef ?= newBuf
       return . Just $ val
 

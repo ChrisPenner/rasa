@@ -8,10 +8,10 @@ import Rasa.Ext
 
 import Control.Monad.State
 
-logger :: Scheduler ()
+logger :: Action ()
 logger = do
-  onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
-  afterRender $ do
+  void . onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
+  void . afterRender $ do
     ed <- get
     liftIO $ appendFile "logs.log" (show ed)
 

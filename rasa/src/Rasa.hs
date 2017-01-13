@@ -25,13 +25,13 @@ import Data.List
 -- >   vim
 -- >   slate
 
-rasa :: Scheduler () -> IO ()
-rasa scheduler =
-  evalAction def hooks $ do
+rasa :: Action () -> IO ()
+rasa initilize =
+  evalAction def $ do
+    initilize
     dispatchEvent Init
     eventLoop
     dispatchEvent Exit
-    where hooks = getHooks scheduler
 
 -- | This is the main event loop, it runs recursively forever until something
 -- sets 'Rasa.Editor.exiting'. It runs the pre-event hooks, then checks if any
