@@ -2,33 +2,17 @@
 module Rasa.Ext.Slate.Internal.Render (render) where
 
 import Rasa.Ext
-import Rasa.Ext.Bufs
-import Rasa.Ext.Viewports
 import Rasa.Ext.Views
 import Rasa.Ext.Style
 -- import Rasa.Ext.StatusBar (left, center, right)
 import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
-import Control.Monad.IO.Class
 import Data.Functor.Foldable
 
 import qualified Graphics.Vty as V
 import Control.Lens
 import Control.Monad.IO.Class
 
-import Data.Monoid
-import Data.Foldable
-
-import qualified Yi.Rope as Y
-import Control.Monad.State
-
--- | Given a window size, creates a 'BufAction' which will return an image representing the buffer it's run in.
-renderBuf :: (Int, Int) -> BufAction V.Image
-renderBuf (width, height) = do
-  txt <- use text
-  atts <- fmap (fmap convertStyle) <$> use styles
-  let img = applyAttrs atts txt
-  return $ V.resize width height img
 type Width = Int
 type Height = Int
 
@@ -42,18 +26,14 @@ getSize = do
 render :: Action ()
 render = do
   (width, height) <- getSize
-  Views vp <- getViews
-  bufs <- collectBuffers
-  let img = renderWindow (width, height) $ fmap (fmap (bufs !!)) vp
-      pic = V.picForImage img
-  v <- getVty
-  liftIO $ V.update v pic
-
--- | Given a window size, creates a 'BufAction' which will return an image representing the buffer it's run in.
-collectBuffers :: Action [Buffer]
-collectBuffers = bufDo $ do
-  buf <- get
-  return [buf]
+  mBufViews <- getBufferViews
+  liftIO $ appendFile "bufs.log" (show mBufViews)
+  case mBufViews of
+    Nothing -> return ()
+    Just win -> 
+      let img = renderWindow (width, height) win
+          pic = V.picForImage img
+       in getVty >>= liftIO . flip V.update pic
 
 splitByRule :: SplitRule -> Int -> (Int, Int)
 splitByRule (Ratio p) sz = (start, end)
@@ -71,7 +51,7 @@ splitByRule (FromEnd amt) sz = (start, end)
     start = sz - end
     end = min sz amt
 
-renderWindow :: (Width, Height) -> BiTree Split (View Buffer) -> V.Image
+renderWindow :: (Width, Height) -> BiTree Split (View, Buffer) -> V.Image
 renderWindow sz win = cata alg win sz
   where
     alg (BranchF (Split Vert spRule) left right) = \(width, height) ->
@@ -88,8 +68,8 @@ renderWindow sz win = cata alg win sz
 
     alg (LeafF bufInfo) = \(width, height) -> renderView (width, height) bufInfo
 
-renderView :: (Width, Height) -> View Buffer -> V.Image
-renderView (width, height) bufView = appendActiveBar $ V.resize width availHeight $ applyAttrs atts txt
+renderView :: (Width, Height) -> (View, Buffer) -> V.Image
+renderView (width, height) (vw, buf) = appendActiveBar $ V.resize width availHeight $ applyAttrs atts txt
   where
     appendActiveBar img =
       if isActive
@@ -97,6 +77,6 @@ renderView (width, height) bufView = appendActiveBar $ V.resize width availHeigh
         else img
     availHeight = if isActive then height - 1
                               else height
-    txt = bufView ^. viewPayload . rope
-    atts = bufView ^. viewPayload . styles & fmap (fmap convertStyle)
-    isActive = bufView ^. active
+    txt = buf^.text
+    atts = buf^.styles & fmap (fmap convertStyle)
+    isActive = vw ^. active

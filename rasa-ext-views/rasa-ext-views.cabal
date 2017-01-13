@@ -23,8 +23,8 @@ library
                      , lens
                      , data-default
                      , bifunctors
-                     , profunctors
                      , recursion-schemes
+                     , mtl
   default-language:    Haskell2010
 
   default-extensions:
