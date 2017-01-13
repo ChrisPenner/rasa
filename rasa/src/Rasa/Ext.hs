@@ -122,8 +122,10 @@ module Rasa.Ext
   -- * Dealing with events
   , Hooks
   , Hook
+  , HookId
   , dispatchEvent
   , eventListener
+  , removeListener
   , eventProvider
 
   -- * Built-in Event Hooks

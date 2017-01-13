@@ -49,9 +49,9 @@ hist = bufExt.histKeys
 vim :: Action ()
 vim = do
   -- Register to listen for keypresses
-  eventListener handleKeypress
+  void $ eventListener handleKeypress
   -- Set the status bar to the current mode before each render
-  beforeRender setStatus
+  void $ beforeRender setStatus
 
 -- | The event hook which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()

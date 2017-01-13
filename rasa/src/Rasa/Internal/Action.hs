@@ -14,7 +14,12 @@ import Rasa.Internal.Editor
 
 
 -- | A wrapper around event listeners so they can be stored in 'Hooks'.
-data Hook = forall a. Hook a
+data Hook = forall a. Hook HookId a
+data HookId =
+  HookId Int TypeRep
+
+instance Eq HookId where
+  HookId a _ == HookId b _ = a == b
 
 -- | A map of Event types to a list of listeners for that event
 type Hooks = Map TypeRep [Hook]
@@ -48,6 +53,7 @@ data ActionState = ActionState
   { _ed :: Editor
   , _asyncs :: [AsyncAction]
   , _hooks :: Hooks
+  , _nextHook :: Int
   }
 makeClassy ''ActionState
 
@@ -59,6 +65,7 @@ instance Default ActionState where
     { _ed=def
     , _asyncs=def
     , _hooks=def
+    , _nextHook=0
     }
 
 instance Show ActionState where

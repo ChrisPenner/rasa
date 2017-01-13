@@ -11,7 +11,7 @@ import Data.List
 
 -- | Main export from the views extension, add this to your rasa config.
 views :: Action ()
-views = onBufAdded addSplit
+views = void $ onBufAdded addSplit
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Action ()

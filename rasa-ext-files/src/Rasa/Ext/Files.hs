@@ -37,7 +37,7 @@ instance Default FileInfo where
 files :: Action ()
 files = do 
   beforeRender showFilename
-  onInit $ do
+  void . onInit $ do
     loadFiles
     addCmd "save" $ void . focusDo . saveAs . Y.fromString
 
