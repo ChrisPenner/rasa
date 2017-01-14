@@ -59,7 +59,7 @@ nextBuf = do
   mWin <- use V.windows
   forM_ mWin $ \w -> V.windows._Just <~ traverse next w
   where
-    next vw 
+    next vw
       | vw ^. V.active = do
             newBufRef <- nextBufRef (vw ^. V.bufRef)
             return (vw & V.bufRef .~ newBufRef)
@@ -71,7 +71,7 @@ prevBuf = do
   mWin <- use V.windows
   forM_ mWin $ \w -> V.windows._Just <~ traverse prev w
   where
-    prev vw 
+    prev vw
       | vw ^. V.active = do
            newBufRef <- prevBufRef (vw ^. V.bufRef)
            return (vw & V.bufRef .~ newBufRef)
@@ -88,5 +88,6 @@ focusDo bufAct = do
   bufRefs <- focusedBufs
   catMaybes <$> mapM (`bufDo` bufAct) bufRefs
 
+-- | 'focusDo' with a void return
 focusDo_ :: BufAction a -> Action ()
 focusDo_ = void . focusDo
