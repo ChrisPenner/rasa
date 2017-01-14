@@ -17,6 +17,7 @@ module Rasa.Ext.Views
   , A.nextBuf
   , A.prevBuf
   , A.focusDo
+  , A.focusDo_
   , A.focusedBufs
   , Dir(..)
   , SplitRule(..)

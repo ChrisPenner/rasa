@@ -87,3 +87,6 @@ focusDo :: BufAction a -> Action [a]
 focusDo bufAct = do
   bufRefs <- focusedBufs
   catMaybes <$> mapM (`bufDo` bufAct) bufRefs
+
+focusDo_ :: BufAction a -> Action ()
+focusDo_ = void . focusDo

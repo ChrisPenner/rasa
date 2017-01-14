@@ -58,6 +58,7 @@ module Rasa.Ext
 
   -- * Working with Buffers
   , BufAction
+  , liftAction
   , bufDo
   , bufDo_
   , buffersDo
@@ -108,6 +109,7 @@ module Rasa.Ext
 
    -- * Accessing/Editing Context
   , Buffer
+  , HasBuffer
   , BufRef
   , HasEditor
   , text

@@ -6,6 +6,7 @@ module Rasa.Internal.Range
   , clampCoord
   , clampRange
   , Range(..)
+  , range
   , sizeOf
   , sizeOfR
   , moveRange
@@ -18,6 +19,8 @@ module Rasa.Internal.Range
   , beforeC
   , afterC
   ) where
+
+import Rasa.Internal.Buffer
 
 import Control.Lens
 import Data.Maybe
@@ -192,3 +195,9 @@ afterC c@(Coord row col) = lens getter setter
 
         setter old new = let prefix = old ^. beforeC c
                           in prefix <> new
+
+-- | A lens over text which is encompassed by a 'Range'
+range :: HasBuffer s =>  Range -> Lens' s Y.YiString
+range (Range start end) = lens getter setter
+  where getter = view (text . beforeC end . afterC start)
+        setter old new = old & text . beforeC end . afterC start .~ new

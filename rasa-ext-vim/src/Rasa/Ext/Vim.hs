@@ -15,6 +15,7 @@ import Data.Default
 import Data.Typeable
 import qualified Yi.Rope as Y
 
+-- | A type representing the current mode of a buffer
 data VimMode
   = Normal
   | Insert
@@ -23,6 +24,7 @@ data VimMode
 instance Default VimMode where
   def = Normal
 
+-- | A history of any keypresses which haven't matched a pattern
 newtype VimHist = VimHist
   { _histKeys :: [Keypress]
   } deriving (Show, Typeable)
@@ -32,11 +34,11 @@ instance Default VimHist where
   def = VimHist []
 
 -- | A hlens into vim's current mode.
-mode :: Lens' Buffer VimMode
+mode :: HasBuffer s => Lens' s VimMode
 mode = bufExt
 
 -- | A lens into the current unresolved keypress history
-hist :: Lens' Buffer [Keypress]
+hist :: HasBuffer s => Lens' s [Keypress]
 hist = bufExt.histKeys
 
 -- | The main export for the vim keybinding extension. Add this to your user config.
@@ -55,18 +57,16 @@ vim = do
 
 -- | The event hook which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()
-handleKeypress keypress = do
-  focVimMode <- focusDo $ do
+handleKeypress keypress = focusDo_ $ do
     mode' <- use mode
     preHist <- use hist
     case mode' of
       Normal -> normal $ preHist ++ [keypress]
       Insert -> insert $ preHist ++ [keypress]
+    anyMode $ preHist ++ [keypress]
     postHist <- use hist
-    -- | If nothing changed than an action must have happened
+    -- If nothing changed than an action must have happened
     unless (preHist /= postHist) (hist .= [])
-    return mode'
-  mapM_ (`global` keypress) focVimMode
 
 -- | Sets the status bar to the current mode and current VimHist
 setStatus :: Action ()
@@ -77,23 +77,14 @@ setStatus = void . focusDo $ do
   rightStatus histDisp
 
 -- | Listeners for keypresses that run regardless of current mode.
-global :: VimMode -> Keypress -> Action ()
-global Normal (Keypress '+' _) = nextBuf
-global Normal (Keypress '-' _) = prevBuf
-global Normal (Keypress 'w' [Ctrl]) = hSplit
-global Normal (Keypress 'v' [Ctrl]) = vSplit
-global Normal (Keypress 'o' [Ctrl]) = closeInactive
-global Normal (Keypress 'r' [Ctrl]) = rotate
-global Normal KLeft = focusViewLeft
-global Normal KRight = focusViewRight
-global Normal KUp = focusViewAbove
-global Normal KDown = focusViewBelow
-global _ (Keypress 'c' [Ctrl]) = exit
-global _ _ = return ()
+anyMode :: [Keypress] -> BufAction ()
+anyMode [Keypress 'c' [Ctrl]] = liftAction exit
+anyMode _ = return ()
 
 -- | Listeners for keypresses when in 'Insert' mode
 insert :: [Keypress] -> BufAction ()
 insert [KEsc] = mode .= Normal
+
 insert [KBS] = moveRangesByN (-1) >> delete
 insert [KEnter] = insertText "\n"
 insert [Keypress c _] = insertText (Y.singleton c) >> moveRangesByN 1
@@ -109,6 +100,17 @@ normal [Keypress '0' []] = startOfLine
 normal [Keypress '$' []] = endOfLine
 normal [Keypress 'g' []] = hist <>= [Keypress 'g' []]
 normal [Keypress 'g' [], Keypress 'g' []] = ranges .= [Range (Coord 0 0) (Coord 0 1)]
+
+normal [Keypress '+' []] = liftAction nextBuf
+normal [Keypress '-' []] = liftAction prevBuf
+normal [Keypress 'w' [Ctrl]] = liftAction hSplit
+normal [Keypress 'v' [Ctrl]] = liftAction vSplit
+normal [Keypress 'o' [Ctrl]] = liftAction closeInactive
+normal [Keypress 'r' [Ctrl]] = liftAction rotate
+normal [KLeft] = liftAction focusViewLeft
+normal [KRight] = liftAction focusViewRight
+normal [KUp] = liftAction focusViewAbove
+normal [KDown] = liftAction focusViewBelow
 
 normal [Keypress 'G' []] = do
   txt <- use text

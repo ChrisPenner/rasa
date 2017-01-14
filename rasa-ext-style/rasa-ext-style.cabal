@@ -1,5 +1,5 @@
 name:                rasa-ext-style
-version:             0.1.1
+version:             0.1.2
 synopsis:            Rasa Ext managing rendering styles
 description:         Rasa Ext managing rendering styles
 homepage:            https://github.com/ChrisPenner/rasa/
