@@ -8,21 +8,22 @@ Embarrassingly modular customizable text editor built in Haskell.
 
 ![Rasa Editor](https://github.com/ChrisPenner/rasa/blob/master/docs/rasa.png "Rasa Editor")
 
-A Rasa editing session with multiple cursors.
+A Rasa editing session with multiple cursors & viewports.
 
 Documentation
 -------------
 You can find hackage documentation for rasa and some extensions here:
 
 - [rasa](https://hackage.haskell.org/package/rasa)
+- [rasa-ext-slate](https://hackage.haskell.org/package/rasa-ext-slate)
+- [rasa-ext-views](https://hackage.haskell.org/package/rasa-ext-views)
+- [rasa-ext-vim](https://hackage.haskell.org/package/rasa-ext-vim)
 - [rasa-ext-cmd](https://hackage.haskell.org/package/rasa-ext-cmd)
 - [rasa-ext-cursors](https://hackage.haskell.org/package/rasa-ext-cursors)
 - [rasa-ext-files](https://hackage.haskell.org/package/rasa-ext-files)
 - [rasa-ext-logger](https://hackage.haskell.org/package/rasa-ext-logger)
-- [rasa-ext-slate](https://hackage.haskell.org/package/rasa-ext-slate)
 - [rasa-ext-status-bar](https://hackage.haskell.org/package/rasa-ext-status-bar)
 - [rasa-ext-style](https://hackage.haskell.org/package/rasa-ext-style)
-- [rasa-ext-vim](https://hackage.haskell.org/package/rasa-ext-vim)
 
 What people are saying
 ----------------------
@@ -77,19 +78,14 @@ extra-deps:
 Getting started
 ---------------
 
-Here's a great guide on building a copy-paste extension from scratch! I definitely
-recommend checking it out!
-
 ### Configuring Rasa
 
-Rasa is designed to be easy to configure, both when adding extensions provided
+Rasa is designed to be easy to configure and script, both when adding extensions provided
 by the community, and when writing your own user-scripts.
 
 Rasa is written in Haskell, and the configuration is done in the Haskell
 language, don't let that scare you though, you can script Rasa and add
 extensions without knowing much haskell!
-
-Check out the [Example Config](https://github.com/ChrisPenner/rasa/tree/master/rasa-example-config) to get an idea of where to go next!
 
 ### [Building Your First Extension](https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md)
 
@@ -118,6 +114,7 @@ community could have written.
 
 - Loading and saving files 
 - Key bindings
+- Listening for keyboard events
 - Multiple cursors
 - Rendering the editor to the terminal
 
@@ -135,13 +132,11 @@ This approach has some unique pros and cons:
 ### Cons
 
 -   Module cross-dependencies makes the community infrastructure more fragile;
-    We'll likely have to develop a solution to this as a community as time
-    goes on.
+    We'll likely develop a solution to this as a community as time goes on.
 -   Fragmentation; Not having a single implementation for a given feature means
     extensions that depend on a feature have to pick a specific implementation
     to augment. Over time data-structures and types will be standardized into
     Rasa's core to help alleviate this.
-
 
 Core Features
 -------------
