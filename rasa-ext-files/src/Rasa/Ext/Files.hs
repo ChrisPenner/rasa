@@ -14,7 +14,6 @@ import Data.Typeable
 import Data.Default
 import Data.Monoid
 
-import Control.Monad
 import Control.Monad.IO.Class
 import qualified Yi.Rope as Y
 
@@ -36,13 +35,13 @@ instance Default FileInfo where
 
 files :: Action ()
 files = do 
-  beforeRender showFilename
-  void . onInit $ do
+  beforeEveryRender_ showFilename
+  onInit $ do
     loadFiles
-    addCmd "save" $ void . focusDo . saveAs . Y.fromString
+    addCmd "save" $ focusDo_ . saveAs . Y.fromString
 
 showFilename :: Action ()
-showFilename = void . focusDo $ do
+showFilename = focusDo_ $ do
   mName <- use $ bufExt.filename
   traverse_ (leftStatus . disp) mName
       where disp name = "<" <> name <> ">"

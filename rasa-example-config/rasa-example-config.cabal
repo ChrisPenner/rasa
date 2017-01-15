@@ -1,5 +1,5 @@
 name:                rasa-example-config
-version:             0.1.1
+version:             0.1.2
 synopsis:            Example user config for Rasa
 description:         Example user config for Rasa
 homepage:            https://github.com/ChrisPenner/rasa/

@@ -6,7 +6,6 @@ import Control.Lens
 
 import Data.Default
 import Control.Applicative
-import Control.Monad
 
 -- | These represent the possible colors for 'fg' or 'bg'.
 -- 'DefColor' represents the terminal's default color.
@@ -88,4 +87,4 @@ addStyle r st = styles %= (Span r st:)
 -- >    style
 -- >    ...
 style :: Action ()
-style = void . afterRender $ buffersDo_ $ styles .= []
+style = afterEveryRender_ $ buffersDo_ $ styles .= []

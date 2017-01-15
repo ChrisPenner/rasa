@@ -9,7 +9,7 @@ import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
 import Rasa.Ext.StatusBar
 
-import Control.Monad (unless, void)
+import Control.Monad
 import Control.Lens
 import Data.Default
 import Data.Typeable
@@ -51,9 +51,9 @@ hist = bufExt.histKeys
 vim :: Action ()
 vim = do
   -- Register to listen for keypresses
-  void $ eventListener handleKeypress
+  onEveryTrigger_ handleKeypress
   -- Set the status bar to the current mode before each render
-  void $ beforeRender setStatus
+  beforeEveryRender_ setStatus
 
 -- | The event hook which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()
@@ -70,7 +70,7 @@ handleKeypress keypress = focusDo_ $ do
 
 -- | Sets the status bar to the current mode and current VimHist
 setStatus :: Action ()
-setStatus = void . focusDo $ do
+setStatus = focusDo_ $ do
   modeDisp <- use (mode.to show.to Y.fromString)
   histDisp <- use (hist.to show.to Y.fromString)
   centerStatus modeDisp

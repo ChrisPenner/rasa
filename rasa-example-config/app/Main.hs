@@ -17,7 +17,7 @@ import Control.Monad
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants
 --
--- The @do@ block is of type 'Rasa.Ext.Action'
+-- The @do@ block is just a normal 'Action' ()
 
 main :: IO ()
 main = rasa $ do
@@ -29,4 +29,4 @@ main = rasa $ do
   logger
   slate
   style
-  void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
+  onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

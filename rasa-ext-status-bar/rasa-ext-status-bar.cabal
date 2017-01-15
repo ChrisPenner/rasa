@@ -1,5 +1,5 @@
 name:                rasa-ext-status-bar
-version:             0.1.1
+version:             0.1.2
 synopsis:            Rasa Ext for populating status-bar
 description:         Rasa Ext for populating status-status-bar
 homepage:            https://github.com/ChrisPenner/rasa/

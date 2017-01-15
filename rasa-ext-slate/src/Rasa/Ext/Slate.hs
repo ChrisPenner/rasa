@@ -6,7 +6,6 @@ import Rasa.Ext.Slate.Internal.Event (terminalEvents)
 import Rasa.Ext.Slate.Internal.State (getVty)
 
 import qualified Graphics.Vty as V
-import Control.Monad
 import Control.Monad.IO.Class
 
 -- | The main export for this extension. Add this to your user config.
@@ -18,9 +17,9 @@ import Control.Monad.IO.Class
 -- >    ...
 slate :: Action ()
 slate = do
-  void $ onInit terminalEvents
-  void $ onRender render
-  void $ onExit shutdown
+  onInit terminalEvents
+  onEveryRender_ render
+  onExit shutdown
 
 -- | Call vty shutdown procedure (if this doesn't happen the terminal ends up in strange states)
 shutdown :: Action ()

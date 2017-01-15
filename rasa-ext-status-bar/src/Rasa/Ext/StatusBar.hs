@@ -12,7 +12,6 @@ module Rasa.Ext.StatusBar
   ) where
 
 import Control.Lens
-import Control.Monad
 
 import Data.Typeable
 import Data.Default
@@ -37,7 +36,7 @@ instance Default StatusBar where
     }
 
 statusBar :: Action ()
-statusBar = void . beforeEvent $ buffersDo_ clearStatus
+statusBar = beforeEveryEvent_ $ buffersDo_ clearStatus
 
 clearStatus :: BufAction ()
 clearStatus = do

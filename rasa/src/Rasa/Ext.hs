@@ -28,7 +28,7 @@
 -- > logger :: Action HookId
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
--- >   eventListener logKeypress
+-- >   onEveryTrigger_ logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 --
 -- Check out this tutorial on building extensions, it's also just a great way to learn
@@ -121,17 +121,26 @@ module Rasa.Ext
   , Hook
   , HookId
   , dispatchEvent
-  , eventListener
+  , onEveryTrigger
+  , onEveryTrigger_
+  , onNextEvent
   , removeListener
-  , persistentListener
   , eventProvider
 
   -- * Built-in Event Hooks
-  , beforeEvent
-  , beforeRender
-  , onRender
-  , afterRender
   , onInit
+  , beforeEveryEvent
+  , beforeEveryEvent_
+  , beforeNextEvent
+  , beforeEveryRender
+  , beforeEveryRender_
+  , beforeNextRender
+  , onEveryRender
+  , onEveryRender_
+  , onNextRender
+  , afterEveryRender
+  , afterEveryRender_
+  , afterNextRender
   , onExit
   , onBufAdded
 

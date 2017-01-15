@@ -124,27 +124,30 @@ rasa/rasa-example-config/app/Main.hs:28:10: error:
 ```
 
 Hrmm, right! Now that we're listening for keypress events we don't want to use
-`onInit` anymore.  Time for the more general `persistentListener`! Let's look
+`onInit` anymore.  Time for the more general `onEveryTrigger`! Let's look
 at the type signature:
 
 ```haskell
-persistentListener :: forall a. Typeable a => (a -> Action ()) -> Action HookId
+onEveryTrigger :: forall a. Typeable a => (a -> Action ()) -> Action HookId
 ```
 
 Whoah, what?? It's tough to unpack exactly what's going on here, but the basic
-idea is that you can see it takes a function from ANY event `a` to an `Action
+idea is that you can see it takes a function from ANY (Typeable) event `a` to an `Action
 ()` and then returns another `Action ()` that will respond to events.  There's
 a bit of magic behind the scenes that stores the function and calls it on any
 events that come that match the type which that function expects, running the
-resulting Action.  Check out the source code behind `persistentListener` if
+resulting Action.  Check out the source code behind `onEveryTrigger` if
 you're interested!  It's pretty cool!  But for now we'll just move on and trust
 that it does what it says. So we've got our function from our event type
-(Keypress), so let's try embedding it using `persistentListener`
+(Keypress), so let's try embedding it using `onEveryTrigger`; the function normally
+returns a reference to the newly created listener so that we could cancel the listener
+using `removeListener` later if we wanted to; but since we don't want to do that we'll
+use `onEveryTrigger_` which just discards it instead.
 
 ```haskell
 main = rasa $ do
   -- other extensions
-  persistentListener helloWorld
+  onEveryTrigger_ helloWorld
 ```
 
 Okay, let's build that and run it, now in a separate terminal we'll run
@@ -192,7 +195,7 @@ import Control.Lens hiding (views)
 main = rasa $ do
   -- other extensions
   cursors
-  persistentListener copyPasta
+  onEveryTrigger_ copyPasta
 
 copyPasta :: Keypress -> Action ()
 copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
@@ -398,7 +401,7 @@ the string that was copied with the event)!
 
 If we were writing this as an extension in a separate package we'd expose the
 type (and maybe the constructor so that people can pattern match on it). Then
-other folks could use `persistentListener` to listen for the event just like we
+other folks could use `onEveryTrigger` to listen for the event just like we
 did with `Keypress` events!
 
 Now that we've defined the type, we need to dispatch an event each time
@@ -408,7 +411,7 @@ the user copies something! Say hello to `dispatchEvent`!
 dispatchEvent :: Typeable a => a -> Action ()
 ```
 
-This looks pretty similar to the `persistentListener` signature, but all that it does
+This looks pretty similar to the `onEveryTrigger` signature, but all that it does
 is takes any event type and will trigger any hooks that are listening for events
 of that type! Let's give it a go!
 
@@ -479,12 +482,12 @@ copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str 
 
 main = rasa $ do
   -- other extensions
-  persistentListener copyListener
+  onEveryTrigger_ copyListener
 ```
 
 Magical! Just like before, all we need to do is write a function that uses
 events of the type we want to listen for and then register the function with
-`persistentListener`.
+`onEveryTrigger`.
 
 ### Extracting the Extension to its own Package
 
@@ -557,10 +560,10 @@ instance Default CopyPasta where
 
 newtype Copied = Copied String
 
--- We've renamed things so we can export a single 'Scheduler'
+-- We've renamed things so we can export a single 'Action'
 -- that the user can embed in their config.
 copyPasta :: Action ()
-copyPasta = persistentListener keyListener
+copyPasta = onEveryTrigger_ keyListener
 
 keyListener :: Keypress -> Action ()
 keyListener (Keypress 'y' _) = do

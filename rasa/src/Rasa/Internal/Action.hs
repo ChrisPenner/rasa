@@ -15,7 +15,7 @@ import Rasa.Internal.Editor
 
 
 -- | A wrapper around event listeners so they can be stored in 'Hooks'.
-data Hook = forall a. Hook HookId a
+data Hook = forall a. Hook HookId (a -> Action ())
 data HookId =
   HookId Int TypeRep
 
@@ -26,7 +26,7 @@ instance Eq HookId where
 type Hooks = Map TypeRep [Hook]
 
 -- | This is a monad-transformer stack for performing actions against the editor.
--- You register Actions to be run in response to events using 'Rasa.Internal.Scheduler.eventListener'
+-- You register Actions to be run in response to events using 'Rasa.Internal.Scheduler.onEveryTrigger'
 --
 -- Within an Action you can:
 --
