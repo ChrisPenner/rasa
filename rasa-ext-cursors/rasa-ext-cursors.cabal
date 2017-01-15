@@ -1,5 +1,5 @@
 name:                rasa-ext-cursors
-version:             0.1.2
+version:             0.1.3
 synopsis:            Rasa Ext adding cursor(s)
 description:         Rasa Ext adding cursor(s)
 homepage:            https://github.com/ChrisPenner/rasa/
@@ -16,9 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Rasa.Ext.Cursors
-  other-modules:
-                       Rasa.Ext.Cursors.Actions
-                       Rasa.Ext.Cursors.Base
+                       Rasa.Ext.Cursors.Internal.Actions
+                       Rasa.Ext.Cursors.Internal.Base
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , rasa-ext-style

@@ -22,8 +22,8 @@ module Rasa.Ext.Cursors
   ) where
 
 import Rasa.Ext
-import Rasa.Ext.Cursors.Base
-import Rasa.Ext.Cursors.Actions
+import Rasa.Ext.Cursors.Internal.Base
+import Rasa.Ext.Cursors.Internal.Actions
 
 import Control.Monad
 

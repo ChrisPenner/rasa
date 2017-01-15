@@ -1,4 +1,4 @@
-module Rasa.Ext.Cursors.Actions
+module Rasa.Ext.Cursors.Internal.Actions
   ( delete
   , insertText
   , findNext
@@ -15,7 +15,7 @@ import qualified Data.Text as T
 import Control.Lens
 import Control.Lens.Text
 import Rasa.Ext
-import Rasa.Ext.Cursors.Base
+import Rasa.Ext.Cursors.Internal.Base
 
 -- | Moves all Ranges that are on the same END row as the given range by the coord's row and column
 -- This is used to adjust cursors when things have been inserted/deleted before them in the row.

@@ -1,13 +1,13 @@
 {-# LANGUAGE TemplateHaskell, OverloadedStrings, Rank2Types #-}
 
-module Rasa.Ext.Cursors.Base
+module Rasa.Ext.Cursors.Internal.Base
   ( rangeDo
   , rangeDo_
   , ranges
-  , displayRange
   , eachRange
   , overRanges
   , addRange
+  , displayRange
   ) where
 
 
@@ -25,7 +25,6 @@ import qualified Yi.Rope as Y
 data Cursors = Cursors
   { _cursors :: [Range]
   } deriving (Typeable, Show)
-
 makeLenses ''Cursors
 
 instance Default Cursors where
