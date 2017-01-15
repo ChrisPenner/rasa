@@ -9,6 +9,7 @@ module Rasa.Internal.Scheduler
   , dispatchEvent
   , eventListener
   , removeListener
+  , persistentListener
   , matchingHooks
   , onInit
   , onExit
@@ -22,6 +23,7 @@ import Rasa.Internal.Events
 import Rasa.Internal.Editor
 
 import Control.Lens
+import Control.Monad (void)
 import Data.Dynamic
 import Data.Foldable
 import Data.Map hiding (filter)
@@ -54,7 +56,7 @@ matchingHooks hooks' = getHook <$> (hooks'^.at (typeRep (Proxy :: Proxy a))._Jus
 -- | This registers an event listener hook, as long as the listener is well-typed similar to this:
 --
 -- @MyEventType -> Action ()@ then it will be registered to listen for dispatched events of that type.
--- Use within the 'Rasa.Internal.Scheduler.Scheduler' and add have the user add it to their config.
+-- Use within the 'Rasa.Internal.Action.Action' and add have the user add it to their config.
 -- It returns an ID which may be used with 'removeListener'
 eventListener :: forall a. Typeable a => (a -> Action ()) -> Action HookId
 eventListener hookFunc = do
@@ -68,6 +70,12 @@ removeListener hkIdA@(HookId _ typ) =
   hooks.at typ._Just %= filter hookMatches
     where
       hookMatches (Hook hkIdB _) = hkIdA /= hkIdB
+
+-- | Registers an event listener but does not return the HookId.
+--
+-- This is for listeners that will never be removed
+persistentListener :: forall a. Typeable a => (a -> Action ()) -> Action ()
+persistentListener = void . eventListener
 
 -- | Registers an action to be performed during the Initialization phase.
 --

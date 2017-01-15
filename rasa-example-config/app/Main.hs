@@ -17,7 +17,7 @@ import Control.Monad
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants
 --
--- The @do@ block is of type 'Rasa.Ext.Scheduler.Scheduler'
+-- The @do@ block is of type 'Rasa.Ext.Action'
 
 main :: IO ()
 main = rasa $ do

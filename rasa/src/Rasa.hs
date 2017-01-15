@@ -17,7 +17,7 @@ import Data.List
 --
 -- @rasa eventProviders extensions@
 --
--- This should be imported by a user-config with and called with a 'Scheduler'
+-- This should be imported by a user-config with and called with an 'Action'
 -- containing any extensions which have event listeners.
 --
 -- > rasa $ do
