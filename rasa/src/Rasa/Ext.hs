@@ -30,7 +30,7 @@
 -- > logKeypress :: Keypress -> Action ()
 -- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
 -- >
--- > logger :: Scheduler ()
+-- > logger :: Action ()
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
 -- >   eventListener logKeypress
