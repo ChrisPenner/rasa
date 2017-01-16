@@ -11,6 +11,7 @@ import Rasa.Ext.StatusBar
 import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
+import Rasa.Ext.Logger
 
 import Control.Monad
 
@@ -29,4 +30,9 @@ main = rasa $ do
   logger
   slate
   style
+  _ <- onBufTextChanged printChg
   onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
+
+printChg :: Range -> Action ()
+printChg r = logInfo $ "BufTextChanged " ++ show r
+  

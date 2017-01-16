@@ -24,12 +24,14 @@ module Rasa.Internal.Scheduler
   , removeListener
   , matchingHooks
   , onBufAdded
+  , onBufTextChanged
   ) where
 
 
 import Rasa.Internal.Action
 import Rasa.Internal.Events
 import Rasa.Internal.Editor
+import Rasa.Internal.Range
 
 import Control.Lens
 import Control.Monad
@@ -167,3 +169,8 @@ onBufAdded :: (BufRef -> Action ()) -> Action HookId
 onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
+
+onBufTextChanged :: (Range -> Action ()) -> Action HookId
+onBufTextChanged f = onEveryTrigger listener
+  where
+    listener (BufTextChanged r) = f r

@@ -127,7 +127,10 @@ replaceRange r txt = range r .= txt
 
 -- | Inserts text into the buffer at the given Coord.
 insertAt :: Coord -> Y.YiString -> BufAction ()
-insertAt c txt = range (Range c c) .= txt
+insertAt c txt = do
+  let r = Range c c
+  liftAction $ dispatchEvent (BufTextChanged r)
+  range r .= txt
 
 -- | Runs the given function over the text in the range, replacing it with the results.
 overRange :: Range -> (Y.YiString -> Y.YiString) -> BufAction ()
