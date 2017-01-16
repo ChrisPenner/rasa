@@ -52,9 +52,11 @@ instance Monoid AttrMonoid where
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: [Span V.Attr] -> Y.YiString -> V.Image
-applyAttrs atts txt = applyAttrs' converted (Y.lines txt)
+applyAttrs atts txt = applyAttrs' converted (padSpaces <$> Y.lines txt)
   where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
         converted = combined & traverse._2 %~ attr'
+        -- Newlines aren't rendered; so we can replace them with spaces.
+        padSpaces = (`Y.append` "  ")
 
 applyAttrs' :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
 applyAttrs' atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
