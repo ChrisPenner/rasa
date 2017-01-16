@@ -13,6 +13,8 @@ import qualified Graphics.Vty as V
 import Control.Lens
 import Control.Monad.IO.Class
 
+import qualified Yi.Rope as Y
+
 type Width = Int
 type Height = Int
 
@@ -72,7 +74,7 @@ renderWindow sz win = cata alg win sz
 
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
 renderView :: (Width, Height) -> (View, Buffer) -> V.Image
-renderView (width, height) (vw, buf) = appendActiveBar . resize . scroll $ textImage
+renderView (width, height) (vw, buf) = appendActiveBar . resize $ textImage
   where
     appendActiveBar i
       | isActive = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
@@ -80,11 +82,12 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize . scroll $ textI
     availHeight = if isActive then height - 1
                               else height
 
+    trimText = Y.concat . take availHeight . drop (vw^.scrollPos & negate) . Y.lines'
+
     resize = V.resize width availHeight
     textImage = applyAttrs atts txt
-    scroll = V.translateY scrollAmt
     textHeight = V.imageHeight textImage
-    txt = buf^.text
+    txt = buf^.text & trimText
     scrollAmt = max (-textHeight) (vw^.scrollPos)
     atts = buf^.styles & fmap (fmap convertStyle)
     isActive = vw ^. active
