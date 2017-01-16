@@ -82,12 +82,10 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize $ textImage
     availHeight = if isActive then height - 1
                               else height
 
-    trimText = Y.concat . take availHeight . drop (vw^.scrollPos & negate) . Y.lines'
+    trimText = Y.concat . take availHeight . drop (vw^.scrollPos) . Y.lines'
 
     resize = V.resize width availHeight
     textImage = applyAttrs atts txt
-    textHeight = V.imageHeight textImage
     txt = buf^.text & trimText
-    scrollAmt = max (-textHeight) (vw^.scrollPos)
     atts = buf^.styles & fmap (fmap convertStyle)
     isActive = vw ^. active

@@ -208,4 +208,6 @@ ensureOneActive w = if not $ anyOf traverse _active w
 
 -- | Scroll all active viewports by the given amount.
 scrollBy :: Int -> Window -> Window
-scrollBy amt = (traverse.filtered (view active).scrollPos) +~ amt
+scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
+  where
+    scroll = max 0 . (+ amt)
