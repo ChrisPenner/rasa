@@ -107,10 +107,17 @@ normal [Keypress 'w' [Ctrl]] = liftAction hSplit
 normal [Keypress 'v' [Ctrl]] = liftAction vSplit
 normal [Keypress 'o' [Ctrl]] = liftAction closeInactive
 normal [Keypress 'r' [Ctrl]] = liftAction rotate
+
+normal [Keypress 'e' [Ctrl]] = liftAction $ scrollBy (-1) -- Scroll down
+normal [Keypress 'd' [Ctrl]] = liftAction $ scrollBy (-7) -- Half-Page down
+normal [Keypress 'y' [Ctrl]] = liftAction $ scrollBy 1 -- Scroll up
+normal [Keypress 'u' [Ctrl]] = liftAction $ scrollBy 7 -- Half-Page up
+
 normal [KLeft] = liftAction focusViewLeft
 normal [KRight] = liftAction focusViewRight
 normal [KUp] = liftAction focusViewAbove
 normal [KDown] = liftAction focusViewBelow
+
 
 normal [Keypress 'G' []] = do
   txt <- use text

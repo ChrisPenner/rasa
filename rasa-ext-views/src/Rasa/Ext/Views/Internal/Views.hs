@@ -1,9 +1,10 @@
-{-# language FlexibleInstances, TemplateHaskell, DeriveFunctor #-}
+{-# language FlexibleInstances, TemplateHaskell, DeriveFunctor, GeneralizedNewtypeDeriving #-}
 module Rasa.Ext.Views.Internal.Views
   ( rotate
   , splitRule
   , active
   , bufRef
+  , scrollPos
   , closeBy
   , focusViewLeft
   , focusViewRight
@@ -13,7 +14,7 @@ module Rasa.Ext.Views.Internal.Views
   , hSplit
   , vSplit
   , addSplit
-  , getBufferViews
+  , scrollBy
   , Dir(..)
   , SplitRule(..)
   , Window
@@ -78,6 +79,7 @@ instance Default Split where
 data View = View
   { _active :: Bool
   , _bufRef :: BufRef
+  , _scrollPos :: Int
   } deriving (Show)
 makeLenses ''View
 
@@ -123,7 +125,7 @@ vSplit = splitView Vert
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: Dir -> BufRef -> Window -> Window
-addSplit d bRef = Branch (def & dir .~ d) (Leaf $ View False bRef)
+addSplit d bRef = Branch (def & dir .~ d) (Leaf View{_active=False, _bufRef=bRef, _scrollPos=0})
 
 -- | Close any views which match a given predicate
 closeBy :: (View -> Bool) -> Window -> Maybe Window
@@ -204,14 +206,6 @@ ensureOneActive w = if not $ anyOf traverse _active w
                        then w & taking 1 traverse . active .~ True
                        else w
 
--- | Retrieve a tree populated with views and their associated buffer
-getBufferViews :: Action (Maybe (BiTree Split (View, Buffer)))
-getBufferViews = do
-  mWin <- use windows
-  case mWin of
-    Nothing -> return Nothing
-    Just win -> sequence <$> mapM collect win
-  where
-    collect vw = do
-      buf <- getBuffer (vw^.bufRef)
-      return $ (,) vw <$> buf
+-- | Scroll all active viewports by the given amount.
+scrollBy :: Int -> Window -> Window
+scrollBy amt = (traverse.filtered (view active).scrollPos) +~ amt

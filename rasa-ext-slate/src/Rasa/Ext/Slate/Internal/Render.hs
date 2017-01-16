@@ -30,11 +30,12 @@ render = do
   liftIO $ appendFile "bufs.log" (show mBufViews)
   case mBufViews of
     Nothing -> return ()
-    Just win -> 
+    Just win ->
       let img = renderWindow (width, height) win
           pic = V.picForImage img
        in getVty >>= liftIO . flip V.update pic
 
+-- | Divides up available space according to the given 'SplitRule'.
 splitByRule :: SplitRule -> Int -> (Int, Int)
 splitByRule (Ratio p) sz = (start, end)
   where
@@ -51,6 +52,7 @@ splitByRule (FromEnd amt) sz = (start, end)
     start = sz - end
     end = min sz amt
 
+-- | Recursively render components of a Window to a 'V.Image' combining the results in the proper locations.
 renderWindow :: (Width, Height) -> BiTree Split (View, Buffer) -> V.Image
 renderWindow sz win = cata alg win sz
   where
@@ -68,15 +70,21 @@ renderWindow sz win = cata alg win sz
 
     alg (LeafF bufInfo) = \(width, height) -> renderView (width, height) bufInfo
 
+-- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
 renderView :: (Width, Height) -> (View, Buffer) -> V.Image
-renderView (width, height) (vw, buf) = appendActiveBar $ V.resize width availHeight $ applyAttrs atts txt
+renderView (width, height) (vw, buf) = appendActiveBar . resize . scroll $ textImage
   where
-    appendActiveBar img =
-      if isActive
-        then img V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
-        else img
+    appendActiveBar i
+      | isActive = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
+      | otherwise = i
     availHeight = if isActive then height - 1
                               else height
+
+    resize = V.resize width availHeight
+    textImage = applyAttrs atts txt
+    scroll = V.translateY scrollAmt
+    textHeight = V.imageHeight textImage
     txt = buf^.text
+    scrollAmt = max (-textHeight) (vw^.scrollPos)
     atts = buf^.styles & fmap (fmap convertStyle)
     isActive = vw ^. active

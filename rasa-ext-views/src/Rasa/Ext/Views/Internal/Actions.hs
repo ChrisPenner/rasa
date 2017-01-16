@@ -50,7 +50,7 @@ addSplit :: BufRef -> Action ()
 addSplit bRef = do
   mWin <- use V.windows
   case mWin of
-    Nothing -> V.windows ?= Leaf (V.View True bRef)
+    Nothing -> V.windows ?= Leaf (V.View True bRef 0)
     Just win -> V.windows ?= V.addSplit V.Vert bRef win
 
 -- | Select the next buffer in any active viewports
@@ -91,3 +91,18 @@ focusDo bufAct = do
 -- | 'focusDo' with a void return
 focusDo_ :: BufAction a -> Action ()
 focusDo_ = void . focusDo
+
+-- | Retrieve a tree populated with views and their associated buffer
+getBufferViews :: Action (Maybe (BiTree V.Split (V.View, Buffer)))
+getBufferViews = do
+  mWin <- use V.windows
+  case mWin of
+    Nothing -> return Nothing
+    Just win -> sequence <$> mapM collect win
+  where
+    collect vw = do
+      buf <- getBuffer (vw^. V.bufRef)
+      return $ (,) vw <$> buf
+
+scrollBy :: Int -> Action ()
+scrollBy amt = V.windows._Just %= V.scrollBy amt

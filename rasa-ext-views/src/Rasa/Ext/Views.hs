@@ -5,6 +5,7 @@ module Rasa.Ext.Views
   , bufRef
   , splitRule
   , active
+  , scrollPos
   , A.rotate
   , A.closeInactive
   , A.focusViewLeft
@@ -19,6 +20,7 @@ module Rasa.Ext.Views
   , A.focusDo
   , A.focusDo_
   , A.focusedBufs
+  , A.scrollBy
   , Dir(..)
   , SplitRule(..)
   , Window
