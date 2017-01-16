@@ -24,7 +24,6 @@ module Rasa.Internal.Directive
   , sizeOf
   ) where
 
-import Rasa.Internal.Text
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Range
@@ -119,17 +118,19 @@ exit = exiting .= True
 
 -- | Deletes the text in the given range from the buffer.
 deleteRange :: CrdRange -> BufAction ()
-deleteRange r = range r.asText .= ""
+deleteRange r = replaceRange r ""
 
 -- | Replaces the text in the given range from the buffer.
 replaceRange :: CrdRange -> Y.YiString -> BufAction ()
-replaceRange r txt = range r .= txt
+replaceRange r txt = overRange r (const txt)
 
 -- | Inserts text into the buffer at the given Coord.
 insertAt :: Coord -> Y.YiString -> BufAction ()
-insertAt c txt = range (Range c c) .= txt
+insertAt c = replaceRange r
+  where r = Range c c
 
 -- | Runs the given function over the text in the range, replacing it with the results.
 overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
-overRange r f = range r %= f
-
+overRange r f = do
+  newText <- range r <%= f
+  liftAction $ dispatchEvent (BufTextChanged r newText)

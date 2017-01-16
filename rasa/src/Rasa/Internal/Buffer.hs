@@ -13,6 +13,7 @@ module Rasa.Internal.Buffer
   ( Buffer
   , HasBuffer(..)
   , text
+  , getText
   , bufExt
   , Ext(..)
   , mkBuffer
@@ -50,6 +51,10 @@ instance HasBuffer Buffer where
 text :: HasBuffer b => Lens' b Y.YiString
 text = buffer.text'
 
+-- | This getter-lens focuses the text of the in-scope buffer.
+getText :: HasBuffer b => Getting r b Y.YiString
+getText = buffer.text'
+  
 -- | This lens focuses the Extensions States map of the in-scope buffer.
 bufExts :: HasBuffer b => Lens' b ExtMap
 bufExts = buffer.bufExts'

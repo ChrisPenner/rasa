@@ -47,7 +47,7 @@ showFilename = focusDo_ $ do
       where disp name = "<" <> name <> ">"
 
 saveAs :: Y.YiString -> BufAction ()
-saveAs fName = use text >>= liftIO . TIO.writeFile (Y.toString fName) . Y.toText
+saveAs fName = use getText >>= liftIO . TIO.writeFile (Y.toString fName) . Y.toText
 
 save :: BufAction ()
 save = do

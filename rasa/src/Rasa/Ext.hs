@@ -107,10 +107,8 @@ module Rasa.Ext
   , HasBuffer
   , BufRef
   , HasEditor
-  , text
-  -- | A lens over the buffer's Text as a 'Yi.Rope.YiString'. Use within a 'BufAction':
-  --
-  -- > txt <- use text
+  , getText
+  , getRange
 
   -- * Events
   , Keypress(..)
@@ -143,6 +141,7 @@ module Rasa.Ext
   , afterNextRender
   , onExit
   , onBufAdded
+  , onBufTextChanged
 
    -- * Ranges
   , Range(..)
@@ -160,7 +159,6 @@ module Rasa.Ext
   , asCoord
   , clampCoord
   , clampRange
-  , range
   , rStart
   , rEnd
   , sizeOfR

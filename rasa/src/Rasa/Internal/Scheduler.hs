@@ -24,12 +24,14 @@ module Rasa.Internal.Scheduler
   , removeListener
   , matchingHooks
   , onBufAdded
+  , onBufTextChanged
   ) where
 
 
 import Rasa.Internal.Action
 import Rasa.Internal.Events
 import Rasa.Internal.Editor
+import Rasa.Internal.Range
 
 import Control.Lens
 import Control.Monad
@@ -37,6 +39,7 @@ import Data.Dynamic
 import Data.Foldable
 import Data.Map hiding (filter)
 import Unsafe.Coerce
+import qualified Yi.Rope as Y
 
 -- | Use this to dispatch an event of any type, any hooks which are listening for this event will be triggered
 -- with the provided event. Use this within an Action.
@@ -167,3 +170,8 @@ onBufAdded :: (BufRef -> Action ()) -> Action HookId
 onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
+
+onBufTextChanged :: (CrdRange -> Y.YiString -> Action ()) -> Action HookId
+onBufTextChanged f = onEveryTrigger listener
+  where
+    listener (BufTextChanged r newText) = f r newText
