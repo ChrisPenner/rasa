@@ -74,7 +74,7 @@ renderWindow sz win = cata alg win sz
 
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
 renderView :: (Width, Height) -> (View, Buffer) -> V.Image
-renderView (width, height) (vw, buf) = appendActiveBar . resize $ textImage
+renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ textImage
   where
     appendActiveBar i
       | isActive = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
@@ -83,9 +83,10 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize $ textImage
                               else height
 
     trimText = Y.concat . take availHeight . drop (vw^.scrollPos) . Y.lines'
-
     resize = V.resize width availHeight
     textImage = applyAttrs atts txt
     txt = buf^.text & trimText
     atts = buf^.styles & fmap (fmap convertStyle)
     isActive = vw ^. active
+    sepBar = V.charFill (V.defAttr `V.withStyle` V.underline) ' ' width 1
+    addEndBar = (V.<-> sepBar)
