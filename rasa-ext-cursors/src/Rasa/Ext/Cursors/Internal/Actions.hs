@@ -51,7 +51,7 @@ findNext pat = do
 -- | Get the 'Coord' of the next occurence of the given text after the given 'Coord'
 findNextFrom :: Y.YiString -> Coord -> BufAction Coord
 findNextFrom pat c = do
-  distance <- use (text . afterC c . asText . tillNext (Y.toText pat) . from asText . to sizeOf)
+  distance <- use (getText . afterC c . asText . tillNext (Y.toText pat) . from asText . to sizeOf)
   return (distance + c)
 
 -- | Move all ranges to the location of the previous occurence of the given text.
@@ -66,9 +66,9 @@ findPrev pat = do
 -- | Get the 'Coord' of the previous occurence of the given text before the given 'Coord'
 findPrevFrom :: Y.YiString -> Coord -> BufAction Coord
 findPrevFrom pat c = do
-  txt <- use text
+  txt <- use getText
   let Offset o = c^.from (asCoord txt)
-  distance <- use (text . asText . before o . tillPrev (Y.toText pat) . to T.length .to negate)
+  distance <- use (getText . asText . before o . tillPrev (Y.toText pat) . to T.length .to negate)
   return ((Offset $ distance + o)^.asCoord txt)
 
 -- | Move all ranges by the given number of columns

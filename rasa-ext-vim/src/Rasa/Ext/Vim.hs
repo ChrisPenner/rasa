@@ -120,7 +120,7 @@ normal [KDown] = liftAction focusViewBelow
 
 
 normal [Keypress 'G' []] = do
-  txt <- use text
+  txt <- use getText
   ranges.= [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
 normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> mode .= Insert
