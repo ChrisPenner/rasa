@@ -45,7 +45,8 @@ At the moment you must build Rasa from source;
 
 ### Troubleshooting
 
-- You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses.
+- You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses. 
+- On linux, when the error message `Missing C libraries: icuuc, icui18n, icudata` appears, install `libicu-dev` (e.g. with `sudo apt install libicu-dev`).
 - You'll need to point to the icu4c lib in your stack.yaml wherever it's stored on your system. If you install
     using brew on your Mac, then you can add the following to your stack.yaml:
 
