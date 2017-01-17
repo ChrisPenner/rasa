@@ -39,6 +39,7 @@ import Data.Dynamic
 import Data.Foldable
 import Data.Map hiding (filter)
 import Unsafe.Coerce
+import qualified Yi.Rope as Y
 
 -- | Use this to dispatch an event of any type, any hooks which are listening for this event will be triggered
 -- with the provided event. Use this within an Action.
@@ -170,7 +171,7 @@ onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
 
-onBufTextChanged :: (Range -> Action ()) -> Action HookId
+onBufTextChanged :: (Range -> Y.YiString -> Action ()) -> Action HookId
 onBufTextChanged f = onEveryTrigger listener
   where
-    listener (BufTextChanged r) = f r
+    listener (BufTextChanged r newText) = f r newText

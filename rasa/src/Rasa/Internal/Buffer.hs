@@ -51,6 +51,7 @@ instance HasBuffer Buffer where
 text :: HasBuffer b => Lens' b Y.YiString
 text = buffer.text'
 
+-- | This getter-lens focuses the text of the in-scope buffer.
 getText :: HasBuffer b => Getter b Y.YiString
 getText = buffer.text'
   

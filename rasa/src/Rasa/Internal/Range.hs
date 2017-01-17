@@ -7,6 +7,7 @@ module Rasa.Internal.Range
   , clampRange
   , Range(..)
   , range
+  , getRange
   , sizeOf
   , sizeOfR
   , moveRange
@@ -201,3 +202,8 @@ range :: HasBuffer s =>  Range -> Lens' s Y.YiString
 range (Range start end) = lens getter setter
   where getter = view (text . beforeC end . afterC start)
         setter old new = old & text . beforeC end . afterC start .~ new
+
+-- | A getter-lens over text which is encompassed by a 'Range'
+getRange :: HasBuffer s =>  Range -> Getter s Y.YiString
+getRange (Range start end) = to getter
+  where getter = view (text . beforeC end . afterC start)

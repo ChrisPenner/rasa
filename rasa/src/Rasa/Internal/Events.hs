@@ -15,6 +15,7 @@ module Rasa.Internal.Events
 import Data.Dynamic
 import Rasa.Internal.Editor
 import Rasa.Internal.Range
+import qualified Yi.Rope as Y
 
 -- | The Event type represents a common denominator for all actions that could
 -- occur Event transmitters express events that have occured as a member of this
@@ -68,6 +69,6 @@ data Mod
   deriving (Show, Eq)
 
 data BufTextChanged
-  = BufTextChanged Range
+  = BufTextChanged Range Y.YiString
   deriving (Show, Eq, Typeable)
   

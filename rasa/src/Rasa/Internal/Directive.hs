@@ -119,20 +119,19 @@ exit = exiting .= True
 
 -- | Deletes the text in the given range from the buffer.
 deleteRange :: Range -> BufAction ()
-deleteRange r = range r.asText .= ""
+deleteRange r = replaceRange r ""
 
 -- | Replaces the text in the given range from the buffer.
 replaceRange :: Range -> Y.YiString -> BufAction ()
-replaceRange r txt = range r .= txt
+replaceRange r txt = overRange r (const txt)
 
 -- | Inserts text into the buffer at the given Coord.
 insertAt :: Coord -> Y.YiString -> BufAction ()
-insertAt c txt = do
-  let r = Range c c
-  liftAction $ dispatchEvent (BufTextChanged r)
-  range r .= txt
+insertAt c = replaceRange r
+  where r = Range c c
 
 -- | Runs the given function over the text in the range, replacing it with the results.
 overRange :: Range -> (Y.YiString -> Y.YiString) -> BufAction ()
-overRange r f = range r %= f
-
+overRange r f = do
+  newText <- range r <%= f
+  liftAction $ dispatchEvent (BufTextChanged r newText)

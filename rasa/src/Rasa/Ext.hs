@@ -107,10 +107,12 @@ module Rasa.Ext
   , HasBuffer
   , BufRef
   , HasEditor
-  , getText
   -- | A getter-lens over the buffer's Text as a 'Yi.Rope.YiString'. Use within a 'BufAction':
   --
   -- > txt <- use getText
+  , getText
+  -- | A getter-lens over text which is encompassed by a 'Range'
+  , getRange
 
   -- * Events
   , Keypress(..)
