@@ -8,6 +8,7 @@ import Rasa.Ext.Style
 import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 import Data.Functor.Foldable
+import Data.Bifunctor
 
 import qualified Graphics.Vty as V
 import Control.Lens
@@ -86,7 +87,9 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ te
     resize = V.resize width availHeight
     textImage = applyAttrs atts txt
     txt = buf^.text & trimText
-    atts = buf^.styles & fmap (fmap convertStyle)
+    atts = buf^.styles
+           & fmap (fmap convertStyle)
+           & fmap (first $ moveRange (Coord (-vw^.scrollPos) 0))
     isActive = vw ^. active
     sepBar = V.charFill (V.defAttr `V.withStyle` V.underline) ' ' width 1
     addEndBar = (V.<-> sepBar)

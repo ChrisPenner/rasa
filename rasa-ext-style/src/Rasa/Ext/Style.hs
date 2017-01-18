@@ -51,13 +51,13 @@ instance Monoid Style where
 newtype Styles =
   Styles {
   -- This list must always stay sorted by the index of the styles
-  _styles' :: [Span Style]
+  _styles' :: [Span Range Style]
          } deriving (Show, Eq)
 
 makeLenses ''Styles
 
 -- | A lens over the styles stored in the current buffer.
-styles :: HasBuffer s => Lens' s [Span Style]
+styles :: HasBuffer s => Lens' s [Span Range Style]
 styles = bufExt.styles'
 
 instance Default Styles where
