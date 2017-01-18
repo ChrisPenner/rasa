@@ -19,7 +19,7 @@ import Rasa.Ext.Cursors.Internal.Base
 
 -- | Moves all Ranges that are on the same END row as the given range by the coord's row and column
 -- This is used to adjust cursors when things have been inserted/deleted before them in the row.
-moveSameLineRangesBy :: Range -> Coord -> BufAction ()
+moveSameLineRangesBy :: CrdRange -> Coord -> BufAction ()
 moveSameLineRangesBy (Range _ (Coord endRow endCol)) amt = do
   let moveInLine r@(Range (Coord startRow startCol) _) = return $
         if endRow == startRow && startCol > endCol

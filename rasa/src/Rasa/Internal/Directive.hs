@@ -118,11 +118,11 @@ exit :: Action ()
 exit = exiting .= True
 
 -- | Deletes the text in the given range from the buffer.
-deleteRange :: Range -> BufAction ()
+deleteRange :: CrdRange -> BufAction ()
 deleteRange r = range r.asText .= ""
 
 -- | Replaces the text in the given range from the buffer.
-replaceRange :: Range -> Y.YiString -> BufAction ()
+replaceRange :: CrdRange -> Y.YiString -> BufAction ()
 replaceRange r txt = range r .= txt
 
 -- | Inserts text into the buffer at the given Coord.
@@ -130,6 +130,6 @@ insertAt :: Coord -> Y.YiString -> BufAction ()
 insertAt c txt = range (Range c c) .= txt
 
 -- | Runs the given function over the text in the range, replacing it with the results.
-overRange :: Range -> (Y.YiString -> Y.YiString) -> BufAction ()
+overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
 overRange r f = range r %= f
 
