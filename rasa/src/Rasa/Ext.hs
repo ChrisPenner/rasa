@@ -146,6 +146,7 @@ module Rasa.Ext
 
    -- * Ranges
   , Range(..)
+  , CrdRange
   , Coord(..)
   , Offset(..)
   , Span(..)

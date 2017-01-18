@@ -51,13 +51,13 @@ instance Monoid Style where
 newtype Styles =
   Styles {
   -- This list must always stay sorted by the index of the styles
-  _styles' :: [Span Range Style]
+  _styles' :: [Span CrdRange Style]
          } deriving (Show, Eq)
 
 makeLenses ''Styles
 
 -- | A lens over the styles stored in the current buffer.
-styles :: HasBuffer s => Lens' s [Span Range Style]
+styles :: HasBuffer s => Lens' s [Span CrdRange Style]
 styles = bufExt.styles'
 
 instance Default Styles where
@@ -76,7 +76,7 @@ flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
 -- | Applies a style over a given range in the buffer's style list.
-addStyle :: Range -> Style -> BufAction ()
+addStyle :: CrdRange -> Style -> BufAction ()
 addStyle r st = styles %= (Span r st:)
 
 -- | The main export for the style extension. Add this to your user config.

@@ -6,6 +6,7 @@ module Rasa.Internal.Range
   , clampCoord
   , clampRange
   , Range(..)
+  , CrdRange
   , range
   , sizeOf
   , sizeOfR
@@ -31,11 +32,16 @@ import qualified Yi.Rope as Y
 
 
 -- | This represents a range between two coordinates ('Coord')
-data Range =
-  Range Coord Coord
+data Range a b =
+  Range a b
   deriving (Show, Eq)
 
-instance Ord Range where
+instance Bifunctor Range where
+  bimap f g (Range a b) = Range (f a) (g b)
+
+type CrdRange = Range Coord Coord
+
+instance (Ord a, Ord b) => Ord (Range a b) where
   Range start end <= Range start' end'
     | end == end' = start <= start'
     | otherwise = end <= end'
@@ -61,12 +67,12 @@ newtype Offset =
 
 -- | Moves a 'Range' by a given 'Coord'
 -- It may be unintuitive, but for (Coord row col) a given range will be moved down by row and to the right by col.
-moveRange :: Coord -> Range -> Range
+moveRange :: Coord -> CrdRange -> CrdRange
 moveRange amt (Range start end) =
   Range (moveCursor amt start) (moveCursor amt end)
 
 -- | Moves a range forward by the given amount
-moveRangeByN :: Int -> Range -> Range
+moveRangeByN :: Int -> CrdRange -> CrdRange
 moveRangeByN amt (Range start end) =
   Range (moveCursorByN amt start) (moveCursorByN amt end)
 
@@ -112,7 +118,7 @@ clampCoord txt (Coord row col) =
     maxColumn = fromMaybe col (txt ^? to Y.lines' . ix row . to Y.length)
 
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
-clampRange :: Y.YiString -> Range -> Range
+clampRange :: Y.YiString -> CrdRange -> CrdRange
 clampRange txt (Range start end) =
   Range (clampCoord txt start) (clampCoord txt end)
 
@@ -136,13 +142,13 @@ type ID = Int
 combineSpans
   :: forall a.
      Monoid a
-    => [Span Range a] -> [(Coord, a)]
+    => [Span CrdRange a] -> [(Coord, a)]
 combineSpans spans = combiner [] $ sortOn (view _3) (splitStartEnd idSpans)
   where
-    idSpans :: [(ID, Span Range a)]
+    idSpans :: [(ID, Span CrdRange a)]
     idSpans = zip [1 ..] spans
 
-    splitStartEnd :: [(ID, Span Range a)] -> [(Marker, ID, Coord, a)]
+    splitStartEnd :: [(ID, Span CrdRange a)] -> [(Marker, ID, Coord, a)]
     splitStartEnd [] = []
     splitStartEnd ((i, Span (Range s e) d):rest) =
       (Start, i, s, d) : (End, i, e, d) : splitStartEnd rest
@@ -169,7 +175,7 @@ clamp mn mx n
   | otherwise = n
 
 -- | Returns the number of rows and columns that a 'Range' spans as a 'Coord'
-sizeOfR :: Range -> Coord
+sizeOfR :: CrdRange -> Coord
 sizeOfR (Range start end) = end - start
 
 -- | Returns the number of rows and columns that a chunk of text spans as a 'Coord'
@@ -199,7 +205,7 @@ afterC c@(Coord row col) = lens getter setter
                           in prefix <> new
 
 -- | A lens over text which is encompassed by a 'Range'
-range :: HasBuffer s =>  Range -> Lens' s Y.YiString
+range :: HasBuffer s =>  CrdRange -> Lens' s Y.YiString
 range (Range start end) = lens getter setter
   where getter = view (text . beforeC end . afterC start)
         setter old new = old & text . beforeC end . afterC start .~ new
