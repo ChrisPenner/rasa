@@ -51,7 +51,7 @@ instance Monoid AttrMonoid where
   AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
-applyAttrs :: [Span V.Attr] -> Y.YiString -> V.Image
+applyAttrs :: [Span Range V.Attr] -> Y.YiString -> V.Image
 applyAttrs atts txt = applyAttrs' converted (padSpaces <$> Y.lines txt)
   where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
         converted = combined & traverse._2 %~ attr'

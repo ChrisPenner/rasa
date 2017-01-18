@@ -36,7 +36,7 @@ data Range =
   deriving (Show, Eq)
 
 instance Ord Range where
-  Range start end <= Range start' end' 
+  Range start end <= Range start' end'
     | end == end' = start <= start'
     | otherwise = end <= end'
 
@@ -117,10 +117,12 @@ clampRange txt (Range start end) =
   Range (clampCoord txt start) (clampCoord txt end)
 
 -- | A span which maps a piece of Monoidal data over a range.
-data Span a = Span
-  { _getRange :: Range
-  , _data :: a
-  } deriving (Show, Eq, Functor)
+data Span a b =
+  Span a b
+  deriving (Show, Eq, Functor)
+
+instance Bifunctor Span where
+  bimap f g (Span a b) = Span (f a) (g b)
 
 -- | A Helper only used when combining many spans.
 data Marker
@@ -134,13 +136,13 @@ type ID = Int
 combineSpans
   :: forall a.
      Monoid a
-  => [Span a] -> [(Coord, a)]
+    => [Span Range a] -> [(Coord, a)]
 combineSpans spans = combiner [] $ sortOn (view _3) (splitStartEnd idSpans)
   where
-    idSpans :: [(ID, Span a)]
+    idSpans :: [(ID, Span Range a)]
     idSpans = zip [1 ..] spans
 
-    splitStartEnd :: [(ID, Span a)] -> [(Marker, ID, Coord, a)]
+    splitStartEnd :: [(ID, Span Range a)] -> [(Marker, ID, Coord, a)]
     splitStartEnd [] = []
     splitStartEnd ((i, Span (Range s e) d):rest) =
       (Start, i, s, d) : (End, i, e, d) : splitStartEnd rest
