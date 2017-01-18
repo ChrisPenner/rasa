@@ -153,12 +153,16 @@ module Rasa.Ext
   , Span(..)
   , overRow
   , overCol
+  , coordRow
+  , coordCol
   , overBoth
   , combineSpans
   , asCoord
   , clampCoord
   , clampRange
   , range
+  , rStart
+  , rEnd
   , sizeOfR
   , afterC
   , beforeC

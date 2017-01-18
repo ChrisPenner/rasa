@@ -1,10 +1,18 @@
-{-# LANGUAGE Rank2Types, OverloadedStrings, DeriveFunctor, ScopedTypeVariables #-}
+{-# LANGUAGE
+  Rank2Types
+  , OverloadedStrings
+  , DeriveFunctor
+  , ScopedTypeVariables
+  , TemplateHaskell 
+#-}
 module Rasa.Internal.Range
   ( Coord
   , Coord'(..)
   , overRow
   , overCol
   , overBoth
+  , coordRow
+  , coordCol
   , Offset(..)
   , asCoord
   , clampCoord
@@ -12,6 +20,8 @@ module Rasa.Internal.Range
   , Range(..)
   , CrdRange
   , range
+  , rStart
+  , rEnd
   , sizeOf
   , sizeOfR
   , moveRange
@@ -34,18 +44,26 @@ import Data.Monoid
 import Data.List
 import Data.Bifunctor
 import Data.Biapplicative
+import Data.Bitraversable
+import Data.Bifoldable
 
 import qualified Yi.Rope as Y
 
 -- | This represents a range between two coordinates ('Coord')
-data Range a b =
-  Range a b
-  deriving (Show, Eq)
+data Range a b = Range
+  { _rStart :: a
+  , _rEnd :: b
+  } deriving (Show, Eq)
+makeLenses ''Range
 
 instance Bifunctor Range where
   bimap f g (Range a b) = Range (f a) (g b)
 
-type CrdRange = Range Coord Coord
+instance Bifoldable Range where
+  bifoldMap f g (Range a b) = f a `mappend` g b
+
+instance Bitraversable Range where
+  bitraverse f g (Range a b) = Range <$> f a <*> g b
 
 instance (Ord a, Ord b) => Ord (Range a b) where
   Range start end <= Range start' end'
@@ -55,10 +73,13 @@ instance (Ord a, Ord b) => Ord (Range a b) where
 -- | (Coord Row Column) represents a char in a block of text. (zero indexed)
 -- e.g. Coord 0 0 is the first character in the text,
 -- Coord 2 1 is the second character of the third row
-data Coord' a b =
-  Coord a b
-  deriving (Show, Eq)
+data Coord' a b = Coord 
+  { _coordRow::a
+  , _coordCol::b
+  } deriving (Show, Eq)
+makeLenses ''Coord'
 type Coord = Coord' Int Int
+type CrdRange = Range Coord Coord
 
 instance Bifunctor Coord' where
   bimap f g (Coord a b) = Coord (f a) (g b)
@@ -86,6 +107,14 @@ instance (Ord a, Ord b) => Ord (Coord' a b) where
 newtype Offset =
   Offset Int
   deriving (Show, Eq)
+
+-- | A span which maps a piece of Monoidal data over a range.
+data Span a b =
+  Span a b
+  deriving (Show, Eq, Functor)
+
+instance Bifunctor Span where
+  bimap f g (Span a b) = Span (f a) (g b)
 
 -- | Moves a 'Range' by a given 'Coord'
 -- It may be unintuitive, but for (Coord row col) a given range will be moved down by row and to the right by col.
@@ -140,14 +169,6 @@ clampCoord txt (Coord row col) =
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
 clampRange :: Y.YiString -> CrdRange -> CrdRange
 clampRange txt = overBoth (clampCoord txt)
-
--- | A span which maps a piece of Monoidal data over a range.
-data Span a b =
-  Span a b
-  deriving (Show, Eq, Functor)
-
-instance Bifunctor Span where
-  bimap f g (Span a b) = Span (f a) (g b)
 
 -- | A Helper only used when combining many spans.
 data Marker

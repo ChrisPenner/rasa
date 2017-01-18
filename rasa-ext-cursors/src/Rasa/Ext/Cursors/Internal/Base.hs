@@ -34,8 +34,8 @@ instance Default Cursors where
 
 -- | Adjusts input ranges to contain at least one character.
 ensureSize :: CrdRange -> CrdRange
-ensureSize r@(Range s e)
-  | s == e = Range s (moveCursorByN 1 e)
+ensureSize r@(Range start end) 
+  | start == end = r & rEnd %~ moveCursorByN 1
   | otherwise = r
 
 -- | Sorts Ranges, removes duplicates, ensures they contain at least one character
