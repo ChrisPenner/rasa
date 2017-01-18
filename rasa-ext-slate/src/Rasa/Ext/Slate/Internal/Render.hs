@@ -77,19 +77,27 @@ renderWindow sz win = cata alg win sz
 renderView :: (Width, Height) -> (View, Buffer) -> V.Image
 renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ textImage
   where
-    appendActiveBar i
-      | isActive = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
-      | otherwise = i
-    availHeight = if isActive then height - 1
-                              else height
-
+    trimText :: Y.YiString -> Y.YiString
     trimText = Y.concat . take availHeight . drop (vw^.scrollPos) . Y.lines'
+    resize :: V.Image -> V.Image
     resize = V.resize width availHeight
-    textImage = applyAttrs atts txt
+    textImage :: V.Image
+    textImage = applyAttrs adjustedStyles txt
+    txt :: Y.YiString
     txt = buf^.text & trimText
-    atts = buf^.styles
-           & fmap (fmap convertStyle)
-           & fmap (first $ moveRange (Coord (-vw^.scrollPos) 0))
-    isActive = vw ^. active
+    adjustedStyles :: [Span CrdRange V.Attr]
+    adjustedStyles = bimap adjustStylePositions convertStyle <$> buf^.styles
+    adjustStylePositions :: CrdRange -> CrdRange
+    adjustStylePositions = both.coordRow -~ vw^.scrollPos
+    sepBar :: V.Image
     sepBar = V.charFill (V.defAttr `V.withStyle` V.underline) ' ' width 1
+    addEndBar :: V.Image -> V.Image
     addEndBar = (V.<-> sepBar)
+    appendActiveBar :: V.Image -> V.Image
+    appendActiveBar i
+      | vw^.active = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
+      | otherwise = i
+    availHeight :: Height
+    availHeight = if vw^.active then height - 1
+                                else height
+

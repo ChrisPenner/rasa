@@ -5,7 +5,7 @@ import Rasa.Ext
 import Rasa.Ext.Style
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
-import Control.Lens
+import Data.Bifunctor
 
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
@@ -42,7 +42,7 @@ reset = V.text' V.defAttr ""
 
 -- | A newtype to define a (not necessarily law abiding) Monoid for 'V.Attr' which acts as we like.
 newtype AttrMonoid = AttrMonoid {
-  attr' :: V.Attr
+  getAttr :: V.Attr
 }
 
 -- | We want 'mempty' to be 'V.defAttr' instead of 'V.currentAttr' for use in 'combineSpans'.
@@ -52,14 +52,13 @@ instance Monoid AttrMonoid where
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: [Span CrdRange V.Attr] -> Y.YiString -> V.Image
-applyAttrs atts txt = applyAttrs' converted (padSpaces <$> Y.lines txt)
-  where combined = combineSpans (atts & traverse.mapped %~ AttrMonoid)
-        converted = combined & traverse._2 %~ attr'
-        -- Newlines aren't rendered; so we can replace them with spaces.
+applyAttrs atts txt = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines txt)
+  where mergedSpans = second getAttr <$> combineSpans (fmap AttrMonoid <$> atts)
+        -- Newlines aren't rendered; so we replace them with spaces so they're selectable
         padSpaces = (`Y.append` "  ")
 
-applyAttrs' :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
-applyAttrs' atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
+textAndStylesToImage :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
+textAndStylesToImage atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
   where
     vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
 
