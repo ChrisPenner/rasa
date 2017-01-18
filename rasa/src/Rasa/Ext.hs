@@ -147,9 +147,13 @@ module Rasa.Ext
    -- * Ranges
   , Range(..)
   , CrdRange
-  , Coord(..)
+  , Coord
+  , Coord'(..)
   , Offset(..)
   , Span(..)
+  , overRow
+  , overCol
+  , overBoth
   , combineSpans
   , asCoord
   , clampCoord

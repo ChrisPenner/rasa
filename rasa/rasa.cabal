@@ -69,6 +69,7 @@ library
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5
                      , async
+                     , bifunctors
                      , containers
                      , data-default
                      , lens

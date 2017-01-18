@@ -1,6 +1,10 @@
 {-# LANGUAGE Rank2Types, OverloadedStrings, DeriveFunctor, ScopedTypeVariables #-}
 module Rasa.Internal.Range
-  ( Coord(..)
+  ( Coord
+  , Coord'(..)
+  , overRow
+  , overCol
+  , overBoth
   , Offset(..)
   , asCoord
   , clampCoord
@@ -22,14 +26,16 @@ module Rasa.Internal.Range
   ) where
 
 import Rasa.Internal.Buffer
-
+import Rasa.Internal.Text
 import Control.Lens
+
 import Data.Maybe
 import Data.Monoid
 import Data.List
-import Rasa.Internal.Text
-import qualified Yi.Rope as Y
+import Data.Bifunctor
+import Data.Biapplicative
 
+import qualified Yi.Rope as Y
 
 -- | This represents a range between two coordinates ('Coord')
 data Range a b =
@@ -49,12 +55,28 @@ instance (Ord a, Ord b) => Ord (Range a b) where
 -- | (Coord Row Column) represents a char in a block of text. (zero indexed)
 -- e.g. Coord 0 0 is the first character in the text,
 -- Coord 2 1 is the second character of the third row
-data Coord =
-  Coord Int
-        Int
+data Coord' a b =
+  Coord a b
   deriving (Show, Eq)
+type Coord = Coord' Int Int
 
-instance Ord Coord where
+instance Bifunctor Coord' where
+  bimap f g (Coord a b) = Coord (f a) (g b)
+
+overRow :: (Int -> Int) -> Coord -> Coord
+overRow = first
+
+overCol :: (Int -> Int) -> Coord -> Coord
+overCol = second
+
+overBoth :: Bifunctor f => (a -> b) -> f a a -> f b b
+overBoth f = bimap f f
+
+instance Biapplicative Coord' where
+  bipure = Coord
+  Coord f g <<*>> Coord a b = Coord (f a) (g b)
+
+instance (Ord a, Ord b) => Ord (Coord' a b) where
   Coord a b <= Coord a' b'
     | a < a' = True
     | a > a' = False
@@ -68,23 +90,21 @@ newtype Offset =
 -- | Moves a 'Range' by a given 'Coord'
 -- It may be unintuitive, but for (Coord row col) a given range will be moved down by row and to the right by col.
 moveRange :: Coord -> CrdRange -> CrdRange
-moveRange amt (Range start end) =
-  Range (moveCursor amt start) (moveCursor amt end)
+moveRange amt = overBoth (moveCursor amt)
 
 -- | Moves a range forward by the given amount
 moveRangeByN :: Int -> CrdRange -> CrdRange
-moveRangeByN amt (Range start end) =
-  Range (moveCursorByN amt start) (moveCursorByN amt end)
+moveRangeByN amt = overBoth (moveCursorByN amt)
 
 -- | Moves a 'Coord' forward by the given amount of columns
 moveCursorByN :: Int -> Coord -> Coord
-moveCursorByN amt (Coord row col) = Coord row (col + amt)
+moveCursorByN amt = overCol (+amt)
 
 -- | Adds the rows and columns of the given two 'Coord's.
 moveCursor :: Coord -> Coord -> Coord
-moveCursor (Coord row col) (Coord row' col') = Coord (row + row') (col + col')
+moveCursor = biliftA2 (+) (+)
 
-instance Num Coord where
+instance (Num a, Num b) => Num (Coord' a b) where
   Coord row col + Coord row' col' = Coord (row + row') (col + col')
   Coord row col - Coord row' col' = Coord (row - row') (col - col')
   Coord row col * Coord row' col' = Coord (row * row') (col * col')
@@ -119,8 +139,7 @@ clampCoord txt (Coord row col) =
 
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
 clampRange :: Y.YiString -> CrdRange -> CrdRange
-clampRange txt (Range start end) =
-  Range (clampCoord txt start) (clampCoord txt end)
+clampRange txt = overBoth (clampCoord txt)
 
 -- | A span which maps a piece of Monoidal data over a range.
 data Span a b =
