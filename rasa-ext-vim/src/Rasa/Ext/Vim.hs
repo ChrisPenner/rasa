@@ -34,11 +34,11 @@ instance Default VimHist where
   def = VimHist []
 
 -- | A hlens into vim's current mode.
-mode :: HasBuffer s => Lens' s VimMode
+mode :: HasBufExts s => Lens' s VimMode
 mode = bufExt
 
 -- | A lens into the current unresolved keypress history
-hist :: HasBuffer s => Lens' s [Keypress]
+hist :: HasBufExts s => Lens' s [Keypress]
 hist = bufExt.histKeys
 
 -- | The main export for the vim keybinding extension. Add this to your user config.
@@ -99,7 +99,7 @@ normal [Keypress 'A' []] = endOfLine >> mode .= Insert
 normal [Keypress '0' []] = startOfLine
 normal [Keypress '$' []] = endOfLine
 normal [Keypress 'g' []] = hist <>= [Keypress 'g' []]
-normal [Keypress 'g' [], Keypress 'g' []] = ranges .= [Range (Coord 0 0) (Coord 0 1)]
+normal [Keypress 'g' [], Keypress 'g' []] = setRanges [Range (Coord 0 0) (Coord 0 1)]
 
 normal [Keypress '+' []] = liftAction nextBuf
 normal [Keypress '-' []] = liftAction prevBuf
@@ -120,8 +120,8 @@ normal [KDown] = liftAction focusViewBelow
 
 
 normal [Keypress 'G' []] = do
-  txt <- use getText
-  ranges.= [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
+  txt <- getText
+  setRanges [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
 normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> mode .= Insert
 normal [Keypress 'O' []] = startOfLine >> insertText "\n" >> mode .= Insert
@@ -160,7 +160,9 @@ normal [Keypress 'F' [],Keypress x []] = findPrev (Y.singleton x) >> moveRangesB
 normal [Keypress 'X' []] = moveRangesByN (-1) >> delete
 normal [Keypress 'x' []] = delete
 normal [Keypress 's' [Ctrl]] = save
-normal [Keypress ';' []] = ranges <~ use (ranges.reversed.to (take 1))
+normal [Keypress ';' []] = do
+  rngs <- getRanges 
+  setRanges (rngs^.reversed.to (take 1))
 normal _ = return ()
 
 -- | Move cursors to end of the line

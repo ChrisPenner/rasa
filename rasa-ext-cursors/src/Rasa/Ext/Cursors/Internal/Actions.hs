@@ -25,7 +25,7 @@ moveSameLineRangesBy (Range _ (Coord endRow endCol)) amt = do
         if endRow == startRow && startCol > endCol
            then moveRange amt r
            else r
-  ranges <~ rangeDo moveInLine
+  rangeDo moveInLine >>= setRanges
 
 -- | Delete the text of all ranges in a buffer
 delete :: BufAction ()
@@ -46,12 +46,13 @@ findNext pat = do
     off <- findNextFrom pat e
     let end = moveCursorByN 1 off
     return $ Range off end
-  ranges .= res
+  setRanges res
 
 -- | Get the 'Coord' of the next occurence of the given text after the given 'Coord'
 findNextFrom :: Y.YiString -> Coord -> BufAction Coord
 findNextFrom pat c = do
-  distance <- use (getText . afterC c . asText . tillNext (Y.toText pat) . from asText . to sizeOf)
+  txt <- getText
+  let distance = txt ^. afterC c . asText . tillNext (Y.toText pat) . from asText . to sizeOf
   return (distance + c)
 
 -- | Move all ranges to the location of the previous occurence of the given text.
@@ -61,20 +62,20 @@ findPrev pat = do
     off <- findPrevFrom pat s
     let end = moveCursorByN 1 off
     return $ Range off end
-  ranges .= res
+  setRanges res
 
 -- | Get the 'Coord' of the previous occurence of the given text before the given 'Coord'
 findPrevFrom :: Y.YiString -> Coord -> BufAction Coord
 findPrevFrom pat c = do
-  txt <- use getText
+  txt <- getText
   let Offset o = c^.from (asCoord txt)
-  distance <- use (getText . asText . before o . tillPrev (Y.toText pat) . to T.length .to negate)
+      distance = txt ^. asText . before o . tillPrev (Y.toText pat) . to T.length .to negate
   return ((Offset $ distance + o)^.asCoord txt)
 
 -- | Move all ranges by the given number of columns
 moveRangesByN :: Int -> BufAction ()
-moveRangesByN n = overRanges $ return . moveRangeByN n
+moveRangesByN n = overEachRange $ return . moveRangeByN n
 
 -- | Move all ranges by the given number of rows and columns
 moveRangesByC :: Coord -> BufAction ()
-moveRangesByC c = overRanges $ return . moveRange c
+moveRangesByC c = overEachRange $ return . moveRange c

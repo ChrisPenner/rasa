@@ -65,6 +65,7 @@ library
                        Rasa.Internal.Range
                        Rasa.Internal.Scheduler
                        Rasa.Internal.Text
+                       Rasa.Internal.BufAction
 
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5
@@ -72,6 +73,7 @@ library
                      , bifunctors
                      , containers
                      , data-default
+                     , free
                      , lens
                      , mtl
                      , text

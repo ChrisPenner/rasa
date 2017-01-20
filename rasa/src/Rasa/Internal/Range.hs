@@ -22,7 +22,6 @@ module Rasa.Internal.Range
   , range
   , rStart
   , rEnd
-  , getRange
   , sizeOf
   , sizeOfR
   , moveRange
@@ -36,7 +35,6 @@ module Rasa.Internal.Range
   , afterC
   ) where
 
-import Rasa.Internal.Buffer
 import Rasa.Internal.Text
 import Control.Lens
 
@@ -246,12 +244,7 @@ afterC c@(Coord row col) = lens getter setter
                           in prefix <> new
 
 -- | A lens over text which is encompassed by a 'Range'
-range :: HasBuffer s =>  CrdRange -> Lens' s Y.YiString
+range :: CrdRange -> Lens' Y.YiString Y.YiString
 range (Range start end) = lens getter setter
-  where getter = view (text . beforeC end . afterC start)
-        setter old new = old & text . beforeC end . afterC start .~ new
-
--- | A getter-lens over text which is encompassed by a 'Range'
-getRange :: HasBuffer s => CrdRange -> Getting r s Y.YiString
-getRange (Range start end) = to getter
-  where getter = view (text . beforeC end . afterC start)
+  where getter = view (beforeC end . afterC start)
+        setter old new = old & beforeC end . afterC start .~ new

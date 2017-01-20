@@ -3,9 +3,10 @@
 module Rasa.Ext.Cursors.Internal.Base
   ( rangeDo
   , rangeDo_
-  , ranges
-  , eachRange
   , overRanges
+  , getRanges
+  , setRanges
+  , overEachRange
   , addRange
   , displayRange
   ) where
@@ -44,31 +45,32 @@ cleanRanges :: Y.YiString -> [CrdRange] -> [CrdRange]
 cleanRanges txt = fmap (ensureSize . clampRange txt) . reverse . nub . sort
 
 -- | A lens over all the stored cursor ranges for a buffer
-ranges :: HasBuffer s => Lens' s [CrdRange]
-ranges = lens getter setter
-  where getter buf = buf^.bufExt.cursors
-        setter buf new = let txt = buf^.getText
-                          in buf & bufExt.cursors .~ cleanRanges txt new
+getRanges :: BufAction [CrdRange]
+getRanges = use (bufExt.cursors)
 
--- | A Traversal over each Range for the given buffer.
-eachRange :: HasBuffer s => Traversal' s CrdRange
-eachRange = ranges.traverse
+setRanges :: [CrdRange] -> BufAction ()
+setRanges new = do
+  txt <- getText
+  bufExt.cursors .= cleanRanges txt new
+
+overRanges :: ([CrdRange] -> [CrdRange]) -> BufAction ()
+overRanges f = getRanges >>= setRanges . f
 
 -- | Sequences actions over each range as a 'BufAction'
 rangeDo :: (CrdRange -> BufAction a) -> BufAction [a]
-rangeDo f = use ranges >>= mapM f
+rangeDo f = getRanges >>= mapM f
 
 -- | 'rangeDo' with void return.
 rangeDo_ :: (CrdRange -> BufAction a) -> BufAction ()
 rangeDo_ = void . rangeDo
 
 -- | Sequences actions over each range and replaces each range with its result.
-overRanges :: (CrdRange -> BufAction CrdRange) -> BufAction ()
-overRanges f = ranges <~ rangeDo f
+overEachRange :: (CrdRange -> BufAction CrdRange) -> BufAction ()
+overEachRange f = rangeDo f >>= setRanges
 
 -- | Adds a new range to the list of ranges.
 addRange :: CrdRange -> BufAction ()
-addRange r = ranges <>= [r]
+addRange r = overRanges (++[r])
 
 -- | Sets style attributes to show a given range.
 displayRange ::  BufAction ()
