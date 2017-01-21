@@ -82,7 +82,7 @@ liftState = liftBufAction . LiftState
 liftFIO :: IO r -> BufAction r
 liftFIO = liftBufAction . LiftIO
 
--- | This is a monad-transformer stack for performing actions on a specific buffer.
+-- | This is a monad for performing actions on a specific buffer.
 -- You run 'BufAction's by embedding them in a 'Action' via 'bufferDo' or 'buffersDo'
 --
 -- Within a BufAction you can:
@@ -107,7 +107,7 @@ instance MonadIO BufAction where
 liftAction :: Action r -> BufAction r
 liftAction action = do
   actState <- use actionState
-  (res, endState) <- liftIO $ runAction action actState
+  (res, endState) <- liftIO $ runAction actState action
   actionState .= endState
   return res
 
