@@ -80,6 +80,9 @@ library
                      , text-lens
                      , transformers
                      , yi-rope
+                     , pipes
+                     , pipes-concurrency
+                     , pipes-parse
 
   default-language:    Haskell2010
 

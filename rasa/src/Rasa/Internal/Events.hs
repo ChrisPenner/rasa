@@ -17,11 +17,6 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Range
 import qualified Yi.Rope as Y
 
--- | The Event type represents a common denominator for all actions that could
--- occur Event transmitters express events that have occured as a member of this
--- type. At the moment it's quite sparse, but it will expand as new types of
--- events are needed.
-
 -- | This event is dispatched exactly once when the editor starts up.
 data Init = Init deriving (Show, Eq, Typeable)
 
@@ -68,6 +63,8 @@ data Mod
   | Shift
   deriving (Show, Eq)
 
+-- | This is triggered when text in a buffer is changed. The Event data includes the 'CrdRange' that changed and
+-- the new text which is now contined in that range.
 data BufTextChanged
   = BufTextChanged CrdRange Y.YiString
   deriving (Show, Eq, Typeable)
