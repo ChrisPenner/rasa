@@ -1,8 +1,9 @@
 module Rasa.Ext.Slate.Internal.Event (terminalEvents) where
 
 import Rasa.Ext
-
 import Rasa.Ext.Slate.Internal.State
+
+import Control.Monad
 
 import qualified Graphics.Vty as V
 
@@ -10,7 +11,9 @@ import qualified Graphics.Vty as V
 terminalEvents :: Action ()
 terminalEvents = do
     v <- getVty
-    eventProvider $ convertEvent <$> V.nextEvent v
+    asyncEventProvider $ getEvents v
+      where
+        getEvents v dispatch = forever $ V.nextEvent v >>= dispatch . convertEvent
 
 -- | Converts a 'V.Event' into a keypress if possible.
 convertEvent :: V.Event -> Keypress

@@ -11,12 +11,13 @@ module Rasa.Internal.Action
   , evalAction
   , execAction
   , ActionState
+  , mkActionState
   , Hook(..)
   , HookId(..)
   , Hooks
   , hooks
   , nextHook
-  , asyncs
+  , actionQueue
   ) where
 
 import Rasa.Internal.Editor
@@ -25,11 +26,12 @@ import Rasa.Internal.Extensions
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
-import Control.Concurrent.Async
 
 import Data.Default
 import Data.Map
 import Data.Typeable
+
+import Pipes.Concurrent hiding (Buffer)
 
 -- | A wrapper around event listeners so they can be stored in 'Hooks'.
 data Hook = forall a. Hook HookId (a -> Action ())
@@ -62,26 +64,24 @@ newtype Action a = Action
   { getAction :: Free (ActionF ActionState) a
   } deriving (Functor, Applicative, Monad)
 
-type AsyncAction = Async (Action ())
-
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
 data ActionState = ActionState
   { _ed :: Editor
-  , _asyncs :: [AsyncAction]
   , _hooks :: Hooks
   , _nextHook :: Int
+  , _actionQueue :: Output (Action ())
   }
 makeLenses ''ActionState
 
 instance Show ActionState where
   show as = show (_ed as)
 
-instance Default ActionState where
-  def = ActionState
+mkActionState :: Output (Action ()) -> ActionState
+mkActionState out = ActionState
     { _ed=def
-    , _asyncs=def
     , _hooks=def
     , _nextHook=0
+    , _actionQueue=out
     }
 
 instance HasEditor ActionState where

@@ -6,12 +6,14 @@ import Rasa.Internal.Action
 import Rasa.Internal.Events
 import Rasa.Internal.Scheduler
 
-import Control.Concurrent.Async
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Default (def)
-import Data.List
+import Data.Maybe
+
+import Pipes
+import Pipes.Concurrent
+import Pipes.Parse
 
 -- | The main function to run rasa.
 --
@@ -26,25 +28,24 @@ import Data.List
 -- >   slate
 
 rasa :: Action () -> IO ()
-rasa initilize =
-  evalAction def $ do
+rasa initilize = do
+  (output, input) <- spawn unbounded
+  evalAction (mkActionState output) $ do
     initilize
     dispatchEvent Init
-    eventLoop
+    eventLoop $ fromInput input
     dispatchEvent Exit
 
 -- | This is the main event loop, it runs recursively forever until something
 -- sets 'Rasa.Editor.exiting'. It runs the pre-event hooks, then checks if any
 -- async events have finished, then runs the post event hooks and repeats.
-eventLoop :: Action ()
-eventLoop = do
+eventLoop :: Producer (Action ()) IO () -> Action ()
+eventLoop producer = do
   dispatchEvent BeforeRender
   dispatchEvent OnRender
   dispatchEvent AfterRender
   dispatchEvent BeforeEvent
-  asyncActions <- use asyncs
-  (done, action) <- liftIO $ waitAny asyncActions
-  asyncs %= delete done
-  action
+  (mAction, nextProducer) <- liftIO $ runStateT draw producer
+  fromMaybe (return ()) mAction
   isExiting <- use exiting
-  unless isExiting eventLoop
+  unless isExiting $ eventLoop nextProducer

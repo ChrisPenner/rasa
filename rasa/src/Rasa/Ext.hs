@@ -40,7 +40,6 @@ module Rasa.Ext
   (
   -- * Editor Actions
     Action
-  , doAsync
   , exit
 
   -- * Managing Buffers
@@ -125,7 +124,6 @@ module Rasa.Ext
   , onEveryTrigger_
   , onNextEvent
   , removeListener
-  , eventProvider
 
   -- * Built-in Event Hooks
   , onInit
@@ -144,6 +142,12 @@ module Rasa.Ext
   , onExit
   , onBufAdded
   , onBufTextChanged
+
+  -- * Working with Async Events/Actions
+  , dispatchActionAsync
+  , dispatchEventAsync
+  , asyncEventProvider
+  , asyncActionProvider
 
    -- * Ranges
   , Range(..)
