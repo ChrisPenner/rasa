@@ -11,9 +11,9 @@ module Rasa.Ext.Cursors
   , findPrevFrom
 
   -- * Working with Cursor Ranges
-  , eachRange
   , addRange
-  , ranges
+  , getRanges
+  , setRanges
   , rangeDo
   , rangeDo_
   , overRanges

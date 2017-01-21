@@ -1,5 +1,5 @@
 {-# language ExistentialQuantification #-}
-module Rasa.Internal.Events 
+module Rasa.Internal.Events
   ( Init(..)
   , BeforeEvent(..)
   , BeforeRender(..)
@@ -71,4 +71,4 @@ data Mod
 data BufTextChanged
   = BufTextChanged CrdRange Y.YiString
   deriving (Show, Eq, Typeable)
-  
+

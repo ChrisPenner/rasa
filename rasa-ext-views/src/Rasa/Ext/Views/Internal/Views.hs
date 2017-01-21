@@ -93,7 +93,7 @@ data Views = Views
 makeLenses ''Views
 
 -- | A lens to access the stored windows
-windows :: HasEditor e => Lens' e (Maybe Window)
+windows :: HasExts e => Lens' e (Maybe Window)
 windows = ext.windows'
 
 instance Default Views where

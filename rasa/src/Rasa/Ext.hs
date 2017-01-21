@@ -98,13 +98,15 @@ module Rasa.Ext
   -- Since it's polymorphic, if ghc can't figure out the type the result is
   -- supposed to be then you'll need to help it out. In practice you won't
   -- typically need to do this unless you're doing something complicated.
-
+  , HasExts(..)
   , ext
+  , HasBufExts(..)
   , bufExt
 
    -- * Accessing/Editing Context
   , Buffer
-  , HasBuffer
+  , HasBuffer(..)
+  , text
   , BufRef
   , HasEditor
   , getText
@@ -177,10 +179,12 @@ module Rasa.Ext
 
 import Rasa.Internal.Action
 import Rasa.Internal.Async
+import Rasa.Internal.Buffer
 import Rasa.Internal.Directive
 import Rasa.Internal.Editor
+import Rasa.Internal.Extensions
 import Rasa.Internal.Events
-import Rasa.Internal.Buffer
-import Rasa.Internal.Text
+import Rasa.Internal.BufAction
 import Rasa.Internal.Range
 import Rasa.Internal.Scheduler
+import Rasa.Internal.Text

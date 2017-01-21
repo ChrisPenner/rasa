@@ -57,7 +57,7 @@ newtype Styles =
 makeLenses ''Styles
 
 -- | A lens over the styles stored in the current buffer.
-styles :: HasBuffer s => Lens' s [Span CrdRange Style]
+styles :: HasBufExts s => Lens' s [Span CrdRange Style]
 styles = bufExt.styles'
 
 instance Default Styles where

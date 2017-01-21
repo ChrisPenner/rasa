@@ -26,6 +26,7 @@ module Rasa.Internal.Directive
 
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
+import Rasa.Internal.BufAction
 import Rasa.Internal.Range
 import Rasa.Internal.Scheduler
 import Rasa.Internal.Events
@@ -46,7 +47,7 @@ import qualified Yi.Rope as Y
 buffersDo :: BufAction a -> Action [a]
 buffersDo bufAct = do
   bufRefs <- getBufRefs
-  catMaybes . foldMap (:[]) <$> mapM (liftBuf bufAct) bufRefs
+  catMaybes . foldMap (:[]) <$> mapM (runBufAction bufAct) bufRefs
 
 buffersDo_ :: BufAction a -> Action ()
 buffersDo_ = void . buffersDo
@@ -55,7 +56,7 @@ buffersDo_ = void . buffersDo
 -- performs the 'Rasa.Action.BufAction' on the buffer referred to by the 'BufRef'
 -- If the buffer referred to no longer exists this returns @Action Nothing@.
 bufDo :: BufRef -> BufAction a -> Action (Maybe a)
-bufDo bufRef bufAct = liftBuf bufAct bufRef
+bufDo bufRef bufAct = runBufAction bufAct bufRef
 
 bufDo_ :: BufRef -> BufAction a -> Action ()
 bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
@@ -128,9 +129,3 @@ replaceRange r txt = overRange r (const txt)
 insertAt :: Coord -> Y.YiString -> BufAction ()
 insertAt c = replaceRange r
   where r = Range c c
-
--- | Runs the given function over the text in the range, replacing it with the results.
-overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
-overRange r f = do
-  newText <- range r <%= f
-  liftAction $ dispatchEvent (BufTextChanged r newText)
