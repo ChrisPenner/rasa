@@ -163,8 +163,19 @@ functions which they can embed in an `Action`. Within an action an extension
 may perform IO, access the available buffers, store and access extension state,
 and edit text.
 
+Running Tests
+-------------
+
+Run all tests:
+
+- `stack test`
+
+Run only tests for core editor:
+
+- `stack test rasa`
+
 Contributing
-============
+------------
 
 Things are moving quickly, but I'd love a hand! You can get a rough idea of
 where you can help out at the
