@@ -144,6 +144,7 @@ module Rasa.Ext
   , onBufTextChanged
 
   -- * Working with Async Events/Actions
+  , Dispatcher
   , dispatchActionAsync
   , dispatchEventAsync
   , asyncEventProvider
