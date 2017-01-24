@@ -62,7 +62,7 @@ main :: IO ()
 main = rasa $ do
   -- some plugins...
   -- Add the new action here!
-  void $ onInit helloWorld
+  onInit helloWorld
 ```
 
 Okay let's try again! `stack build && stack exec rasa` (you may want to alias
