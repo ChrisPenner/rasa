@@ -62,7 +62,7 @@ main :: IO ()
 main = rasa $ do
   -- some plugins...
   -- Add the new action here!
-  void $ onInit helloWorld
+  onInit helloWorld
 ```
 
 Okay let's try again! `stack build && stack exec rasa` (you may want to alias
@@ -128,21 +128,22 @@ Hrmm, right! Now that we're listening for keypress events we don't want to use
 at the type signature:
 
 ```haskell
-onEveryTrigger :: forall a. Typeable a => (a -> Action ()) -> Action HookId
+onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action HookId
 ```
 
 Whoah, what?? It's tough to unpack exactly what's going on here, but the basic
-idea is that you can see it takes a function from ANY (Typeable) event `a` to an `Action
-()` and then returns another `Action ()` that will respond to events.  There's
-a bit of magic behind the scenes that stores the function and calls it on any
-events that come that match the type which that function expects, running the
-resulting Action.  Check out the source code behind `onEveryTrigger` if
-you're interested!  It's pretty cool!  But for now we'll just move on and trust
-that it does what it says. So we've got our function from our event type
-(Keypress), so let's try embedding it using `onEveryTrigger`; the function normally
-returns a reference to the newly created listener so that we could cancel the listener
-using `removeListener` later if we wanted to; but since we don't want to do that we'll
-use `onEveryTrigger_` which just discards it instead.
+idea is that you can see it takes a function from ANY (Typeable) event `a` to
+any `Action b` and then returns an `Action ()` that will respond to events.
+There's a bit of magic behind the scenes that stores the function and calls it
+on any events that come that match the type which that function expects,
+running the resulting Action.  Check out the source code behind
+`onEveryTrigger` if you're interested!  It's pretty cool!  But for now we'll
+just move on and trust that it does what it says. So we've got our function
+from our event type (Keypress), so let's try embedding it using
+`onEveryTrigger`; the function normally returns a reference to the newly
+created listener so that we could cancel the listener using `removeListener`
+later if we wanted to; but since we don't want to do that we'll use
+`onEveryTrigger_` which just discards it instead.
 
 ```haskell
 main = rasa $ do

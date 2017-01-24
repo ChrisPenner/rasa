@@ -29,4 +29,4 @@ main = rasa $ do
   logger
   slate
   style
-  onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
+  onInit $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
