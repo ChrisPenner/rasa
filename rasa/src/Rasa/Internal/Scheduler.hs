@@ -81,11 +81,10 @@ onEveryTrigger hookFunc = do
 onEveryTrigger_ :: forall a. Typeable a => (a -> Action ()) -> Action ()
 onEveryTrigger_ = void . onEveryTrigger
 
-
 -- | This acts as 'onEveryTrigger' but listens only for the first event of a given type.
-onNextEvent :: forall a. Typeable a => (a -> Action ()) -> Action ()
+onNextEvent :: forall a b. Typeable a => (a -> Action b) -> Action ()
 onNextEvent hookFunc = do
-  (hookId, hook) <- makeHook hookFunc
+  (hookId, hook) <- makeHook $ void . hookFunc
   let selfCancellingHook = extendHook hook (removeListener hookId)
   hooks %= insertWith mappend (typeRep (Proxy :: Proxy a)) [selfCancellingHook]
 
@@ -102,8 +101,8 @@ removeListener hkIdA@(HookId _ typ) =
 -- Though arbitrary actions may be performed in the configuration block;
 -- it's recommended to embed such actions in the onInit event listener
 -- so that all event listeners are registered before anything Actions occur.
-onInit :: Action () -> Action ()
-onInit action = void $ onEveryTrigger (const action :: Init -> Action ())
+onInit :: forall a. Action a -> Action ()
+onInit action = onNextEvent (const action :: Init -> Action a)
 
 -- | Registers an action to be performed BEFORE each event phase.
 beforeEveryEvent :: Action () -> Action HookId
@@ -112,8 +111,8 @@ beforeEveryEvent action = onEveryTrigger (const action :: BeforeEvent -> Action 
 beforeEveryEvent_ :: Action () -> Action ()
 beforeEveryEvent_ = void . beforeEveryEvent
 
-beforeNextEvent :: Action () -> Action ()
-beforeNextEvent action = onNextEvent (const action :: BeforeEvent -> Action ())
+beforeNextEvent :: forall a. Action a -> Action ()
+beforeNextEvent action = onNextEvent (const action :: BeforeEvent -> Action a)
 
 -- | Registers an action to be performed BEFORE each render phase.
 --
@@ -126,8 +125,8 @@ beforeEveryRender action = onEveryTrigger (const action :: BeforeRender -> Actio
 beforeEveryRender_ :: Action () -> Action ()
 beforeEveryRender_ = void . beforeEveryRender
 
-beforeNextRender :: Action () -> Action ()
-beforeNextRender action = onNextEvent (const action :: BeforeRender -> Action ())
+beforeNextRender :: forall a. Action a -> Action ()
+beforeNextRender action = onNextEvent (const action :: BeforeRender -> Action a)
 
 -- | Registers an action to be performed during each render phase.
 --
@@ -138,8 +137,8 @@ onEveryRender action = onEveryTrigger (const action :: OnRender -> Action ())
 onEveryRender_ :: Action () -> Action ()
 onEveryRender_ = void . onEveryRender
 
-onNextRender :: Action () -> Action ()
-onNextRender action = onNextEvent (const action :: OnRender -> Action ())
+onNextRender :: forall a. Action a -> Action ()
+onNextRender action = onNextEvent (const action :: OnRender -> Action a)
 
 -- | Registers an action to be performed AFTER each render phase.
 --
@@ -151,8 +150,8 @@ afterEveryRender action = onEveryTrigger (const action :: AfterRender -> Action 
 afterEveryRender_ :: Action () -> Action ()
 afterEveryRender_ = void . afterEveryRender
 
-afterNextRender :: Action () -> Action ()
-afterNextRender action = onNextEvent (const action :: AfterRender -> Action ())
+afterNextRender :: forall a. Action a -> Action ()
+afterNextRender action = onNextEvent (const action :: AfterRender -> Action a)
 
 -- | Registers an action to be performed during the exit phase.
 --
@@ -160,8 +159,8 @@ afterNextRender action = onNextEvent (const action :: AfterRender -> Action ())
 -- allows an opportunity to do clean-up, kill any processes you've started, or
 -- save any data before the editor terminates.
 
-onExit :: Action () -> Action ()
-onExit action = void $ onEveryTrigger (const action :: Exit -> Action ())
+onExit :: forall a. Action a -> Action ()
+onExit action = onNextEvent (const action :: Exit -> Action a)
 
 -- | Registers an action to be performed after a new buffer is added.
 --
