@@ -55,11 +55,12 @@ getHook = coerce
     coerce :: Hook -> (a -> Action ())
     coerce (Hook _ x) = unsafeCoerce x
 
-makeHook :: forall a. Typeable a => (a -> Action ()) -> Action (HookId, Hook)
+makeHook :: forall a b. Typeable a => (a -> Action b) -> Action (HookId, Hook)
 makeHook hookFunc = do
   n <- nextHook <<+= 1
   let hookId = HookId n (typeRep (Proxy :: Proxy a))
-  return (hookId, Hook hookId hookFunc)
+      hookFunc' = void . hookFunc
+  return (hookId, Hook hookId hookFunc')
 
 extendHook :: Hook -> Action () -> Hook
 extendHook (Hook hookId hookFunc) act = Hook hookId (\a -> hookFunc a >> act)
@@ -72,19 +73,19 @@ matchingHooks hooks' = getHook <$> (hooks'^.at (typeRep (Proxy :: Proxy a))._Jus
 --
 -- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of that type.
 -- It returns an ID which may be used with 'removeListener' to cancel the listener
-onEveryTrigger :: forall a. Typeable a => (a -> Action ()) -> Action HookId
+onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action HookId
 onEveryTrigger hookFunc = do
   (hookId, hook) <- makeHook hookFunc
   hooks %= insertWith mappend (typeRep (Proxy :: Proxy a)) [hook]
   return hookId
 
-onEveryTrigger_ :: forall a. Typeable a => (a -> Action ()) -> Action ()
+onEveryTrigger_ :: forall a b. Typeable a => (a -> Action b) -> Action ()
 onEveryTrigger_ = void . onEveryTrigger
 
 -- | This acts as 'onEveryTrigger' but listens only for the first event of a given type.
 onNextEvent :: forall a b. Typeable a => (a -> Action b) -> Action ()
 onNextEvent hookFunc = do
-  (hookId, hook) <- makeHook $ void . hookFunc
+  (hookId, hook) <- makeHook hookFunc
   let selfCancellingHook = extendHook hook (removeListener hookId)
   hooks %= insertWith mappend (typeRep (Proxy :: Proxy a)) [selfCancellingHook]
 
@@ -105,10 +106,10 @@ onInit :: forall a. Action a -> Action ()
 onInit action = onNextEvent (const action :: Init -> Action a)
 
 -- | Registers an action to be performed BEFORE each event phase.
-beforeEveryEvent :: Action () -> Action HookId
-beforeEveryEvent action = onEveryTrigger (const action :: BeforeEvent -> Action ())
+beforeEveryEvent :: forall a. Action a -> Action HookId
+beforeEveryEvent action = onEveryTrigger (const action :: BeforeEvent -> Action a)
 
-beforeEveryEvent_ :: Action () -> Action ()
+beforeEveryEvent_ :: forall a. Action a -> Action ()
 beforeEveryEvent_ = void . beforeEveryEvent
 
 beforeNextEvent :: forall a. Action a -> Action ()
@@ -119,10 +120,10 @@ beforeNextEvent action = onNextEvent (const action :: BeforeEvent -> Action a)
 -- This is a good spot to add information useful to the renderer
 -- since all actions have been performed. Only cosmetic changes should
 -- occur during this phase.
-beforeEveryRender :: Action () -> Action HookId
-beforeEveryRender action = onEveryTrigger (const action :: BeforeRender -> Action ())
+beforeEveryRender :: forall a. Action a -> Action HookId
+beforeEveryRender action = onEveryTrigger (const action :: BeforeRender -> Action a)
 
-beforeEveryRender_ :: Action () -> Action ()
+beforeEveryRender_ :: forall a. Action a -> Action ()
 beforeEveryRender_ = void . beforeEveryRender
 
 beforeNextRender :: forall a. Action a -> Action ()
@@ -131,10 +132,10 @@ beforeNextRender action = onNextEvent (const action :: BeforeRender -> Action a)
 -- | Registers an action to be performed during each render phase.
 --
 -- This phase should only be used by extensions which actually render something.
-onEveryRender :: Action () -> Action HookId
-onEveryRender action = onEveryTrigger (const action :: OnRender -> Action ())
+onEveryRender :: forall a. Action a -> Action HookId
+onEveryRender action = onEveryTrigger (const action :: OnRender -> Action a)
 
-onEveryRender_ :: Action () -> Action ()
+onEveryRender_ :: forall a. Action a -> Action ()
 onEveryRender_ = void . onEveryRender
 
 onNextRender :: forall a. Action a -> Action ()
@@ -144,10 +145,10 @@ onNextRender action = onNextEvent (const action :: OnRender -> Action a)
 --
 -- This is useful for cleaning up extension state that was registered for the
 -- renderer, but needs to be cleared before the next iteration.
-afterEveryRender :: Action () -> Action HookId
-afterEveryRender action = onEveryTrigger (const action :: AfterRender -> Action ())
+afterEveryRender :: forall a. Action a -> Action HookId
+afterEveryRender action = onEveryTrigger (const action :: AfterRender -> Action a)
 
-afterEveryRender_ :: Action () -> Action ()
+afterEveryRender_ :: forall a. Action a -> Action ()
 afterEveryRender_ = void . afterEveryRender
 
 afterNextRender :: forall a. Action a -> Action ()
@@ -165,12 +166,12 @@ onExit action = onNextEvent (const action :: Exit -> Action a)
 -- | Registers an action to be performed after a new buffer is added.
 --
 -- The supplied function will be called with a 'BufRef' to the new buffer, and the resulting 'Action' will be run.
-onBufAdded :: (BufRef -> Action ()) -> Action HookId
+onBufAdded :: forall a. (BufRef -> Action a) -> Action HookId
 onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
 
-onBufTextChanged :: (CrdRange -> Y.YiString -> Action ()) -> Action HookId
+onBufTextChanged :: forall a. (CrdRange -> Y.YiString -> Action a) -> Action HookId
 onBufTextChanged f = onEveryTrigger listener
   where
     listener (BufTextChanged r newText) = f r newText
