@@ -86,7 +86,7 @@ insert :: [Keypress] -> BufAction ()
 insert [KEsc] = mode .= Normal
 
 insert [KBS] = moveRangesByN (-1) >> delete
-insert [KEnter] = insertText "\n"
+insert [KEnter] = insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
 insert [Keypress c _] = insertText (Y.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
@@ -123,7 +123,7 @@ normal [Keypress 'G' []] = do
   txt <- getText
   setRanges [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
-normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByN 1 >> mode .= Insert
+normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByC (Coord 1 0) >> mode .= Insert
 normal [Keypress 'O' []] = startOfLine >> insertText "\n" >> mode .= Insert
 normal [Keypress 'h' []] = moveRangesByN (-1)
 normal [Keypress 'l' []] = moveRangesByN 1

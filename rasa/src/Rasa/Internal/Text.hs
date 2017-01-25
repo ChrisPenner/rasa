@@ -20,4 +20,4 @@ asString = iso Y.toString Y.fromString
 
 -- | An iso which converts to/from 'Y.YiString' -> ['Y.YiString']
 asLines :: Iso' Y.YiString [Y.YiString]
-asLines = iso Y.lines Y.unlines
+asLines = iso Y.lines' Y.concat

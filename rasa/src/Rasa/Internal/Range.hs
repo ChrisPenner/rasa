@@ -163,7 +163,7 @@ clampCoord txt (Coord row col) =
   Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
   where
     maxRow = Y.countNewLines txt
-    maxColumn = fromMaybe col (txt ^? to Y.lines' . ix row . to Y.length)
+    maxColumn = fromMaybe col (txt ^? asLines . ix row . to Y.length)
 
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
 clampRange :: Y.YiString -> CrdRange -> CrdRange
@@ -227,7 +227,7 @@ beforeC c@(Coord row col) = lens getter setter
   where getter txt =
           txt ^.. asLines . taking (row + 1) traverse
               & _last %~ Y.take col
-              & Y.unlines
+              & Y.concat
 
         setter old new = let suffix = old ^. afterC c
                           in new <> suffix
@@ -238,7 +238,7 @@ afterC c@(Coord row col) = lens getter setter
   where getter txt =
           txt ^.. asLines . dropping row traverse
               & _head %~ Y.drop col
-              & Y.unlines
+              & Y.concat
 
         setter old new = let prefix = old ^. beforeC c
                           in prefix <> new
@@ -247,4 +247,7 @@ afterC c@(Coord row col) = lens getter setter
 range :: CrdRange -> Lens' Y.YiString Y.YiString
 range (Range start end) = lens getter setter
   where getter = view (beforeC end . afterC start)
-        setter old new = old & beforeC end . afterC start .~ new
+        setter old new = result
+          where
+            setBefore = old & beforeC end .~ new
+            result = old & afterC start .~ setBefore
