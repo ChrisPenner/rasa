@@ -78,9 +78,9 @@ renderView :: (Width, Height) -> (View, Buffer) -> V.Image
 renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ textImage
   where
     trimText :: Y.YiString -> Y.YiString
-    trimText = Y.concat . take availHeight . drop (vw^.scrollPos) . Y.lines'
+    trimText = Y.concat . take height . drop (vw^.scrollPos) . Y.lines'
     resize :: V.Image -> V.Image
-    resize = V.resize width availHeight
+    resize = V.resize availWidth height
     textImage :: V.Image
     textImage = applyAttrs adjustedStyles txt
     txt :: Y.YiString
@@ -95,9 +95,9 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ te
     addEndBar = (V.<-> sepBar)
     appendActiveBar :: V.Image -> V.Image
     appendActiveBar i
-      | vw^.active = i V.<-> V.charFill (V.defAttr `V.withForeColor` V.magenta) '-' width 1
+      | vw^.active = i V.<|> V.charFill (V.defAttr `V.withForeColor` V.magenta) '|' 1 height
       | otherwise = i
-    availHeight :: Height
-    availHeight = if vw^.active then height - 1
-                                else height
+    availWidth :: Height
+    availWidth = if vw^.active then width - 1
+                                else width
 
