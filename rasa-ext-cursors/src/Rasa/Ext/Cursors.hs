@@ -25,6 +25,6 @@ import Rasa.Ext
 import Rasa.Ext.Cursors.Internal.Base
 import Rasa.Ext.Cursors.Internal.Actions
 
--- | Registers hooks for the extension. The user should add this to their config.
+-- | Registers listeners for the extension. The user should add this to their config.
 cursors :: Action ()
 cursors = beforeEveryRender_ $ buffersDo_ displayRange

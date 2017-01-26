@@ -94,7 +94,7 @@ extensions without knowing much haskell!
 you're running rasa you can experiment with creating your own adaptations. You
 should customize your keymap to add a few mappings you like. It's a short step
 from here to developing your own extensions. `Action`s like you'd use in an
-extension can be registered to hooks in your `Main.hs`. You can build and
+extension can be registered to listeners in your `Main.hs`. You can build and
 experiment with entire extensions in your config file and extract them as a
 package when you're ready, kind of like a vimrc file. Again, just read the 
 extension guide, it covers what you need to know!
@@ -148,11 +148,11 @@ We focus on creating a simple system so people can pick it up quickly.
 
 Here are some features of that API:
 
-### Event Hook System
+### Event Listener System
 
 All actions in the editor are triggered via an event/listener system.
 Extensions may subscribe to events from the editor, or from another extension
-and perform an action in response. The Event which triggered the hook is
+and perform an action in response. The Event which triggered the listener is
 available as an argument). Extensions may also dispatch any kind of event at
 any time which other extensions may listen for.
 

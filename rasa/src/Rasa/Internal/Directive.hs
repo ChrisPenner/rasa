@@ -111,7 +111,7 @@ prevBufRef br@(BufRef bufInt) = do
          Nothing -> return . BufRef . fst . findMax $ bufMap
 
 -- | This signals to the editor that you'd like to shutdown. The current events
--- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' hook will run,
+-- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' event will be dispatched,
 -- then the editor will exit.
 
 exit :: Action ()

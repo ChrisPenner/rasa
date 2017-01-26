@@ -37,8 +37,8 @@ rasa initilize = do
     dispatchEvent Exit
 
 -- | This is the main event loop, it runs recursively forever until something
--- sets 'Rasa.Editor.exiting'. It runs the pre-event hooks, then checks if any
--- async events have finished, then runs the post event hooks and repeats.
+-- sets 'Rasa.Editor.exiting'. It runs the pre-event listeners, then checks if any
+-- async events have finished, then runs the post event listeners and repeats.
 eventLoop :: Producer (Action ()) IO () -> Action ()
 eventLoop producer = do
   dispatchEvent BeforeRender

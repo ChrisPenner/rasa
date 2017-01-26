@@ -55,7 +55,7 @@ vim = do
   -- Set the status bar to the current mode before each render
   beforeEveryRender_ setStatus
 
--- | The event hook which listens for keypresses and responds appropriately
+-- | The event listener which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()
 handleKeypress keypress = focusDo_ $ do
     mode' <- use mode

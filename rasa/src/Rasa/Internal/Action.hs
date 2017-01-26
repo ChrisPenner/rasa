@@ -12,11 +12,11 @@ module Rasa.Internal.Action
   , execAction
   , ActionState
   , mkActionState
-  , Hook(..)
-  , HookId(..)
-  , Hooks
-  , hooks
-  , nextHook
+  , Listener(..)
+  , ListenerId(..)
+  , Listeners
+  , listeners
+  , nextListenerId
   , actionQueue
   ) where
 
@@ -33,16 +33,16 @@ import Data.Typeable
 
 import Pipes.Concurrent hiding (Buffer)
 
--- | A wrapper around event listeners so they can be stored in 'Hooks'.
-data Hook = forall a. Hook HookId (a -> Action ())
-data HookId =
-  HookId Int TypeRep
+-- | A wrapper around event listeners so they can be stored in 'Listeners'.
+data Listener = forall a. Listener ListenerId (a -> Action ())
+data ListenerId =
+  ListenerId Int TypeRep
 
-instance Eq HookId where
-  HookId a _ == HookId b _ = a == b
+instance Eq ListenerId where
+  ListenerId a _ == ListenerId b _ = a == b
 
 -- | A map of Event types to a list of listeners for that event
-type Hooks = Map TypeRep [Hook]
+type Listeners = Map TypeRep [Listener]
 
 -- | Free Monad Actions for Action
 data ActionF state next =
@@ -67,8 +67,8 @@ newtype Action a = Action
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
 data ActionState = ActionState
   { _ed :: Editor
-  , _hooks :: Hooks
-  , _nextHook :: Int
+  , _listeners :: Listeners
+  , _nextListenerId :: Int
   , _actionQueue :: Output (Action ())
   }
 makeLenses ''ActionState
@@ -79,8 +79,8 @@ instance Show ActionState where
 mkActionState :: Output (Action ()) -> ActionState
 mkActionState out = ActionState
     { _ed=def
-    , _hooks=def
-    , _nextHook=0
+    , _listeners=def
+    , _nextListenerId=0
     , _actionQueue=out
     }
 

@@ -128,7 +128,7 @@ Hrmm, right! Now that we're listening for keypress events we don't want to use
 at the type signature:
 
 ```haskell
-onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action HookId
+onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
 ```
 
 Whoah, what?? It's tough to unpack exactly what's going on here, but the basic
@@ -385,7 +385,7 @@ Dispatching Custom Events
 -------------------------
 
 Let's add just one last feature, other extensions may want to know when
-the user copies something. Let's expose an event hook so that they can 'listen'
+the user copies something. Let's expose an event so that they can 'listen'
 for when something gets copied and do something in return! This is actually
 really easy to do since it's a core part of how rasa operates!
 
@@ -413,7 +413,7 @@ dispatchEvent :: Typeable a => a -> Action ()
 ```
 
 This looks pretty similar to the `onEveryTrigger` signature, but all that it does
-is takes any event type and will trigger any hooks that are listening for events
+is take any event type and will trigger any listeners that are listening for events
 of that type! Let's give it a go!
 
 ```haskell

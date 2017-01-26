@@ -25,7 +25,7 @@
 -- > logKeypress :: Keypress -> Action ()
 -- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
 -- >
--- > logger :: Action HookId
+-- > logger :: Action ListenerId
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
 -- >   onEveryTrigger_ logKeypress
@@ -116,16 +116,16 @@ module Rasa.Ext
   , Mod(..)
 
   -- * Dealing with events
-  , Hooks
-  , Hook
-  , HookId
+  , Listeners
+  , Listener
+  , ListenerId
   , dispatchEvent
   , onEveryTrigger
   , onEveryTrigger_
   , onNextEvent
   , removeListener
 
-  -- * Built-in Event Hooks
+  -- * Built-in Event Listeners
   , onInit
   , beforeEveryEvent
   , beforeEveryEvent_
