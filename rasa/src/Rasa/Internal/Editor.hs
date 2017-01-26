@@ -24,10 +24,9 @@ import Data.Default
 import Data.IntMap
 import Control.Lens
 
--- | An opaque reference to a buffer (The contained Int is not meant to be
--- altered). It is possible for references to become stale if buffers are
--- deleted. Operations over invalid BufRef's are simply ignored and return
--- 'Nothing' if a value was expected.
+-- | An opaque reference to a buffer.
+-- When operating over a BufRef Rasa checks if the 'Rasa.Internal.Buffer.Buffer' still
+-- exists and simply ignores any operations over non-existent buffers; typically returning 'Nothing'
 newtype BufRef =
   BufRef Int
   deriving (Show, Eq, Ord)

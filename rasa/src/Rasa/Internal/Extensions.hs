@@ -24,11 +24,12 @@ instance Show Ext where
 -- | A map of extension types to their current value.
 type ExtMap = Map TypeRep Ext
 
+-- | Members of this class have access to editor extensions.
 class HasExts s where
   -- | This lens focuses the Extensions States
   exts :: Lens' s (Map TypeRep Ext)
 
--- | 'ext' is a lens which will focus the extension state that matches the type
+-- | This is a lens which will focus the extension state that matches the type
 -- inferred as the focal point. It's a little bit of magic, if you treat the
 -- focus as a member of your extension state it should just work out.
 --
@@ -51,6 +52,7 @@ ext = lens getter setter
         s
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
+-- | Members of this class have access to buffer extensions. (Each 'Rasa.Internal.Buffer.Buffer' is a member of this class)
 class HasBufExts s where
   -- | This lens focuses the Extensions States map of the in-scope buffer.
   bufExts :: Lens' s (Map TypeRep Ext)

@@ -69,9 +69,9 @@ extendListener (Listener listenerId listenerFunc) act = Listener listenerId (\a 
 matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
 matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
--- | This registers an event listener listener, as long as the listener is well-typed similar to this:
+-- | This registers an event listener, as long as the listener is well-typed similar to this:
 --
--- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of that type.
+-- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
 -- It returns an ID which may be used with 'removeListener' to cancel the listener
 onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
 onEveryTrigger listenerFunc = do
@@ -112,6 +112,7 @@ beforeEveryEvent action = onEveryTrigger (const action :: BeforeEvent -> Action 
 beforeEveryEvent_ :: forall a. Action a -> Action ()
 beforeEveryEvent_ = void . beforeEveryEvent
 
+-- | Registers an action to be performed ONCE before only the NEXT event phase.
 beforeNextEvent :: forall a. Action a -> Action ()
 beforeNextEvent action = onNextEvent (const action :: BeforeEvent -> Action a)
 
@@ -126,6 +127,7 @@ beforeEveryRender action = onEveryTrigger (const action :: BeforeRender -> Actio
 beforeEveryRender_ :: forall a. Action a -> Action ()
 beforeEveryRender_ = void . beforeEveryRender
 
+-- | Registers an action to be performed ONCE before only the NEXT render phase.
 beforeNextRender :: forall a. Action a -> Action ()
 beforeNextRender action = onNextEvent (const action :: BeforeRender -> Action a)
 
@@ -138,6 +140,9 @@ onEveryRender action = onEveryTrigger (const action :: OnRender -> Action a)
 onEveryRender_ :: forall a. Action a -> Action ()
 onEveryRender_ = void . onEveryRender
 
+-- | Registers an action to be performed ONCE before only the NEXT render phase.
+--
+-- This phase should only be used by extensions which actually render something.
 onNextRender :: forall a. Action a -> Action ()
 onNextRender action = onNextEvent (const action :: OnRender -> Action a)
 
@@ -151,6 +156,7 @@ afterEveryRender action = onEveryTrigger (const action :: AfterRender -> Action 
 afterEveryRender_ :: forall a. Action a -> Action ()
 afterEveryRender_ = void . afterEveryRender
 
+-- | Registers an action to be performed after the NEXT render phase.
 afterNextRender :: forall a. Action a -> Action ()
 afterNextRender action = onNextEvent (const action :: AfterRender -> Action a)
 
@@ -171,6 +177,9 @@ onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
 
+-- | This is fired every time text in a buffer changes.
+--
+-- The range of text which was altered and the new value of that text are provided inside a 'BufTextChanged' event.
 onBufTextChanged :: forall a. (CrdRange -> Y.YiString -> Action a) -> Action ListenerId
 onBufTextChanged f = onEveryTrigger listener
   where

@@ -38,7 +38,9 @@ dispatchEventAsync getEventIO = do
           evt <- lift getEventIO
           yield (dispatchEvent evt)
 
--- | Don't let the type signature confuse you; it's much simpler than it seems.
+-- | This allows long-running IO processes to provide Events to Rasa asyncronously.
+--
+-- Don't let the type signature confuse you; it's much simpler than it seems.
 --
 -- Let's break it down:
 --

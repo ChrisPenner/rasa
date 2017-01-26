@@ -77,18 +77,25 @@ data Coord' a b = Coord
   , _coordCol::b
   } deriving (Show, Eq)
 makeLenses ''Coord'
+
+-- | A type alias to 'Coord'' which specializes the types to integers.
 type Coord = Coord' Int Int
+
+-- | A type alias to 'Range'' which specializes the types to 'Coord's.
 type CrdRange = Range Coord Coord
 
 instance Bifunctor Coord' where
   bimap f g (Coord a b) = Coord (f a) (g b)
 
+-- | Applies a function over the row of a 'Coord'
 overRow :: (Int -> Int) -> Coord -> Coord
 overRow = first
 
+-- | Applies a function over the column of a 'Coord'
 overCol :: (Int -> Int) -> Coord -> Coord
 overCol = second
 
+-- | Applies a function over both functors in any 'Bifunctor'.
 overBoth :: Bifunctor f => (a -> b) -> f a a -> f b b
 overBoth f = bimap f f
 

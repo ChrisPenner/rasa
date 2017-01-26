@@ -52,16 +52,16 @@ buffersDo bufAct = do
 buffersDo_ :: BufAction a -> Action ()
 buffersDo_ = void . buffersDo
 
--- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
--- performs the 'Rasa.Action.BufAction' on the buffer referred to by the 'BufRef'
--- If the buffer referred to no longer exists this returns @Action Nothing@.
+-- | This lifts a 'Rasa.Internal.Action.BufAction' to an 'Rasa.Internal.Action.Action' which
+-- performs the 'Rasa.Internal.Action.BufAction' on the buffer referred to by the 'BufRef'
+-- If the buffer referred to no longer exists this returns: @Nothing@.
 bufDo :: BufRef -> BufAction a -> Action (Maybe a)
 bufDo bufRef bufAct = runBufAction bufAct bufRef
 
 bufDo_ :: BufRef -> BufAction a -> Action ()
 bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
 
--- | This adds a new buffer with the given text.
+-- | This adds a new buffer with the given text, returning a reference to that buffer.
 newBuffer :: Y.YiString -> Action BufRef
 newBuffer txt = do
   n <- nextBufId <<+= 1
@@ -111,21 +111,25 @@ prevBufRef br@(BufRef bufInt) = do
          Nothing -> return . BufRef . fst . findMax $ bufMap
 
 -- | This signals to the editor that you'd like to shutdown. The current events
--- will finish processing, then the 'Rasa.Ext.Listeners.onExit' event will be dispatched,
+-- will finish processing, then the 'Rasa.Internal.Listeners.onExit' event will be dispatched,
 -- then the editor will exit.
 
 exit :: Action ()
 exit = exiting .= True
 
+-- | Runs function over given range of text
+overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
+overRange r f = getRange r >>= setRange r . f
+
 -- | Deletes the text in the given range from the buffer.
 deleteRange :: CrdRange -> BufAction ()
 deleteRange r = replaceRange r ""
 
--- | Replaces the text in the given range from the buffer.
+-- | Replaces the text in the given range with the given text.
 replaceRange :: CrdRange -> Y.YiString -> BufAction ()
 replaceRange r txt = overRange r (const txt)
 
--- | Inserts text into the buffer at the given Coord.
+-- | Inserts text into the buffer at the given 'Coord'.
 insertAt :: Coord -> Y.YiString -> BufAction ()
 insertAt c = replaceRange r
   where r = Range c c

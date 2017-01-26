@@ -10,7 +10,6 @@ module Rasa.Internal.BufAction
   , setText
   , getRange
   , setRange
-  , overRange
   , liftState
   , liftAction
   , runBufAction
@@ -70,10 +69,6 @@ getRange rng = view (range rng) <$> getText
 setRange :: CrdRange -> Y.YiString -> BufAction ()
 setRange rng txt = liftBufAction $ SetRange rng txt ()
 
--- | Runs function over given range of text
-overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
-overRange r f = getRange r >>= setRange r . f
-
 -- | Allows running state actions over BufActionState; used to lift mtl state functions
 liftState :: (BufActionState -> (a, BufActionState)) -> BufAction a
 liftState = liftBufAction . LiftState
@@ -83,14 +78,14 @@ liftFIO :: IO r -> BufAction r
 liftFIO = liftBufAction . LiftIO
 
 -- | This is a monad for performing actions on a specific buffer.
--- You run 'BufAction's by embedding them in a 'Action' via 'bufferDo' or 'buffersDo'
+-- You run 'BufAction's by embedding them in a 'Action' via 'Rasa.Internal.Actions.bufferDo' or
+-- 'Rasa.Internal.Actions.buffersDo'
 --
 -- Within a BufAction you can:
 --
---      * Use 'liftAction' to run an 'Action'; It is your responsibility to ensure that any nested 'Action's don't edit
-  --      the Buffer which the current 'BufAction' is editing; behaviour is undefined if this occurs.
+--      * Use 'liftAction' to run an 'Action'
 --      * Use liftIO for IO
---      * Access/Edit the buffer's text
+--      * Access/Edit the buffer's text; some commands are available in "Rasa.Internal.Actions".
 --      * Access/edit buffer extensions; see 'bufExt'
 --      * Embed and sequence 'BufAction's from other extensions
 newtype BufAction a = BufAction

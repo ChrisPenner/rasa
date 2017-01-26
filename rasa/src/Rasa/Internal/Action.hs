@@ -35,6 +35,9 @@ import Pipes.Concurrent hiding (Buffer)
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
 data Listener = forall a. Listener ListenerId (a -> Action ())
+
+-- | An opaque reverence to a specific registered event-listener. 
+-- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
 data ListenerId =
   ListenerId Int TypeRep
 
@@ -58,8 +61,8 @@ data ActionF state next =
 --      * Use liftIO for IO
 --      * Access/edit extensions that are stored globally, see 'ext'
 --      * Embed any 'Action's exported other extensions
---      * Embed buffer actions using 'Rasa.Internal.Ext.Actions.bufDo' or 'Rasa.Internal.Ext.Actions.buffersDo'
---      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Internal.Ext.Actions' module.
+--      * Embed buffer actions using 'Rasa.Internal.Actions.bufDo' or 'Rasa.Internal.Actions.buffersDo'
+--      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the "Rasa.Internal.Actions" module.
 newtype Action a = Action
   { getAction :: Free (ActionF ActionState) a
   } deriving (Functor, Applicative, Monad)

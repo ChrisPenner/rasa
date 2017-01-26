@@ -25,15 +25,16 @@
 -- > logKeypress :: Keypress -> Action ()
 -- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
 -- >
--- > logger :: Action ListenerId
+-- > logger :: Action ()
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
--- >   onEveryTrigger_ logKeypress
+-- >   -- Listeners should also be registered using 'onInit'.
+-- >   -- It ensures all listeners are ready before any actions occur.
+-- >   onInit $ onEveryTrigger_ logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 --
 -- Check out this tutorial on building extensions, it's also just a great way to learn
--- how the editor works: <https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md Building an
--- Extension>.
+-- how the editor works: <https://github.com/ChrisPenner/rasa/blob/master/docs/Building-An-Extension.md Extension-Guide>.
 ----------------------------------------------------------------------------
 
 module Rasa.Ext
@@ -51,6 +52,15 @@ module Rasa.Ext
   , getBuffer
 
   -- * Working with Buffers
+  , Buffer
+  , HasBuffer(..)
+  , BufRef
+  , text
+  , HasEditor
+  , getText
+  , getRange
+
+  -- * Actions over Buffers
   , BufAction
   , liftAction
   , bufDo
@@ -74,8 +84,8 @@ module Rasa.Ext
   -- a counter as an Int, wrap it in your own custom Counter newtype when storing
   -- it.
   --
-  -- Because Extension states are stored by their TypeRep, they must define an
-  -- instance of Typeable, luckily GHC can derive this for you.
+  -- Because Extension states are stored by their 'Data.Typeable.TypeRep', they must define an
+  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you.
   --
   -- It is also required for all extension states to define an instance of
   -- 'Data.Default.Default', this is because accessing an extension which has not
@@ -88,7 +98,7 @@ module Rasa.Ext
   -- Extensions may store state persistently for later access or for other
   -- extensions to access. Because Rasa can't possibly know the types of the
   -- state that extensions will store it uses a clever workaround wherein
-  -- extension states are stored in a map of 'Data.Typeable.TypeRep' -> Ext
+  -- extension states are stored in a map of 'Data.Typeable.TypeRep' -> 'Rasa.Internal.Extensions.Ext'
   -- which is coerced into the proper type when it's extracted. The interface to
   -- extract or alter a given extension is to use the 'ext' and 'bufExt' lenses.
   -- Simply use them as though they were lenses to an object of your type and
@@ -102,22 +112,11 @@ module Rasa.Ext
   , HasBufExts(..)
   , bufExt
 
-   -- * Accessing/Editing Context
-  , Buffer
-  , HasBuffer(..)
-  , text
-  , BufRef
-  , HasEditor
-  , getText
-  , getRange
-
   -- * Events
   , Keypress(..)
   , Mod(..)
 
   -- * Dealing with events
-  , Listeners
-  , Listener
   , ListenerId
   , dispatchEvent
   , onEveryTrigger
