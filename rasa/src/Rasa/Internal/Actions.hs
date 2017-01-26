@@ -1,5 +1,5 @@
 {-# language Rank2Types, OverloadedStrings #-}
-module Rasa.Internal.Directive
+module Rasa.Internal.Actions
   (
   -- * Performing Actions on Buffers
     bufDo
@@ -28,7 +28,7 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.BufAction
 import Rasa.Internal.Range
-import Rasa.Internal.Scheduler
+import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Buffer as B
 
@@ -111,7 +111,7 @@ prevBufRef br@(BufRef bufInt) = do
          Nothing -> return . BufRef . fst . findMax $ bufMap
 
 -- | This signals to the editor that you'd like to shutdown. The current events
--- will finish processing, then the 'Rasa.Ext.Scheduler.onExit' event will be dispatched,
+-- will finish processing, then the 'Rasa.Ext.Listeners.onExit' event will be dispatched,
 -- then the editor will exit.
 
 exit :: Action ()

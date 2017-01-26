@@ -1,6 +1,6 @@
 {-# LANGUAGE ExistentialQuantification, ScopedTypeVariables #-}
 
-module Rasa.Internal.Scheduler
+module Rasa.Internal.Listeners
   ( Listener
   , Listeners
   , onEveryTrigger

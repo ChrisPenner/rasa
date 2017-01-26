@@ -4,7 +4,7 @@ module Rasa (rasa) where
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Events
-import Rasa.Internal.Scheduler
+import Rasa.Internal.Listeners
 
 import Control.Lens
 import Control.Monad

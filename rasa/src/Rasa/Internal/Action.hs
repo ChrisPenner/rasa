@@ -51,15 +51,15 @@ data ActionF state next =
   deriving (Functor)
 
 -- | This is a monad for performing actions against the editor.
--- You can register Actions to be run in response to events using 'Rasa.Internal.Scheduler.onEveryTrigger'
+-- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
 --
 -- Within an Action you can:
 --
 --      * Use liftIO for IO
 --      * Access/edit extensions that are stored globally, see 'ext'
 --      * Embed any 'Action's exported other extensions
---      * Embed buffer actions using 'Rasa.Internal.Ext.Directive.bufDo' or 'Rasa.Internal.Ext.Directive.buffersDo'
---      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Internal.Ext.Directive' module.
+--      * Embed buffer actions using 'Rasa.Internal.Ext.Actions.bufDo' or 'Rasa.Internal.Ext.Actions.buffersDo'
+--      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the 'Rasa.Internal.Ext.Actions' module.
 newtype Action a = Action
   { getAction :: Free (ActionF ActionState) a
   } deriving (Functor, Applicative, Monad)

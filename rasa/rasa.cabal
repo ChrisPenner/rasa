@@ -50,22 +50,19 @@ description:         A modular text editor
 
 library
   hs-source-dirs:      src
-  exposed-modules:
-                       Rasa
-
+  exposed-modules:     Rasa
                        Rasa.Ext
-
                        Rasa.Internal.Action
+                       Rasa.Internal.Actions
                        Rasa.Internal.Async
+                       Rasa.Internal.BufAction
                        Rasa.Internal.Buffer
-                       Rasa.Internal.Directive
                        Rasa.Internal.Editor
                        Rasa.Internal.Events
                        Rasa.Internal.Extensions
+                       Rasa.Internal.Listeners
                        Rasa.Internal.Range
-                       Rasa.Internal.Scheduler
                        Rasa.Internal.Text
-                       Rasa.Internal.BufAction
 
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5

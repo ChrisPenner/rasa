@@ -8,7 +8,7 @@ module Rasa.Internal.Async
 ) where
 
 import Rasa.Internal.Action
-import Rasa.Internal.Scheduler
+import Rasa.Internal.Listeners
 
 import Control.Lens
 import Control.Monad.IO.Class

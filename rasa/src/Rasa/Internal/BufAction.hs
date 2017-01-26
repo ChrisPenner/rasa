@@ -20,7 +20,7 @@ import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Range
-import Rasa.Internal.Scheduler
+import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 

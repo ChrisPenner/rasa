@@ -532,7 +532,7 @@ All extensions should be stored as a new module inside `Rasa.Ext`.
 Now we can go ahead and copy those functions we wrote inside `Main.hs` into our
 new `CopyPasta.hs` and add a module definition at the top. We'll want to only
 export things we're okay with other people using, so how about we export a
-`Scheduler ()` which sets up the key-listener and also the `Copied` type so
+`Action ()` which sets up the key-listener and also the `Copied` type so
 that users can write their own event listeners for it.
 
 We'll end up with something like this:
