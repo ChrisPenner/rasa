@@ -1,9 +1,9 @@
 name:                rasa-ext-files
-version:             0.1.2
+version:             0.1.3
 synopsis:            Rasa Ext for filesystem actions
 description:         Rasa Ext for filesystem actions
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

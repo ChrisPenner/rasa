@@ -1,9 +1,9 @@
 name:                rasa-ext-slate
-version:             0.1.5
+version:             0.1.6
 synopsis:            Rasa extension for rendering to terminal with vty
 description:         Rasa extension for rendering to terminal with vty
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

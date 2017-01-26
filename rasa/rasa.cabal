@@ -1,8 +1,8 @@
 name:                rasa
-version:             0.1.7
+version:             0.1.8
 synopsis:            A modular text editor
 homepage:            https://github.com/ChrisPenner/rasa#readme
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

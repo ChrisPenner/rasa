@@ -1,9 +1,9 @@
 name:                text-lens
-version:             0.1.0.0
+version:             0.1.1
 synopsis:            Lenses for operating over text
 description:         Lenses for operating over text
 homepage:            https://github.com/ChrisPenner/rasa
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

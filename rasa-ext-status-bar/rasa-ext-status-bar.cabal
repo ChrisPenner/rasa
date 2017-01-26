@@ -1,9 +1,9 @@
 name:                rasa-ext-status-bar
-version:             0.1.2
+version:             0.1.3
 synopsis:            Rasa Ext for populating status-bar
 description:         Rasa Ext for populating status-status-bar
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

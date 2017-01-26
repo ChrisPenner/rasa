@@ -1,9 +1,9 @@
 name:                rasa-ext-cmd
-version:             0.1.1
+version:             0.1.2
 synopsis:            Rasa Ext for running commands
 description:         Rasa Ext for running commands
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             MIT
+license:             GPL-3.0
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com
