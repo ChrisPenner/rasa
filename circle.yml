@@ -1,21 +1,19 @@
 machine:
   ghc:
-    version: 7.10.2
-
+      version: 7.10.1
 dependencies:
-  cache_directories:
-    - "~/.stack"
-    - "~/.cabal"
-    - "~/.ghc"
-    - ".stack-work"
   pre:
-    - wget https://github.com/commercialhaskell/stack/releases/download/v0.1.2.0/stack-0.1.2.0-x86_64-linux.gz -O /tmp/stack.gz
-    - gunzip /tmp/stack.gz && chmod +x /tmp/stack
-    - sudo mv /tmp/stack /usr/bin/stack
+    - wget -q -O- https://s3.amazonaws.com/download.fpcomplete.com/ubuntu/fpco.key | sudo apt-key add -
+    - echo 'deb http://download.fpcomplete.com/ubuntu/precise stable main'|sudo tee /etc/apt/sources.list.d/fpco.list
+    - sudo apt-get update && sudo apt-get -y install stack
   override:
-    - stack setup
-    - stack build
+    - stack --version
+    - stack --install-ghc --no-terminal build --only-snapshot -j 1
+  cache_directories:
+    - ~/.stack
 
 test:
+  pre:
+    - stack build
   override:
     - stack test
