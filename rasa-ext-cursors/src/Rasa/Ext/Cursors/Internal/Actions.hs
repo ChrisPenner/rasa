@@ -68,9 +68,12 @@ findPrev pat = do
 findPrevFrom :: Y.YiString -> Coord -> BufAction Coord
 findPrevFrom pat c = do
   txt <- getText
-  let Offset o = c^.from (asCoord txt)
-      distance = txt ^. asText . before o . tillPrev (Y.toText pat) . to T.length .to negate
-  return ((Offset $ distance + o)^.asCoord txt)
+  let distance = txt ^. beforeC c . asText . tillPrev (Y.toText pat) . from asText . to sizeOf
+  return (c - distance)
+
+  -- let Offset o = c^.from (asCoord txt)
+      -- distance = txt ^. asText . before o . tillPrev (Y.toText pat) . to T.length .to negate
+  -- return ((Offset $ distance + o)^.asCoord txt)
 
 -- | Move all ranges by the given number of columns
 moveRangesByN :: Int -> BufAction ()
