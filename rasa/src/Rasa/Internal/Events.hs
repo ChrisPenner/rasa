@@ -44,16 +44,15 @@ data BufAdded = BufAdded BufRef deriving (Show, Eq, Typeable)
 -- | This event is dispatched in response to keyboard key presses. It contains both
 -- the char that was pressed and any modifiers ('Mod') that where held when the key was pressed.
 data Keypress
-  = Keypress Char
-             [Mod]
-  | KEsc
-  | KBS
-  | KEnter
+  = Keypress Char [Mod]
+  | KEsc     [Mod]
+  | KBS      [Mod]
+  | KEnter   [Mod]
+  | KLeft    [Mod]
+  | KRight   [Mod]
+  | KUp      [Mod]
+  | KDown    [Mod]
   | KUnknown
-  | KLeft
-  | KRight
-  | KUp
-  | KDown
   deriving (Show, Eq, Typeable)
 
 -- | This represents each modifier key that could be pressed along with a key.
@@ -68,4 +67,3 @@ data Mod
 data BufTextChanged
   = BufTextChanged CrdRange Y.YiString
   deriving (Show, Eq, Typeable)
-
