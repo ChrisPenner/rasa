@@ -22,13 +22,13 @@ convertEvent _ = KUnknown
 
 -- | Converts a 'V.Event' into a keypress if possible.
 convertKeypress :: V.Key -> [V.Modifier] -> Keypress
-convertKeypress V.KEnter _ = KEnter
-convertKeypress V.KBS _ = KBS
-convertKeypress V.KEsc _ = KEsc
-convertKeypress V.KLeft _ = KLeft
-convertKeypress V.KRight _ = KRight
-convertKeypress V.KUp _ = KUp
-convertKeypress V.KDown _ = KDown
+convertKeypress V.KEnter mods     = KEnter (fmap convertMod mods)
+convertKeypress V.KBS mods        = KBS (fmap convertMod mods)
+convertKeypress V.KEsc mods       = KEsc (fmap convertMod mods)
+convertKeypress V.KLeft mods      = KLeft (fmap convertMod mods)
+convertKeypress V.KRight mods     = KRight (fmap convertMod mods)
+convertKeypress V.KUp mods        = KUp (fmap convertMod mods)
+convertKeypress V.KDown mods      = KDown (fmap convertMod mods)
 convertKeypress (V.KChar c) mods  = Keypress c (fmap convertMod mods)
 convertKeypress _ _ = KUnknown
 
