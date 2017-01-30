@@ -79,15 +79,20 @@ setStatus = focusDo_ $ do
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()
 anyMode [Keypress 'c' [Ctrl]] = liftAction exit
+anyMode [KPageDown []] = liftAction $ scrollBy 14 -- Page down
+anyMode [KPageUp []] = liftAction $ scrollBy (-14) -- Page up
+anyMode [KHome []] = startOfLine
+anyMode [KEnd []] = endOfLine
 anyMode _ = return ()
 
 -- | Listeners for keypresses when in 'Insert' mode
 insert :: [Keypress] -> BufAction ()
-insert [KEsc _] = mode .= Normal
+insert [KEsc []] = mode .= Normal
 
-insert [KBS _] = moveRangesByN (-1) >> delete
-insert [KEnter _] = insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
-insert [Keypress c _] = insertText (Y.singleton c) >> moveRangesByN 1
+insert [KBS []] = moveRangesByN (-1) >> delete
+insert [KDel []] = delete
+insert [KEnter []] = insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
+insert [Keypress c []] = insertText (Y.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
 -- | Listeners for keypresses when in 'Normal' mode
@@ -113,10 +118,10 @@ normal [Keypress 'd' [Ctrl]] = liftAction $ scrollBy 7 -- Half-Page down
 normal [Keypress 'y' [Ctrl]] = liftAction $ scrollBy (-1) -- Scroll up
 normal [Keypress 'u' [Ctrl]] = liftAction $ scrollBy (-7) -- Half-Page up
 
-normal [KLeft _] = liftAction focusViewLeft
-normal [KRight _] = liftAction focusViewRight
-normal [KUp _] = liftAction focusViewAbove
-normal [KDown _] = liftAction focusViewBelow
+normal [KLeft []] = liftAction focusViewLeft
+normal [KRight []] = liftAction focusViewRight
+normal [KUp []] = liftAction focusViewAbove
+normal [KDown []] = liftAction focusViewBelow
 
 
 normal [Keypress 'G' []] = do
