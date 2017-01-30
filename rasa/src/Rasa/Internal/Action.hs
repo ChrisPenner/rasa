@@ -10,6 +10,7 @@ module Rasa.Internal.Action
   , runAction
   , evalAction
   , execAction
+  , bootstrapAction
   , ActionState
   , mkActionState
   , Listener(..)
@@ -122,6 +123,12 @@ evalAction actionState action = fst <$> runAction actionState action
 -- | Execs an Action into an IO
 execAction :: ActionState -> Action a -> IO ActionState
 execAction actionState action = snd <$> runAction actionState action
+
+-- | Spawn the channels necessary to run action and do so.
+bootstrapAction :: Action a -> IO a
+bootstrapAction action = do
+    (output, _) <- spawn unbounded
+    evalAction (mkActionState output) action
 
 -- | Interpret the Free Monad; in this case it interprets it down to an IO
 actionInterpreter :: ActionState -> Free (ActionF ActionState) r -> IO (r, ActionState)

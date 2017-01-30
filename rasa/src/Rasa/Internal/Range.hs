@@ -52,8 +52,11 @@ import qualified Yi.Rope as Y
 data Range a b = Range
   { _rStart :: a
   , _rEnd :: b
-  } deriving (Show, Eq)
+  } deriving (Eq)
 makeLenses ''Range
+
+instance (Show a, Show b) => Show (Range a b) where
+  show (Range a b) = "(Range (start " ++ show a ++ ") (end " ++ show b ++ "))"
 
 instance Bifunctor Range where
   bimap f g (Range a b) = Range (f a) (g b)
@@ -75,8 +78,11 @@ instance (Ord a, Ord b) => Ord (Range a b) where
 data Coord' a b = Coord 
   { _coordRow::a
   , _coordCol::b
-  } deriving (Show, Eq)
+  } deriving (Eq)
 makeLenses ''Coord'
+
+instance (Show a, Show b) => Show (Coord' a b) where
+  show (Coord a b) = "(Coord (row " ++ show a ++ ") (col " ++ show b ++ "))"
 
 -- | A type alias to 'Coord'' which specializes the types to integers.
 type Coord = Coord' Int Int
