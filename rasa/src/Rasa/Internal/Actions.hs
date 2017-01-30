@@ -15,19 +15,11 @@ module Rasa.Internal.Actions
   , getBuffer
   , nextBufRef
   , prevBufRef
-
-  -- * Buffer Actions
-  , overRange
-  , replaceRange
-  , deleteRange
-  , insertAt
-  , sizeOf
   ) where
 
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.BufAction
-import Rasa.Internal.Range
 import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Buffer as B
@@ -116,20 +108,3 @@ prevBufRef br@(BufRef bufInt) = do
 
 exit :: Action ()
 exit = exiting .= True
-
--- | Runs function over given range of text
-overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()
-overRange r f = getRange r >>= setRange r . f
-
--- | Deletes the text in the given range from the buffer.
-deleteRange :: CrdRange -> BufAction ()
-deleteRange r = replaceRange r ""
-
--- | Replaces the text in the given range with the given text.
-replaceRange :: CrdRange -> Y.YiString -> BufAction ()
-replaceRange r txt = overRange r (const txt)
-
--- | Inserts text into the buffer at the given 'Coord'.
-insertAt :: Coord -> Y.YiString -> BufAction ()
-insertAt c = replaceRange r
-  where r = Range c c
