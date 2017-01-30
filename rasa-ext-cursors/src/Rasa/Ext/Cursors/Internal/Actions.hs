@@ -10,7 +10,6 @@ module Rasa.Ext.Cursors.Internal.Actions
   ) where
 
 import qualified Yi.Rope as Y
-import qualified Data.Text as T
 
 import Control.Lens
 import Control.Lens.Text

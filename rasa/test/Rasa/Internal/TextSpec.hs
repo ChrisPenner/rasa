@@ -2,8 +2,8 @@ module Rasa.Internal.TextSpec where
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Test.QuickCheck.Instances
-import ArbitraryInstances
+import Test.QuickCheck.Instances ()
+import ArbitraryInstances ()
 
 import Rasa.Internal.Text
 

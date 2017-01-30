@@ -2,13 +2,10 @@ module Rasa.Internal.RangeSpec where
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Test.QuickCheck.Instances
-import ArbitraryInstances
+import Test.QuickCheck.Instances ()
+import ArbitraryInstances ()
 
 import Rasa.Internal.Range
-
-import qualified Yi.Rope as Y
-import Control.Lens
 
 spec :: Spec
 spec = do

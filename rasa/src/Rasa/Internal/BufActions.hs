@@ -1,3 +1,4 @@
+{-# language OverloadedStrings #-}
 module Rasa.Internal.BufActions
   ( overRange
   , replaceRange

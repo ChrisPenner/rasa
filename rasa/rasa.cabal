@@ -103,6 +103,7 @@ test-suite rasa-test
                      , Rasa.Internal.ActionsSpec
                      , Rasa.Internal.AsyncSpec
                      , Rasa.Internal.BufActionSpec
+                     , Rasa.Internal.BufActionsSpec
                      , Rasa.Internal.BufferSpec
                      , Rasa.Internal.EditorSpec
                      , Rasa.Internal.EventsSpec
