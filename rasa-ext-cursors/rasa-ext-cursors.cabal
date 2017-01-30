@@ -3,7 +3,7 @@ version:             0.1.5
 synopsis:            Rasa Ext adding cursor(s)
 description:         Rasa Ext adding cursor(s)
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             GPL-3.0
+license:             GPL-3
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com

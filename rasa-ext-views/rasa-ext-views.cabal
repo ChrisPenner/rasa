@@ -3,7 +3,7 @@ version:             0.1.3
 synopsis:            Rasa Ext managing rendering views
 description:         Rasa Ext managing rendering views
 homepage:            https://github.com/ChrisPenner/rasa/
-license:             GPL-3.0
+license:             GPL-3
 license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com
