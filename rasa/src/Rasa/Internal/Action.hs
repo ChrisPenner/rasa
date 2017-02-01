@@ -37,7 +37,7 @@ import Pipes.Concurrent hiding (Buffer)
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
 data Listener = forall a. Listener ListenerId (a -> Action ())
 
--- | An opaque reverence to a specific registered event-listener. 
+-- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
 data ListenerId =
   ListenerId Int TypeRep
@@ -114,7 +114,7 @@ instance MonadIO Action where
 
 -- | Runs an Action into an IO
 runAction :: ActionState -> Action a -> IO (a, ActionState)
-runAction actionState (Action actionF) = actionInterpreter actionState actionF
+runAction actionState (Action actionF) = flip runStateT actionState $ actionInterpreter actionF
 
 -- | Evals an Action into an IO
 evalAction :: ActionState -> Action a -> IO a
@@ -131,14 +131,13 @@ bootstrapAction action = do
     evalAction (mkActionState output) action
 
 -- | Interpret the Free Monad; in this case it interprets it down to an IO
-actionInterpreter :: ActionState -> Free (ActionF ActionState) r -> IO (r, ActionState)
-actionInterpreter actionState (Free actionF) =
+actionInterpreter :: Free (ActionF ActionState) r -> StateT ActionState IO r
+actionInterpreter (Free actionF) =
   case actionF of
-    (LiftState stateFunc) -> 
-      let (next, newState) = stateFunc actionState
-       in actionInterpreter newState next
+    (LiftState stateFunc) ->
+      state stateFunc >>= actionInterpreter
 
     (LiftIO ioNext) ->
-      ioNext >>= actionInterpreter actionState
+      liftIO ioNext >>= actionInterpreter
 
-actionInterpreter actionState (Pure res) = return (res, actionState)
+actionInterpreter (Pure res) = return res
