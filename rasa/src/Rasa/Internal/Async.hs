@@ -45,8 +45,8 @@ import Data.Typeable
 -- > myAction :: Action ()
 -- > myAction = onInit $ asyncEventProvider myTimer
 
-asyncEventProvider :: (Dispatcher -> IO ()) -> Action ()
-asyncEventProvider eventProvidingIO = undefined -- do
+-- asyncEventProvider :: (Dispatcher -> IO ()) -> Action ()
+-- asyncEventProvider eventProvidingIO = undefined -- do
   -- out <- use actionQueue
   -- liftIO $ void . forkIO $ eventProvidingIO (dispatchAction out . dispatchEvent)
 
@@ -63,8 +63,8 @@ type Dispatcher = forall a. Typeable a => a -> IO ()
 --
 -- Use this function when you have some long-running process which dispatches multiple 'Action's.
 
-asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
-asyncActionProvider actionProvidingIO = undefined -- do
+-- asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
+-- asyncActionProvider actionProvidingIO = undefined -- do
   -- out <- use actionQueue
   -- liftIO $ void . forkIO $ actionProvidingIO (dispatchAction out)
 

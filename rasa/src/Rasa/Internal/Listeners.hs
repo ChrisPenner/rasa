@@ -72,7 +72,8 @@ onEveryTrigger_ = void . onEveryTrigger
 
 -- | This acts as 'onEveryTrigger' but listens only for the first event of a given type.
 onNextEvent :: forall a b. Typeable a => (a -> Action b) -> Action ()
-onNextEvent listenerFunc = undefined -- do
+onNextEvent = void . addListener
+-- do
   -- (listenerId, listener) <- makeListener listenerFunc
   -- let selfCancellingListener = extendListener listener (removeListener listenerId)
   -- listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [selfCancellingListener]

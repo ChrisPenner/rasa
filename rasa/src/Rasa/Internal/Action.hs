@@ -2,7 +2,7 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , GeneralizedNewtypeDeriving
-  , Rank2Types
+  , RankNTypes
   , ExistentialQuantification
   , ScopedTypeVariables
   , TemplateHaskell #-}
@@ -13,6 +13,8 @@ module Rasa.Internal.Action
   , dispatchEvent
   , dispatchEventAsync
   , dispatchActionAsync
+  , asyncActionProvider
+  , asyncEventProvider
   , runAction
   , evalAction
   , execAction
@@ -35,10 +37,13 @@ import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
 
+import Data.Foldable
 import Data.Default
-import Data.Map
 import Data.Typeable
+import qualified Data.Map as M
 
+import Unsafe.Coerce
+import Pipes hiding (Proxy, next)
 import Pipes.Concurrent hiding (Buffer)
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
@@ -53,7 +58,7 @@ instance Eq ListenerId where
   ListenerId a _ == ListenerId b _ = a == b
 
 -- | A map of Event types to a list of listeners for that event
-type Listeners = Map TypeRep [Listener]
+type Listeners = M.Map TypeRep [Listener]
 
 -- | Free Monad Actions for Action
 data ActionF state next =
@@ -61,8 +66,9 @@ data ActionF state next =
   | LiftIO (IO next)
   | forall event r. Typeable event => AddListener (event -> Action r) (ListenerId -> next)
   | RemoveListener ListenerId next
-  | forall event. DispatchEvent event next
+  | forall event. Typeable event => DispatchEvent event next
   | DispatchActionAsync (IO (Action ())) next
+  | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
 
 instance Functor (ActionF s) where
   fmap f (LiftState stateF) = LiftState (first f <$> stateF)
@@ -71,6 +77,7 @@ instance Functor (ActionF s) where
   fmap f (RemoveListener listenerId next) = RemoveListener listenerId $ f next
   fmap f (DispatchEvent event next) = DispatchEvent event (f next)
   fmap f (DispatchActionAsync ioAction next) = DispatchActionAsync ioAction (f next)
+  fmap f (AsyncActionProvider actionProvider next) = AsyncActionProvider actionProvider (f next)
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
@@ -125,11 +132,11 @@ liftFIO :: IO r -> Action r
 liftFIO = liftActionF . LiftIO
 
 -- | Dispatches an Event
-dispatchEvent :: event -> Action ()
+dispatchEvent :: Typeable event => event -> Action ()
 dispatchEvent event = liftActionF $ DispatchEvent event ()
 
 -- | Dispatches an Event asyncronously
-dispatchEventAsync :: IO event -> Action ()
+dispatchEventAsync :: Typeable event => IO event -> Action ()
 dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$> ioEvent) ()
 
 -- | Dispatches an Action asyncronously
@@ -143,6 +150,15 @@ addListener listener = liftActionF $ AddListener listener id
 -- | Adds a new listener
 removeListener :: ListenerId -> Action ()
 removeListener listenerId = liftActionF $ RemoveListener listenerId ()
+
+-- | Adds a new async action provider
+asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
+asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncActionProv ()
+
+-- | Adds a new async event provider
+asyncEventProvider :: forall event. Typeable event => ((event -> IO ()) -> IO ()) -> Action ()
+asyncEventProvider asyncEventProv = liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
+  where toAction = lmap dispatchEvent
 
 instance (MonadState Editor) Action where
   state = liftState
@@ -187,10 +203,48 @@ actionInterpreter (Free actionF) =
                 prox = typeRep (Proxy :: Proxy event)
              in (list, listId, prox)
           (listener, listenerId, eventType) = mkListener listenerF
-      listeners %= insertWith mappend eventType [listener]
+      listeners %= M.insertWith mappend eventType [listener]
       actionInterpreter $ withListenerId listenerId
 
+    (RemoveListener idA@(ListenerId _ eventType) next) -> do
+      listeners.at eventType._Just %= filter listenerMatches
+      actionInterpreter next
+        where
+          listenerMatches (Listener idB _) = idA /= idB
+
+    (DispatchEvent evt next) -> do
+      listeners' <- use listeners
+      let (Action action) = traverse_ ($ evt) (matchingListeners listeners')
+      actionInterpreter (action >> next)
+
+    (DispatchActionAsync asyncActionIO next) -> do
+      asyncQueue <- use actionQueue
+      let effect = (liftIO asyncActionIO >>= yield) >-> toOutput asyncQueue
+      liftIO $ void $ forkIO $ runEffect effect >> performGC
+      actionInterpreter next
+
+  -- | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
+    (AsyncActionProvider dispatcherToIO next) -> do
+      asyncQueue <- use actionQueue
+      let dispatcher action = 
+            let effect = yield action >-> toOutput asyncQueue
+             in void . forkIO $ runEffect effect >> performGC
+      liftIO $ dispatcherToIO dispatcher
+      actionInterpreter next
+
+
 actionInterpreter (Pure res) = return res
+
+
+-- | This extracts all event listeners from a map of listeners which match the type of the provided event.
+matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
+matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
+
+getListener :: forall a. Listener -> (a -> Action ())
+getListener = coerce
+  where
+    coerce :: Listener -> (a -> Action ())
+    coerce (Listener _ x) = unsafeCoerce x
 
 -- makeListener :: forall a b. Typeable a => (a -> Action b) -> Action (ListenerId, Listener)
 -- makeListener listenerFunc = do
