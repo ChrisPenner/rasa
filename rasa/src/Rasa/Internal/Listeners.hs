@@ -36,17 +36,15 @@ import Rasa.Internal.Range
 import Control.Lens
 import Control.Monad
 import Data.Dynamic
-import Data.Foldable
-import Data.Map hiding (filter)
 import Unsafe.Coerce
 import qualified Yi.Rope as Y
 
 -- | Use this to dispatch an event of any type, any listeners which are listening for this event will be triggered
 -- with the provided event. Use this within an Action.
-dispatchEvent :: Typeable a => a -> Action ()
-dispatchEvent evt = do
-  listeners' <- use listeners
-  traverse_ ($ evt) (matchingListeners listeners')
+-- dispatchEvent :: Typeable a => a -> Action ()
+-- dispatchEvent evt = do
+  -- listeners' <- use listeners
+  -- traverse_ ($ evt) (matchingListeners listeners')
 
 -- | This is a helper which extracts and coerces a listener from its wrapper back into the proper event handler type.
 getListener :: forall a. Listener -> (a -> Action ())
@@ -54,13 +52,6 @@ getListener = coerce
   where
     coerce :: Listener -> (a -> Action ())
     coerce (Listener _ x) = unsafeCoerce x
-
-makeListener :: forall a b. Typeable a => (a -> Action b) -> Action (ListenerId, Listener)
-makeListener listenerFunc = do
-  n <- nextListenerId <<+= 1
-  let listenerId = ListenerId n (typeRep (Proxy :: Proxy a))
-      listenerFunc' = void . listenerFunc
-  return (listenerId, Listener listenerId listenerFunc')
 
 extendListener :: Listener -> Action () -> Listener
 extendListener (Listener listenerId listenerFunc) act = Listener listenerId (\a -> listenerFunc a >> act)
@@ -73,28 +64,18 @@ matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :
 --
 -- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
 -- It returns an ID which may be used with 'removeListener' to cancel the listener
-onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
-onEveryTrigger listenerFunc = do
-  (listenerId, listener) <- makeListener listenerFunc
-  listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [listener]
-  return listenerId
+onEveryTrigger :: Typeable event => (event -> Action b) -> Action ListenerId
+onEveryTrigger = addListener
 
-onEveryTrigger_ :: forall a b. Typeable a => (a -> Action b) -> Action ()
+onEveryTrigger_ :: Typeable event => (event -> Action b) -> Action ()
 onEveryTrigger_ = void . onEveryTrigger
 
 -- | This acts as 'onEveryTrigger' but listens only for the first event of a given type.
 onNextEvent :: forall a b. Typeable a => (a -> Action b) -> Action ()
-onNextEvent listenerFunc = do
-  (listenerId, listener) <- makeListener listenerFunc
-  let selfCancellingListener = extendListener listener (removeListener listenerId)
-  listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [selfCancellingListener]
-
--- | This removes a listener and prevents it from responding to any more events.
-removeListener :: ListenerId -> Action ()
-removeListener hkIdA@(ListenerId _ typ) =
-  listeners.at typ._Just %= filter listenerMatches
-    where
-      listenerMatches (Listener hkIdB _) = hkIdA /= hkIdB
+onNextEvent listenerFunc = undefined -- do
+  -- (listenerId, listener) <- makeListener listenerFunc
+  -- let selfCancellingListener = extendListener listener (removeListener listenerId)
+  -- listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [selfCancellingListener]
 
 -- | Registers an action to be performed during the Initialization phase.
 --

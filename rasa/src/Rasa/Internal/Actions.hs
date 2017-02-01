@@ -20,7 +20,6 @@ module Rasa.Internal.Actions
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.BufAction
-import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Buffer as B
 

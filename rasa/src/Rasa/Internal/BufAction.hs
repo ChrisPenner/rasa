@@ -3,6 +3,7 @@
   , FlexibleInstances
   , GeneralizedNewtypeDeriving
   , Rank2Types
+  , ExistentialQuantification
   , TemplateHaskell #-}
 module Rasa.Internal.BufAction
   ( BufAction(..)
@@ -19,7 +20,6 @@ import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Range
-import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 
@@ -33,7 +33,7 @@ import qualified Yi.Rope as Y
 -- We keep the full ActionState here too so that 'Action's may be lifted inside a 'BufAction'
 data BufActionState = BufActionState
   { _buffer' :: Buffer
-  , _actionState :: ActionState
+  , _ed :: Editor
   }
 makeLenses ''BufActionState
 
@@ -45,9 +45,13 @@ data BufActionF state next =
       GetText (Y.YiString -> next)
     | SetText Y.YiString next
     | SetRange CrdRange Y.YiString next
+    | forall r. LiftAction (Action r) (r -> next)
     | LiftState (state -> (next, state))
     | LiftIO (IO next)
-  deriving (Functor)
+
+instance Functor (BufActionF state) where
+  fmap f (GetText next) = GetText (f <$> next)
+  fmap f (GetText next) = GetText (f <$> next)
 
 -- | Embeds a BufActionF type into the BufAction Monad
 liftBufAction :: BufActionF BufActionState a -> BufAction a
@@ -100,13 +104,9 @@ instance MonadIO BufAction where
 
 -- | This lifts up an 'Action' to be run inside a 'BufAction'
 liftAction :: Action r -> BufAction r
-liftAction action = do
-  actState <- use actionState
-  (res, endState) <- liftIO $ runAction actState action
-  actionState .= endState
-  return res
+liftAction action = liftBufAction $ LiftAction action id
 
-bufAt :: BufRef -> Traversal' ActionState Buffer
+bufAt :: HasEditor e => BufRef -> Traversal' e Buffer
 bufAt (BufRef bufInd) = buffers.at bufInd._Just
 
 -- | This lifts up a bufAction into an Action which performs the 'BufAction'
@@ -119,8 +119,8 @@ bufActionInterpreter :: BufRef -> Free (BufActionF BufActionState) r -> Action (
 bufActionInterpreter bRef (Free bufActionF) =
   case bufActionF of
     (GetText nextF) -> do
-      actState <- get
-      case actState^? bufAt bRef of
+      mBuf <- preuse (bufAt bRef)
+      case mBuf of
         Nothing -> return Nothing
         Just buf -> bufActionInterpreter bRef (nextF (buf^.text))
 

@@ -4,9 +4,15 @@
   , GeneralizedNewtypeDeriving
   , Rank2Types
   , ExistentialQuantification
+  , ScopedTypeVariables
   , TemplateHaskell #-}
 module Rasa.Internal.Action
   ( Action(..)
+  , addListener
+  , removeListener
+  , dispatchEvent
+  , dispatchEventAsync
+  , dispatchActionAsync
   , runAction
   , evalAction
   , execAction
@@ -24,6 +30,7 @@ module Rasa.Internal.Action
 import Rasa.Internal.Editor
 import Rasa.Internal.Extensions
 
+import Control.Arrow
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
@@ -52,7 +59,18 @@ type Listeners = Map TypeRep [Listener]
 data ActionF state next =
   LiftState (state -> (next, state))
   | LiftIO (IO next)
-  deriving (Functor)
+  | forall event r. Typeable event => AddListener (event -> Action r) (ListenerId -> next)
+  | RemoveListener ListenerId next
+  | forall event. DispatchEvent event next
+  | DispatchActionAsync (IO (Action ())) next
+
+instance Functor (ActionF s) where
+  fmap f (LiftState stateF) = LiftState (first f <$> stateF)
+  fmap f (LiftIO ioNext) = LiftIO $ f <$> ioNext
+  fmap f (AddListener listener next) = AddListener listener $ f <$> next
+  fmap f (RemoveListener listenerId next) = RemoveListener listenerId $ f next
+  fmap f (DispatchEvent event next) = DispatchEvent event (f next)
+  fmap f (DispatchActionAsync ioAction next) = DispatchActionAsync ioAction (f next)
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
@@ -65,7 +83,7 @@ data ActionF state next =
 --      * Embed buffer actions using 'Rasa.Internal.Actions.bufDo' or 'Rasa.Internal.Actions.buffersDo'
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the "Rasa.Internal.Actions" module.
 newtype Action a = Action
-  { getAction :: Free (ActionF ActionState) a
+  { getAction :: Free (ActionF Editor) a
   } deriving (Functor, Applicative, Monad)
 
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
@@ -95,18 +113,38 @@ instance HasExts ActionState where
   exts = ed.exts
 
 -- | Embeds a ActionF type into the Action Monad
-liftActionF :: ActionF ActionState a -> Action a
+liftActionF :: ActionF Editor a -> Action a
 liftActionF = Action . liftF
 
 -- | Allows running state actions over ActionState; used to lift mtl state functions
-liftState :: (ActionState -> (a, ActionState)) -> Action a
+liftState :: (Editor -> (a, Editor)) -> Action a
 liftState = liftActionF . LiftState
 
 -- | Allows running IO in BufAction.
 liftFIO :: IO r -> Action r
 liftFIO = liftActionF . LiftIO
 
-instance (MonadState ActionState) Action where
+-- | Dispatches an Event
+dispatchEvent :: event -> Action ()
+dispatchEvent event = liftActionF $ DispatchEvent event ()
+
+-- | Dispatches an Event asyncronously
+dispatchEventAsync :: IO event -> Action ()
+dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$> ioEvent) ()
+
+-- | Dispatches an Action asyncronously
+dispatchActionAsync :: IO (Action ()) -> Action ()
+dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
+
+-- | Adds a new listener
+addListener :: Typeable event => (event -> Action r) -> Action ListenerId
+addListener listener = liftActionF $ AddListener listener id
+
+-- | Adds a new listener
+removeListener :: ListenerId -> Action ()
+removeListener listenerId = liftActionF $ RemoveListener listenerId ()
+
+instance (MonadState Editor) Action where
   state = liftState
 
 instance MonadIO Action where
@@ -131,13 +169,105 @@ bootstrapAction action = do
     evalAction (mkActionState output) action
 
 -- | Interpret the Free Monad; in this case it interprets it down to an IO
-actionInterpreter :: Free (ActionF ActionState) r -> StateT ActionState IO r
+actionInterpreter :: Free (ActionF Editor) r -> StateT ActionState IO r
 actionInterpreter (Free actionF) =
   case actionF of
     (LiftState stateFunc) ->
-      state stateFunc >>= actionInterpreter
+      zoom ed (state stateFunc) >>= actionInterpreter
 
     (LiftIO ioNext) ->
       liftIO ioNext >>= actionInterpreter
 
+    (AddListener listenerF withListenerId) -> do
+      n <- nextListenerId <<+= 1
+      let mkListener :: forall event r. Typeable event => (event -> Action r) -> (Listener, ListenerId, TypeRep)
+          mkListener listenerFunc = 
+            let list = Listener listId (void . listenerFunc)
+                listId = ListenerId n (typeRep (Proxy :: Proxy event))
+                prox = typeRep (Proxy :: Proxy event)
+             in (list, listId, prox)
+          (listener, listenerId, eventType) = mkListener listenerF
+      listeners %= insertWith mappend eventType [listener]
+      actionInterpreter $ withListenerId listenerId
+
 actionInterpreter (Pure res) = return res
+
+-- makeListener :: forall a b. Typeable a => (a -> Action b) -> Action (ListenerId, Listener)
+-- makeListener listenerFunc = do
+--   n <- nextListenerId <<+= 1
+--   let listenerId = ListenerId n (typeRep (Proxy :: Proxy a))
+--       listenerFunc' = void . listenerFunc
+--   return (listenerId, Listener listenerId listenerFunc')
+
+-- | This registers an event listener, as long as the listener is well-typed similar to this:
+--
+-- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
+-- It returns an ID which may be used with 'removeListener' to cancel the listener
+-- onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
+-- onEveryTrigger listenerFunc = do
+--   (listenerId, listener) <- makeListener listenerFunc
+--   listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [listener]
+--   return listenerId
+
+
+-- | This removes a listener and prevents it from responding to any more events.
+-- removeListener :: ListenerId -> Action ()
+-- removeListener hkIdA@(ListenerId _ typ) =
+--   listeners.at typ._Just %= filter listenerMatches
+--     where
+--       listenerMatches (Listener hkIdB _) = hkIdA /= hkIdB
+
+
+-- | This function takes an IO which results in some Event, it runs the IO
+-- asynchronously and dispatches the event
+-- dispatchEventAsync :: Typeable a => IO a -> Action ()
+-- dispatchEventAsync getEventIO = do
+--   out <- use actionQueue
+--   liftIO $ void . forkIO $ do runEffect $ producer >-> toOutput out
+--                               performGC
+--   where
+--     producer :: Producer (Action ()) IO ()
+--     producer = do
+--           evt <- lift getEventIO
+--           yield (dispatchEvent evt)
+
+
+-- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
+-- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
+-- an Action, note that the context in which the second action is executed is
+-- NOT the same context in which dispatchActionAsync is called; it is likely that text and
+-- other state have changed while the IO executed, so it's a good idea to check
+-- (inside the applying Action) that things are in a good state before making
+-- changes. Here's an example:
+--
+-- > asyncCapitalize :: Action ()
+-- > asyncCapitalize = do
+-- >   txt <- focusDo $ use text
+-- >   -- We give dispatchActionAsync an IO which resolves in an action
+-- >   dispatchActionAsync $ ioPart txt
+-- >
+-- > ioPart :: Text -> IO (Action ())
+-- > ioPart txt = do
+-- >   result <- longAsyncronousCapitalizationProgram txt
+-- >   -- Note that this returns an Action, but it's still wrapped in IO
+-- >   return $ maybeApplyResult txt result
+-- >
+-- > maybeApplyResult :: Text -> Text -> Action ()
+-- > maybeApplyResult oldTxt capitalized = do
+-- >   -- We get the current buffer's text, which may have changed since we started
+-- >   newTxt <- focusDo (use text)
+-- >   if newTxt == oldTxt
+-- >     -- If the text is the same as it was, we can apply the transformation
+-- >     then focusDo (text .= capitalized)
+-- >     -- Otherwise we can choose to re-queue the whole action and try again
+-- >     -- Or we could just give up.
+-- >     else asyncCapitalize
+
+-- dispatchActionAsync ::  IO (Action ()) -> Action ()
+-- dispatchActionAsync asyncIO = do
+--   queue <- use actionQueue
+--   liftIO $ void $ forkIO $ do runEffect $ producer >-> toOutput queue
+--                               performGC
+--   where producer = do
+--           action <- lift asyncIO
+--           yield action
