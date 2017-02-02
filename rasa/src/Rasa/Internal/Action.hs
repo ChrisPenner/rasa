@@ -60,20 +60,16 @@ instance Eq ListenerId where
 -- | A map of Event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
-
--- TODO remove state from ActionF and replace LiftState with one over ExtMap
 -- | Free Monad Actions for Action
-data ActionF state next =
-  LiftState (state -> (next, state))
-  | LiftIO (IO next)
+data ActionF next =
+    LiftIO (IO next)
   | forall event r. Typeable event => AddListener (event -> Action r) (ListenerId -> next)
   | RemoveListener ListenerId next
   | forall event. Typeable event => DispatchEvent event next
   | DispatchActionAsync (IO (Action ())) next
   | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
 
-instance Functor (ActionF s) where
-  fmap f (LiftState stateF) = LiftState (first f <$> stateF)
+instance Functor ActionF where
   fmap f (LiftIO ioNext) = LiftIO $ f <$> ioNext
   fmap f (AddListener listener next) = AddListener listener $ f <$> next
   fmap f (RemoveListener listenerId next) = RemoveListener listenerId $ f next
@@ -92,7 +88,7 @@ instance Functor (ActionF s) where
 --      * Embed buffer actions using 'Rasa.Internal.Actions.bufDo' or 'Rasa.Internal.Actions.buffersDo'
 --      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the "Rasa.Internal.Actions" module.
 newtype Action a = Action
-  { getAction :: Free (ActionF Editor) a
+  { getAction :: Free ActionF a
   } deriving (Functor, Applicative, Monad)
 
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
@@ -122,12 +118,8 @@ instance HasExts ActionState where
   exts = ed.exts
 
 -- | Embeds a ActionF type into the Action Monad
-liftActionF :: ActionF Editor a -> Action a
+liftActionF :: ActionF a -> Action a
 liftActionF = Action . liftF
-
--- | Allows running state actions over ActionState; used to lift mtl state functions
-liftState :: (Editor -> (a, Editor)) -> Action a
-liftState = liftActionF . LiftState
 
 -- | Allows running IO in BufAction.
 liftFIO :: IO r -> Action r
@@ -192,9 +184,6 @@ asyncEventProvider :: forall event. Typeable event => ((event -> IO ()) -> IO ()
 asyncEventProvider asyncEventProv = liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
   where toAction = lmap dispatchEvent
 
-instance (MonadState Editor) Action where
-  state = liftState
-
 instance MonadIO Action where
   liftIO = liftFIO
 
@@ -217,12 +206,9 @@ bootstrapAction action = do
     evalAction (mkActionState output) action
 
 -- | Interpret the Free Monad; in this case it interprets it down to an IO
-actionInterpreter :: Free (ActionF Editor) r -> StateT ActionState IO r
+actionInterpreter :: Free ActionF r -> StateT ActionState IO r
 actionInterpreter (Free actionF) =
   case actionF of
-    (LiftState stateFunc) ->
-      zoom ed (state stateFunc) >>= actionInterpreter
-
     (LiftIO ioNext) ->
       liftIO ioNext >>= actionInterpreter
 

@@ -104,7 +104,7 @@ newtype BufAction a = BufAction
   { getBufAction :: Free BufActionF a
   } deriving (Functor, Applicative, Monad)
 
-newtype BufExts = BufExts 
+newtype BufExts = BufExts
   { _bExts :: ExtMap
   }
 makeLenses ''BufExts
@@ -124,41 +124,34 @@ bufAt (BufRef bufInd) = buffers.at bufInd._Just
 
 -- | This lifts up a bufAction into an Action which performs the 'BufAction'
 -- over the referenced buffer and returns the result (if the buffer existed)
-runBufAction :: BufAction a -> BufRef -> Action (Maybe a)
-runBufAction (BufAction bufActF) = flip bufActionInterpreter bufActF
+runBufAction :: BufAction a -> StateT Buffer Action a
+runBufAction (BufAction bufActF) = bufActionInterpreter bufActF
 
 -- | Interpret the Free Monad; in this case it interprets it down to an Action.
-bufActionInterpreter :: BufRef -> Free BufActionF r -> Action (Maybe r)
-bufActionInterpreter bRef (Free bufActionF) =
+bufActionInterpreter :: Free BufActionF r -> StateT Buffer Action r
+bufActionInterpreter (Free bufActionF) =
   case bufActionF of
-    (GetText nextF) -> do
-      mBuf <- preuse (bufAt bRef)
-      case mBuf of
-        Nothing -> return Nothing
-        Just buf -> bufActionInterpreter bRef (nextF (buf^.text))
+    (GetText nextF) -> use text >>= bufActionInterpreter . nextF
 
     (SetText newText next) -> do
-      bufAt bRef.text .= newText
-      bufActionInterpreter bRef next
+      text .= newText
+      bufActionInterpreter next
 
     (SetRange rng newText next) -> do
-      bufAt bRef.text.range rng .= newText
-      dispatchEvent $ BufTextChanged rng newText
-      bufActionInterpreter bRef next
+      text.range rng .= newText
+      lift . dispatchEvent $ BufTextChanged rng newText
+      bufActionInterpreter next
 
-    (LiftAction act toNext) -> act >>= bufActionInterpreter bRef . toNext
+    (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
 
-    (GetBufExt extToNext) -> do
-      mBuf <- preuse (bufAt bRef)
-      case mBuf of
-        Nothing -> return Nothing
-        Just buf -> bufActionInterpreter bRef (extToNext (buf^.bufExt))
+    (GetBufExt extToNext) ->
+      use bufExt >>= bufActionInterpreter . extToNext
 
     (SetBufExt new next) -> do
-      bufAt bRef.bufExt .= new
-      bufActionInterpreter bRef next
+      bufExt .= new
+      bufActionInterpreter next
 
     (LiftIO ioNext) ->
-      liftIO ioNext >>= bufActionInterpreter bRef
+      liftIO ioNext >>= bufActionInterpreter
 
-bufActionInterpreter _ (Pure res) = return $ Just res
+bufActionInterpreter (Pure res) = return res
