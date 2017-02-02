@@ -23,6 +23,7 @@ import Rasa.Internal.Range
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 
+import Control.Arrow
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
@@ -51,7 +52,11 @@ data BufActionF state next =
 
 instance Functor (BufActionF state) where
   fmap f (GetText next) = GetText (f <$> next)
-  fmap f (GetText next) = GetText (f <$> next)
+  fmap f (SetText txt next) = SetText txt (f next)
+  fmap f (SetRange rng txt next) = SetRange rng txt (f next)
+  fmap f (LiftAction act toNext) = LiftAction act (f <$> toNext)
+  fmap f (LiftState stateF) = LiftState (first f <$> stateF)
+  fmap f (LiftIO ioNext) = LiftIO (f <$> ioNext)
 
 -- | Embeds a BufActionF type into the BufAction Monad
 liftBufAction :: BufActionF BufActionState a -> BufAction a
@@ -132,6 +137,8 @@ bufActionInterpreter bRef (Free bufActionF) =
       bufAt bRef.text.range rng .= newText
       dispatchEvent $ BufTextChanged rng newText
       bufActionInterpreter bRef next
+
+    (LiftAction act toNext) -> act >>= bufActionInterpreter bRef . toNext
 
     (LiftState stateFunc) -> do
       mBuf <- preuse (bufAt bRef)

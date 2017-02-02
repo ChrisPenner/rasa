@@ -29,6 +29,7 @@ module Rasa.Internal.Action
   , actionQueue
   ) where
 
+import Rasa.Internal.Events
 import Rasa.Internal.Editor
 import Rasa.Internal.Extensions
 
@@ -223,15 +224,13 @@ actionInterpreter (Free actionF) =
       liftIO $ void $ forkIO $ runEffect effect >> performGC
       actionInterpreter next
 
-  -- | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
     (AsyncActionProvider dispatcherToIO next) -> do
       asyncQueue <- use actionQueue
       let dispatcher action = 
             let effect = yield action >-> toOutput asyncQueue
              in void . forkIO $ runEffect effect >> performGC
-      liftIO $ dispatcherToIO dispatcher
+      liftIO $ void $ forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
-
 
 actionInterpreter (Pure res) = return res
 

@@ -27,11 +27,14 @@ import Pipes.Parse
 -- >   slate
 
 rasa :: Action () -> IO ()
-rasa initilize = do
+rasa initialize = do
   (output, input) <- spawn unbounded
   evalAction (mkActionState output) $ do
-    initilize
+    liftIO $ writeFile "welp.logs" "Start\n"
+    initialize
+    liftIO $ appendFile "welp.logs" "Init'd\n"
     dispatchEvent Init
+    liftIO $ appendFile "welp.logs" "After dispatch\n"
     eventLoop $ fromInput input
     dispatchEvent Exit
 
@@ -44,7 +47,9 @@ eventLoop producer = do
   dispatchEvent OnRender
   dispatchEvent AfterRender
   dispatchEvent BeforeEvent
+  liftIO $ appendFile "welp.logs" "Before event \n"
   (mAction, nextProducer) <- liftIO $ runStateT draw producer
+  liftIO $ appendFile "welp.logs" "Before Action \n"
   fromMaybe (return ()) mAction
   isExiting <- use exiting
   unless isExiting $ eventLoop nextProducer
