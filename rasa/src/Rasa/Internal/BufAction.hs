@@ -36,7 +36,7 @@ import Data.Typeable
 import qualified Yi.Rope as Y
 
 -- | Free Monad Actions for BufAction
-data BufActionF state next =
+data BufActionF next =
       GetText (Y.YiString -> next)
     | SetText Y.YiString next
     | forall ext. (Typeable ext, Show ext, Default ext) => GetBufExt (ext -> next)
@@ -46,7 +46,7 @@ data BufActionF state next =
     | LiftState (BufExts -> (next, BufExts))
     | LiftIO (IO next)
 
-instance Functor (BufActionF state) where
+instance Functor BufActionF where
   fmap f (GetText next) = GetText (f <$> next)
   fmap f (SetText txt next) = SetText txt (f next)
   fmap f (GetBufExt extToNext) = GetBufExt (f <$> extToNext)
@@ -57,7 +57,7 @@ instance Functor (BufActionF state) where
   fmap f (LiftIO ioNext) = LiftIO (f <$> ioNext)
 
 -- | Embeds a BufActionF type into the BufAction Monad
-liftBufAction :: BufActionF Buffer a -> BufAction a
+liftBufAction :: BufActionF a -> BufAction a
 liftBufAction = BufAction . liftF
 
 -- | Returns the text of the current buffer
@@ -108,7 +108,7 @@ liftFIO = liftBufAction . LiftIO
 --      * Access/edit buffer extensions; see 'bufExt'
 --      * Embed and sequence 'BufAction's from other extensions
 newtype BufAction a = BufAction
-  { getBufAction :: Free (BufActionF Buffer) a
+  { getBufAction :: Free BufActionF a
   } deriving (Functor, Applicative, Monad)
 
 newtype BufExts = BufExts 
@@ -138,7 +138,7 @@ runBufAction :: BufAction a -> BufRef -> Action (Maybe a)
 runBufAction (BufAction bufActF) = flip bufActionInterpreter bufActF
 
 -- | Interpret the Free Monad; in this case it interprets it down to an Action.
-bufActionInterpreter :: BufRef -> Free (BufActionF Buffer) r -> Action (Maybe r)
+bufActionInterpreter :: BufRef -> Free BufActionF r -> Action (Maybe r)
 bufActionInterpreter bRef (Free bufActionF) =
   case bufActionF of
     (GetText nextF) -> do
