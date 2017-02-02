@@ -14,12 +14,17 @@ module Rasa.Internal.ActionMonads
   , Listener(..)
   , Listeners
   , ListenerId(..)
+  , liftActionF
+  , liftBufAction
+  , dispatchEvent
   ) where
 
 import Rasa.Internal.Editor
+import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
 import Control.Monad.Free
+import Control.Monad.IO.Class
 
 import Data.Default
 import Data.Typeable
@@ -53,6 +58,12 @@ data ActionF next =
   | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
   | AddBuffer (BufRef -> next)
   | GetBufRefs ([BufRef] -> next)
+  | forall ext. (Typeable ext, Show ext, Default ext) => GetExt (ext -> next)
+  | forall ext. (Typeable ext, Show ext, Default ext) => SetExt ext next
+  | GetEditor (Editor -> next)
+  | GetBuffer BufRef (Maybe Buffer -> next)
+  | Exit next
+  | ShouldExit (Bool -> next)
 
 instance Functor ActionF where
   fmap f (LiftIO ioNext) = LiftIO $ f <$> ioNext
@@ -64,6 +75,27 @@ instance Functor ActionF where
   fmap f (AsyncActionProvider actionProvider next) = AsyncActionProvider actionProvider (f next)
   fmap f (AddBuffer toNext) = AddBuffer (f <$> toNext)
   fmap f (GetBufRefs toNext) = GetBufRefs (f <$> toNext)
+  fmap f (GetExt extToNext) = GetExt (f <$> extToNext)
+  fmap f (SetExt newExt next) = SetExt newExt (f next)
+  fmap f (GetEditor toNext) = GetEditor (f <$> toNext)
+  fmap f (GetBuffer bufRef toNext) = GetBuffer bufRef (f <$> toNext)
+  fmap f (Exit next) = Exit (f next)
+  fmap f (ShouldExit toNext) = ShouldExit (f <$> toNext)
+
+-- | Embeds a ActionF type into the Action Monad
+liftActionF :: ActionF a -> Action a
+liftActionF = Action . liftF
+
+-- | Allows running IO in BufAction.
+liftFIO :: IO r -> Action r
+liftFIO = liftActionF . LiftIO
+
+instance MonadIO Action where
+  liftIO = liftFIO
+
+-- | Dispatches an Event
+dispatchEvent :: Typeable event => event -> Action ()
+dispatchEvent event = liftActionF $ DispatchEvent event ()
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
@@ -112,3 +144,14 @@ instance Functor BufActionF where
 newtype BufAction a = BufAction
   { getBufAction :: Free BufActionF a
   } deriving (Functor, Applicative, Monad)
+
+-- | Embeds a BufActionF type into the BufAction Monad
+liftBufAction :: BufActionF a -> BufAction a
+liftBufAction = BufAction . liftF
+
+-- | Allows running IO in BufAction.
+liftBufActionFIO :: IO r -> BufAction r
+liftBufActionFIO = liftBufAction . BufLiftIO
+
+instance MonadIO BufAction where
+  liftIO = liftBufActionFIO

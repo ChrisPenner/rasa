@@ -53,6 +53,7 @@ library
   exposed-modules:     Rasa
                        Rasa.Ext
                        Rasa.Testing
+                       Rasa.Internal.ActionMonads
                        Rasa.Internal.Action
                        Rasa.Internal.Actions
                        Rasa.Internal.Async

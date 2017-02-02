@@ -21,13 +21,9 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.BufAction
 import Rasa.Internal.Events
-import Rasa.Internal.Buffer as B
 
-import Control.Lens
 import Control.Monad
-import Control.Arrow (first)
 import Data.Maybe
-import Data.IntMap as M
 import qualified Yi.Rope as Y
 
 
@@ -74,31 +70,17 @@ newBuffer txt = do
 
 -- | Gets 'BufRef' that comes after the one provided
 nextBufRef :: BufRef -> Action BufRef
-nextBufRef br@(BufRef bufInt) = do
-  bufMap <- use buffers
-  if M.null bufMap
-     then return br
-     else do
-       let mGreaterInd = lookupGT bufInt bufMap
-       case mGreaterInd of
-         Just (greaterInd, _) -> return $ BufRef greaterInd
-         Nothing -> return . BufRef . fst . findMin $ bufMap
+nextBufRef br = do
+  bufRefs <- getBufRefs
+  return $ if null bufRefs
+              then br
+              else fromMaybe (head bufRefs) $ listToMaybe $ filter (>br) bufRefs
 
 -- | Gets 'BufRef' that comes before the one provided
 prevBufRef :: BufRef -> Action BufRef
-prevBufRef br@(BufRef bufInt) = do
-  bufMap <- use buffers
-  if M.null bufMap
-     then return br
-     else do
-       let mLesserInd = lookupLT bufInt bufMap
-       case mLesserInd of
-         Just (lesserInd, _) -> return $ BufRef lesserInd
-         Nothing -> return . BufRef . fst . findMax $ bufMap
+prevBufRef br = do
+  bufRefs <- getBufRefs
+  return $ if null bufRefs
+              then br
+              else fromMaybe (head bufRefs) $ listToMaybe $ filter (<br) bufRefs
 
--- | This signals to the editor that you'd like to shutdown. The current events
--- will finish processing, then the 'Rasa.Internal.Listeners.onExit' event will be dispatched,
--- then the editor will exit.
-
-exit :: Action ()
-exit = exiting .= True

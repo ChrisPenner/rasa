@@ -13,7 +13,6 @@ module Rasa.Internal.Editor
   , HasEditor(..)
   , buffers
   , exiting
-  , nextBufId
   , BufRef(..)
   ) where
 
@@ -36,7 +35,6 @@ data Editor = Editor
   { _buffers' :: IntMap Buffer
   , _exiting' :: Bool
   , _extState' :: ExtMap
-  , _nextBufId' :: Int
   }
 makeLenses ''Editor
 
@@ -58,10 +56,6 @@ buffers = editor.buffers'
 exiting :: HasEditor e => Lens' e Bool
 exiting = editor.exiting'
 
--- | A lens over the next buffer id to be allocated
-nextBufId :: HasEditor e => Lens' e Int
-nextBufId = editor.nextBufId'
-
 instance HasEditor Editor where
   editor = lens id (flip const)
 
@@ -74,5 +68,4 @@ instance Default Editor where
     { _extState'=def
     , _buffers'=empty
     , _exiting'=False
-    , _nextBufId'=0
     }

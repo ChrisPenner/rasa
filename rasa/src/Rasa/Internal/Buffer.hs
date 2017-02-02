@@ -20,6 +20,7 @@ import Rasa.Internal.Extensions
 
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
+import Data.Default
 import Data.Map
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
@@ -28,6 +29,9 @@ data Buffer = Buffer
   , _bufExts' :: ExtMap
   }
 makeLenses ''Buffer
+
+instance Default Buffer where
+  def = Buffer def def
 
 instance HasBufExts Buffer where
   bufExts = bufExts'

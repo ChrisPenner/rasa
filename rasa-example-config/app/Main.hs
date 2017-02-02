@@ -19,7 +19,7 @@ import Rasa.Ext.Slate
 
 main :: IO ()
 main = rasa $ do
-  views
+  viewports
   vim
   statusBar
   files

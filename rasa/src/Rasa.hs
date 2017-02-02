@@ -1,11 +1,9 @@
 {-# language ExistentialQuantification, Rank2Types, ScopedTypeVariables #-}
 module Rasa (rasa) where
 
-import Rasa.Internal.Editor
 import Rasa.Internal.Action
 import Rasa.Internal.Events
 
-import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Maybe
@@ -46,5 +44,5 @@ eventLoop producer = do
   dispatchEvent BeforeEvent
   (mAction, nextProducer) <- liftIO $ runStateT draw producer
   fromMaybe (return ()) mAction
-  isExiting <- use exiting
+  isExiting <- shouldExit
   unless isExiting $ eventLoop nextProducer

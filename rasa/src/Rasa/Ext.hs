@@ -41,6 +41,8 @@ module Rasa.Ext
   (
   -- * Editor Actions
     Action
+  , getBuffer
+  , getEditor
   , exit
 
   -- * Managing Buffers
@@ -48,8 +50,6 @@ module Rasa.Ext
   , nextBufRef
   , prevBufRef
   , getBufRefs
-  , getBuffers
-  , getBuffer
 
   -- * Working with Buffers
   , Buffer
@@ -110,6 +110,9 @@ module Rasa.Ext
   -- typically need to do this unless you're doing something complicated.
   , HasExts(..)
   , ext
+  , getExt
+  , setExt
+  , overExt
   , HasBufExts
   , bufExt
   , getBufExt

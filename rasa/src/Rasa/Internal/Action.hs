@@ -18,6 +18,13 @@ module Rasa.Internal.Action
   , bufferDo
   , addBuffer
   , getBufRefs
+  , getExt
+  , setExt
+  , overExt
+  , exit
+  , shouldExit
+  , getBuffer
+  , getEditor
   , runAction
   , evalAction
   , execAction
@@ -33,18 +40,21 @@ module Rasa.Internal.Action
   ) where
 
 import Rasa.Internal.ActionMonads
+import Rasa.Internal.BufAction
 import Rasa.Internal.Editor
+import Rasa.Internal.Buffer
 import Rasa.Internal.Extensions
 
-import Control.Arrow
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
 
 import Data.Foldable
 import Data.Default
+import Data.Maybe
 import Data.Typeable
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 
 import Unsafe.Coerce
 import Pipes hiding (Proxy, next)
@@ -55,6 +65,7 @@ data ActionState = ActionState
   { _ed :: Editor
   , _listeners :: Listeners
   , _nextListenerId :: Int
+  , _nextBufId :: Int
   , _actionQueue :: Output (Action ())
   }
 makeLenses ''ActionState
@@ -67,6 +78,7 @@ mkActionState out = ActionState
     { _ed=def
     , _listeners=def
     , _nextListenerId=0
+    , _nextBufId=0
     , _actionQueue=out
     }
 
@@ -75,18 +87,6 @@ instance HasEditor ActionState where
 
 instance HasExts ActionState where
   exts = ed.exts
-
--- | Embeds a ActionF type into the Action Monad
-liftActionF :: ActionF a -> Action a
-liftActionF = Action . liftF
-
--- | Allows running IO in BufAction.
-liftFIO :: IO r -> Action r
-liftFIO = liftActionF . LiftIO
-
--- | Dispatches an Event
-dispatchEvent :: Typeable event => event -> Action ()
-dispatchEvent event = liftActionF $ DispatchEvent event ()
 
 -- | This function takes an IO which results in some Event, it runs the IO
 -- asynchronously and dispatches the event
@@ -153,8 +153,34 @@ addBuffer = liftActionF $ AddBuffer id
 getBufRefs :: Action [BufRef]
 getBufRefs = liftActionF $ GetBufRefs id
 
-instance MonadIO Action where
-  liftIO = liftFIO
+-- | Retrieve some extension state
+getExt :: forall ext. (Typeable ext, Show ext, Default ext) => Action ext
+getExt = liftActionF $ GetExt id
+
+-- | Set some extension state
+setExt :: forall ext. (Typeable ext, Show ext, Default ext) => ext -> Action ()
+setExt newExt = liftActionF $ SetExt newExt ()
+
+-- | Set some extension state
+overExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> Action ()
+overExt f = getExt >>= setExt . f
+
+-- | Retrieve the entire editor state. This is read-only for logging/rendering/debugging purposes only.
+getEditor :: Action Editor
+getEditor = liftActionF $ GetEditor id
+
+-- | Retrieve a buffer. This is read-only for logging/rendering/debugging purposes only.
+getBuffer :: BufRef -> Action (Maybe Buffer)
+getBuffer bufRef = liftActionF $ GetBuffer bufRef id
+
+-- | This signals to the editor that you'd like to shutdown. The current events
+-- will finish processing, then the 'Rasa.Internal.Listeners.onExit' event will be dispatched,
+-- then the editor will exit.
+exit :: Action ()
+exit = liftActionF $ Exit ()
+
+shouldExit :: Action Bool
+shouldExit = liftActionF $ ShouldExit id
 
 -- | Runs an Action into an IO
 runAction :: ActionState -> Action a -> IO (a, ActionState)
@@ -181,12 +207,20 @@ actionInterpreter (Free actionF) =
     (LiftIO ioNext) ->
       liftIO ioNext >>= actionInterpreter
 
-    (BufferDo bufRefs bufAct toNext) -> undefined
+    (BufferDo bufRefs bufAct toNext) -> do
+      results <- forM bufRefs $ \(BufRef bInd) ->
+        use (buffers.at bInd) >>= traverse (handleBuf bInd)
+      actionInterpreter . toNext $ catMaybes results
+        where handleBuf bIndex buf = do
+                let Action act = runBufAction bufAct buf
+                (res, newBuffer) <- actionInterpreter act
+                buffers.at bIndex ?= newBuffer
+                return res
 
     (AddListener listenerF withListenerId) -> do
       n <- nextListenerId <<+= 1
       let mkListener :: forall event r. Typeable event => (event -> Action r) -> (Listener, ListenerId, TypeRep)
-          mkListener listenerFunc = 
+          mkListener listenerFunc =
             let list = Listener listId (void . listenerFunc)
                 listId = ListenerId n (typeRep (Proxy :: Proxy event))
                 prox = typeRep (Proxy :: Proxy event)
@@ -214,21 +248,42 @@ actionInterpreter (Free actionF) =
 
     (AsyncActionProvider dispatcherToIO next) -> do
       asyncQueue <- use actionQueue
-      let dispatcher action = 
+      let dispatcher action =
             let effect = yield action >-> toOutput asyncQueue
              in void . forkIO $ runEffect effect >> performGC
       liftIO $ void $ forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
 
-  -- buffers %= insert n (mkBuffer txt)
-  -- let bufRef = BufRef n
-  -- dispatchEvent (BufAdded bufRef)
-  -- return bufRef
+    (AddBuffer toNext) -> do
+      bufId <- nextBufId <+= 1
+      buffers.at bufId ?= def
+      actionInterpreter . toNext $ BufRef bufId
 
--- getBufRefs = fmap BufRef <$> use (buffers.to keys)
+    (GetBufRefs toNext) ->
+      use (buffers.to IM.keys) >>= actionInterpreter . toNext . fmap BufRef
+
+    (GetExt toNext) ->
+      use ext >>= actionInterpreter . toNext
+
+    (SetExt new next) -> do
+      ext .= new
+      actionInterpreter next
+
+    (GetEditor toNext) ->
+      use ed >>= actionInterpreter . toNext
+
+    (GetBuffer (BufRef bufInd) toNext) ->
+      use (buffers.at bufInd) >>= actionInterpreter . toNext
+
+    (Exit next) -> do
+      exiting .= True
+      actionInterpreter next
+
+    (ShouldExit toNext) -> do
+      ex <- use exiting
+      actionInterpreter (toNext ex)
 
 actionInterpreter (Pure res) = return res
-
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
 matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]

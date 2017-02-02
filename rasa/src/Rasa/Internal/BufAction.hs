@@ -21,8 +21,6 @@ module Rasa.Internal.BufAction
 
 import Rasa.Internal.ActionMonads
 import Rasa.Internal.Buffer
-import Rasa.Internal.Editor
-import Rasa.Internal.Action
 import Rasa.Internal.Range
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
@@ -34,10 +32,6 @@ import Data.Default
 import Data.Typeable
 
 import qualified Yi.Rope as Y
-
--- | Embeds a BufActionF type into the BufAction Monad
-liftBufAction :: BufActionF a -> BufAction a
-liftBufAction = BufAction . liftF
 
 -- | Returns the text of the current buffer
 getText :: BufAction Y.YiString
@@ -67,10 +61,6 @@ setBufExt newExt = liftBufAction $ SetBufExt newExt ()
 overBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
 overBufExt f = getBufExt >>= setBufExt . f
 
--- | Allows running IO in BufAction.
-liftFIO :: IO r -> BufAction r
-liftFIO = liftBufAction . BufLiftIO
-
 newtype BufExts = BufExts
   { _bExts :: ExtMap
   }
@@ -79,20 +69,14 @@ makeLenses ''BufExts
 instance HasBufExts BufExts where
   bufExts = bExts
 
-instance MonadIO BufAction where
-  liftIO = liftFIO
-
 -- | This lifts up an 'Action' to be run inside a 'BufAction'
 liftAction :: Action r -> BufAction r
 liftAction action = liftBufAction $ LiftAction action id
 
-bufAt :: HasEditor e => BufRef -> Traversal' e Buffer
-bufAt (BufRef bufInd) = buffers.at bufInd._Just
-
 -- | This lifts up a bufAction into an Action which performs the 'BufAction'
 -- over the referenced buffer and returns the result (if the buffer existed)
-runBufAction :: BufAction a -> StateT Buffer Action a
-runBufAction (BufAction bufActF) = bufActionInterpreter bufActF
+runBufAction :: BufAction a -> Buffer -> Action (a, Buffer)
+runBufAction (BufAction bufActF) buf = flip runStateT buf $ bufActionInterpreter bufActF
 
 -- | Interpret the Free Monad; in this case it interprets it down to an Action.
 bufActionInterpreter :: Free BufActionF r -> StateT Buffer Action r

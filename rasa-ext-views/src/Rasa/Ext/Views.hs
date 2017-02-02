@@ -1,5 +1,5 @@
 module Rasa.Ext.Views
-  ( views
+  ( viewports
   , getBufferViews
   , bufRef
   , splitRule
@@ -24,7 +24,6 @@ module Rasa.Ext.Views
   , SplitRule(..)
   , Window
   , Split(..)
-  , Views(..)
   , View(..)
   , BiTree(..)
   , BiTreeF(..)
