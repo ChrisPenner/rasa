@@ -82,5 +82,5 @@ prevBufRef br = do
   bufRefs <- getBufRefs
   return $ if null bufRefs
               then br
-              else fromMaybe (head bufRefs) $ listToMaybe $ filter (<br) bufRefs
+              else fromMaybe (last bufRefs) $ listToMaybe $ filter (<br) bufRefs
 
