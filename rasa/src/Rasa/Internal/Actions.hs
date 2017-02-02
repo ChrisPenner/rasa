@@ -34,7 +34,7 @@ import qualified Yi.Rope as Y
 buffersDo :: BufAction a -> Action [a]
 buffersDo bufAct = do
   bufRefs <- getBufRefs
-  bufferDo bufRefs bufAct 
+  bufferDo bufRefs bufAct
 
 buffersDo_ :: BufAction a -> Action ()
 buffersDo_ = void . buffersDo
@@ -55,18 +55,6 @@ newBuffer txt = do
   bufferDo [bufRef] (setText txt)
   dispatchEvent (BufAdded bufRef)
   return bufRef
-
--- | Returns the 'Buffer' for a BufRef if it still exists.
--- This is read-only; altering the buffer has no effect on the stored buffer.
--- This function is useful for renderers.
--- getBuffer :: BufRef -> Action (Maybe Buffer)
--- getBuffer (BufRef bufInt) = use (buffers.at bufInt)
-
--- | Returns an up-to-date list of all 'Buffer's, returned values
--- are read-only; altering them has no effect on the actual stored buffers.
--- This function is useful for renderers.
--- getBuffers :: Action [(BufRef, Buffer)]
--- getBuffers = fmap (first BufRef) <$> use (buffers.to assocs)
 
 -- | Gets 'BufRef' that comes after the one provided
 nextBufRef :: BufRef -> Action BufRef

@@ -1,10 +1,5 @@
 {-# language DeriveFunctor
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , GeneralizedNewtypeDeriving
-  , Rank2Types
   , ExistentialQuantification
-  , TemplateHaskell
 #-}
 module Rasa.Internal.BufAction
   ( BufAction(..)
@@ -60,14 +55,6 @@ setBufExt newExt = liftBufAction $ SetBufExt newExt ()
 -- | Set some buffer extension state
 overBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
 overBufExt f = getBufExt >>= setBufExt . f
-
-newtype BufExts = BufExts
-  { _bExts :: ExtMap
-  }
-makeLenses ''BufExts
-
-instance HasBufExts BufExts where
-  bufExts = bExts
 
 -- | This lifts up an 'Action' to be run inside a 'BufAction'
 liftAction :: Action r -> BufAction r

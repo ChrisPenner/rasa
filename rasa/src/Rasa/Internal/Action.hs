@@ -5,7 +5,8 @@
   , RankNTypes
   , ExistentialQuantification
   , ScopedTypeVariables
-  , TemplateHaskell #-}
+  , TemplateHaskell
+#-}
 module Rasa.Internal.Action
   ( Action(..)
   , addListener
@@ -103,7 +104,7 @@ dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$
 --
 -- > asyncCapitalize :: Action ()
 -- > asyncCapitalize = do
--- >   txt <- focusDo $ use text
+-- >   txt <- focusDo getText
 -- >   -- We give dispatchActionAsync an IO which resolves in an action
 -- >   dispatchActionAsync $ ioPart txt
 -- >
@@ -116,10 +117,10 @@ dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$
 -- > maybeApplyResult :: Text -> Text -> Action ()
 -- > maybeApplyResult oldTxt capitalized = do
 -- >   -- We get the current buffer's text, which may have changed since we started
--- >   newTxt <- focusDo (use text)
+-- >   newTxt <- focusDo getText
 -- >   if newTxt == oldTxt
 -- >     -- If the text is the same as it was, we can apply the transformation
--- >     then focusDo (text .= capitalized)
+-- >     then focusDo (setText capitalized)
 -- >     -- Otherwise we can choose to re-queue the whole action and try again
 -- >     -- Or we could just give up.
 -- >     else asyncCapitalize
@@ -140,8 +141,9 @@ asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncAct
 
 -- | Adds a new async event provider
 asyncEventProvider :: forall event. Typeable event => ((event -> IO ()) -> IO ()) -> Action ()
-asyncEventProvider asyncEventProv = liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
-  where toAction = lmap dispatchEvent
+asyncEventProvider asyncEventProv =
+  liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
+    where toAction = lmap dispatchEvent
 
 bufferDo :: [BufRef] -> BufAction r -> Action [r]
 bufferDo bufRefs bufAct = liftActionF $ BufferDo bufRefs bufAct id
@@ -219,21 +221,22 @@ actionInterpreter (Free actionF) =
 
     (AddListener listenerF withListenerId) -> do
       n <- nextListenerId <<+= 1
-      let mkListener :: forall event r. Typeable event => (event -> Action r) -> (Listener, ListenerId, TypeRep)
-          mkListener listenerFunc =
+      let (listener, listenerId, eventType) = mkListener n listenerF
+      listeners %= M.insertWith mappend eventType [listener]
+      actionInterpreter $ withListenerId listenerId
+        where
+          mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+          mkListener n listenerFunc =
             let list = Listener listId (void . listenerFunc)
                 listId = ListenerId n (typeRep (Proxy :: Proxy event))
                 prox = typeRep (Proxy :: Proxy event)
              in (list, listId, prox)
-          (listener, listenerId, eventType) = mkListener listenerF
-      listeners %= M.insertWith mappend eventType [listener]
-      actionInterpreter $ withListenerId listenerId
 
-    (RemoveListener idA@(ListenerId _ eventType) next) -> do
-      listeners.at eventType._Just %= filter listenerMatches
+    (RemoveListener listenerId@(ListenerId _ eventType) next) -> do
+      listeners.at eventType._Just %= filter (notMatch listenerId)
       actionInterpreter next
         where
-          listenerMatches (Listener idB _) = idA /= idB
+          notMatch idA (Listener idB _) = idA /= idB
 
     (DispatchEvent evt next) -> do
       listeners' <- use listeners
@@ -243,7 +246,7 @@ actionInterpreter (Free actionF) =
     (DispatchActionAsync asyncActionIO next) -> do
       asyncQueue <- use actionQueue
       let effect = (liftIO asyncActionIO >>= yield) >-> toOutput asyncQueue
-      liftIO $ void $ forkIO $ runEffect effect >> performGC
+      liftIO $ forkIO $ runEffect effect >> performGC
       actionInterpreter next
 
     (AsyncActionProvider dispatcherToIO next) -> do
@@ -251,7 +254,7 @@ actionInterpreter (Free actionF) =
       let dispatcher action =
             let effect = yield action >-> toOutput asyncQueue
              in void . forkIO $ runEffect effect >> performGC
-      liftIO $ void $ forkIO $ dispatcherToIO dispatcher
+      liftIO . forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
 
     (AddBuffer toNext) -> do
