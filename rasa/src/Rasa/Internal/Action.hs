@@ -15,6 +15,9 @@ module Rasa.Internal.Action
   , dispatchActionAsync
   , asyncActionProvider
   , asyncEventProvider
+  , bufferDo
+  , addBuffer
+  , getBufRefs
   , runAction
   , evalAction
   , execAction
@@ -29,6 +32,7 @@ module Rasa.Internal.Action
   , actionQueue
   ) where
 
+import Rasa.Internal.ActionMonads
 import Rasa.Internal.Editor
 import Rasa.Internal.Extensions
 
@@ -45,51 +49,6 @@ import qualified Data.Map as M
 import Unsafe.Coerce
 import Pipes hiding (Proxy, next)
 import Pipes.Concurrent hiding (Buffer)
-
--- | A wrapper around event listeners so they can be stored in 'Listeners'.
-data Listener = forall a. Listener ListenerId (a -> Action ())
-
--- | An opaque reverence to a specific registered event-listener.
--- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
-data ListenerId =
-  ListenerId Int TypeRep
-
-instance Eq ListenerId where
-  ListenerId a _ == ListenerId b _ = a == b
-
--- | A map of Event types to a list of listeners for that event
-type Listeners = M.Map TypeRep [Listener]
-
--- | Free Monad Actions for Action
-data ActionF next =
-    LiftIO (IO next)
-  | forall event r. Typeable event => AddListener (event -> Action r) (ListenerId -> next)
-  | RemoveListener ListenerId next
-  | forall event. Typeable event => DispatchEvent event next
-  | DispatchActionAsync (IO (Action ())) next
-  | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
-
-instance Functor ActionF where
-  fmap f (LiftIO ioNext) = LiftIO $ f <$> ioNext
-  fmap f (AddListener listener next) = AddListener listener $ f <$> next
-  fmap f (RemoveListener listenerId next) = RemoveListener listenerId $ f next
-  fmap f (DispatchEvent event next) = DispatchEvent event (f next)
-  fmap f (DispatchActionAsync ioAction next) = DispatchActionAsync ioAction (f next)
-  fmap f (AsyncActionProvider actionProvider next) = AsyncActionProvider actionProvider (f next)
-
--- | This is a monad for performing actions against the editor.
--- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
---
--- Within an Action you can:
---
---      * Use liftIO for IO
---      * Access/edit extensions that are stored globally, see 'ext'
---      * Embed any 'Action's exported other extensions
---      * Embed buffer actions using 'Rasa.Internal.Actions.bufDo' or 'Rasa.Internal.Actions.buffersDo'
---      * Add\/Edit\/Focus buffers and a few other Editor-level things, see the "Rasa.Internal.Actions" module.
-newtype Action a = Action
-  { getAction :: Free ActionF a
-  } deriving (Functor, Applicative, Monad)
 
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
 data ActionState = ActionState
@@ -184,6 +143,16 @@ asyncEventProvider :: forall event. Typeable event => ((event -> IO ()) -> IO ()
 asyncEventProvider asyncEventProv = liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
   where toAction = lmap dispatchEvent
 
+bufferDo :: [BufRef] -> BufAction r -> Action [r]
+bufferDo bufRefs bufAct = liftActionF $ BufferDo bufRefs bufAct id
+
+addBuffer :: Action BufRef
+addBuffer = liftActionF $ AddBuffer id
+
+-- | Returns an up-to-date list of all 'BufRef's
+getBufRefs :: Action [BufRef]
+getBufRefs = liftActionF $ GetBufRefs id
+
 instance MonadIO Action where
   liftIO = liftFIO
 
@@ -211,6 +180,8 @@ actionInterpreter (Free actionF) =
   case actionF of
     (LiftIO ioNext) ->
       liftIO ioNext >>= actionInterpreter
+
+    (BufferDo bufRefs bufAct toNext) -> undefined
 
     (AddListener listenerF withListenerId) -> do
       n <- nextListenerId <<+= 1
@@ -248,6 +219,13 @@ actionInterpreter (Free actionF) =
              in void . forkIO $ runEffect effect >> performGC
       liftIO $ void $ forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
+
+  -- buffers %= insert n (mkBuffer txt)
+  -- let bufRef = BufRef n
+  -- dispatchEvent (BufAdded bufRef)
+  -- return bufRef
+
+-- getBufRefs = fmap BufRef <$> use (buffers.to keys)
 
 actionInterpreter (Pure res) = return res
 

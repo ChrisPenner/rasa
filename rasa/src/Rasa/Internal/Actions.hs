@@ -11,8 +11,8 @@ module Rasa.Internal.Actions
   , exit
   , newBuffer
   , getBufRefs
-  , getBuffers
-  , getBuffer
+  -- , getBuffers
+  -- , getBuffer
   , nextBufRef
   , prevBufRef
   ) where
@@ -38,7 +38,7 @@ import qualified Yi.Rope as Y
 buffersDo :: BufAction a -> Action [a]
 buffersDo bufAct = do
   bufRefs <- getBufRefs
-  catMaybes . foldMap (:[]) <$> mapM (runBufAction bufAct) bufRefs
+  bufferDo bufRefs bufAct 
 
 buffersDo_ :: BufAction a -> Action ()
 buffersDo_ = void . buffersDo
@@ -47,7 +47,7 @@ buffersDo_ = void . buffersDo
 -- performs the 'Rasa.Internal.Action.BufAction' on the buffer referred to by the 'BufRef'
 -- If the buffer referred to no longer exists this returns: @Nothing@.
 bufDo :: BufRef -> BufAction a -> Action (Maybe a)
-bufDo bufRef bufAct = runBufAction bufAct bufRef
+bufDo bufRef bufAct = listToMaybe <$> bufferDo [bufRef] bufAct
 
 bufDo_ :: BufRef -> BufAction a -> Action ()
 bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
@@ -55,27 +55,22 @@ bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
 -- | This adds a new buffer with the given text, returning a reference to that buffer.
 newBuffer :: Y.YiString -> Action BufRef
 newBuffer txt = do
-  n <- nextBufId <<+= 1
-  buffers %= insert n (mkBuffer txt)
-  let bufRef = BufRef n
+  bufRef <- addBuffer
+  bufferDo [bufRef] (setText txt)
   dispatchEvent (BufAdded bufRef)
   return bufRef
-
--- | Returns an up-to-date list of all 'BufRef's
-getBufRefs :: Action [BufRef]
-getBufRefs = fmap BufRef <$> use (buffers.to keys)
 
 -- | Returns the 'Buffer' for a BufRef if it still exists.
 -- This is read-only; altering the buffer has no effect on the stored buffer.
 -- This function is useful for renderers.
-getBuffer :: BufRef -> Action (Maybe Buffer)
-getBuffer (BufRef bufInt) = use (buffers.at bufInt)
+-- getBuffer :: BufRef -> Action (Maybe Buffer)
+-- getBuffer (BufRef bufInt) = use (buffers.at bufInt)
 
 -- | Returns an up-to-date list of all 'Buffer's, returned values
 -- are read-only; altering them has no effect on the actual stored buffers.
 -- This function is useful for renderers.
-getBuffers :: Action [(BufRef, Buffer)]
-getBuffers = fmap (first BufRef) <$> use (buffers.to assocs)
+-- getBuffers :: Action [(BufRef, Buffer)]
+-- getBuffers = fmap (first BufRef) <$> use (buffers.to assocs)
 
 -- | Gets 'BufRef' that comes after the one provided
 nextBufRef :: BufRef -> Action BufRef

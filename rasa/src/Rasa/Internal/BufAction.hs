@@ -19,6 +19,7 @@ module Rasa.Internal.BufAction
   , runBufAction
   ) where
 
+import Rasa.Internal.ActionMonads
 import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
@@ -33,25 +34,6 @@ import Data.Default
 import Data.Typeable
 
 import qualified Yi.Rope as Y
-
--- | Free Monad Actions for BufAction
-data BufActionF next =
-      GetText (Y.YiString -> next)
-    | SetText Y.YiString next
-    | forall ext. (Typeable ext, Show ext, Default ext) => GetBufExt (ext -> next)
-    | forall ext. (Typeable ext, Show ext, Default ext) => SetBufExt ext next
-    | SetRange CrdRange Y.YiString next
-    | forall r. LiftAction (Action r) (r -> next)
-    | LiftIO (IO next)
-
-instance Functor BufActionF where
-  fmap f (GetText next) = GetText (f <$> next)
-  fmap f (SetText txt next) = SetText txt (f next)
-  fmap f (GetBufExt extToNext) = GetBufExt (f <$> extToNext)
-  fmap f (SetBufExt newExt next) = SetBufExt newExt (f next)
-  fmap f (SetRange rng txt next) = SetRange rng txt (f next)
-  fmap f (LiftAction act toNext) = LiftAction act (f <$> toNext)
-  fmap f (LiftIO ioNext) = LiftIO (f <$> ioNext)
 
 -- | Embeds a BufActionF type into the BufAction Monad
 liftBufAction :: BufActionF a -> BufAction a
@@ -87,22 +69,7 @@ overBufExt f = getBufExt >>= setBufExt . f
 
 -- | Allows running IO in BufAction.
 liftFIO :: IO r -> BufAction r
-liftFIO = liftBufAction . LiftIO
-
--- | This is a monad for performing actions on a specific buffer.
--- You run 'BufAction's by embedding them in a 'Action' via 'Rasa.Internal.Actions.bufferDo' or
--- 'Rasa.Internal.Actions.buffersDo'
---
--- Within a BufAction you can:
---
---      * Use 'liftAction' to run an 'Action'
---      * Use liftIO for IO
---      * Access/Edit the buffer's text; some commands are available in "Rasa.Internal.Actions".
---      * Access/edit buffer extensions; see 'bufExt'
---      * Embed and sequence 'BufAction's from other extensions
-newtype BufAction a = BufAction
-  { getBufAction :: Free BufActionF a
-  } deriving (Functor, Applicative, Monad)
+liftFIO = liftBufAction . BufLiftIO
 
 newtype BufExts = BufExts
   { _bExts :: ExtMap
@@ -151,7 +118,7 @@ bufActionInterpreter (Free bufActionF) =
       bufExt .= new
       bufActionInterpreter next
 
-    (LiftIO ioNext) ->
+    (BufLiftIO ioNext) ->
       liftIO ioNext >>= bufActionInterpreter
 
 bufActionInterpreter (Pure res) = return res
