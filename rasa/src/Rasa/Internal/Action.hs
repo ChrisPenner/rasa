@@ -21,15 +21,14 @@ module Rasa.Internal.Action
   , bootstrapAction
   , ActionState
   , mkActionState
-  , Listener(..)
-  , ListenerId(..)
+  , Listener
+  , ListenerId
   , Listeners
   , listeners
   , nextListenerId
   , actionQueue
   ) where
 
-import Rasa.Internal.Events
 import Rasa.Internal.Editor
 import Rasa.Internal.Extensions
 
@@ -136,11 +135,41 @@ liftFIO = liftActionF . LiftIO
 dispatchEvent :: Typeable event => event -> Action ()
 dispatchEvent event = liftActionF $ DispatchEvent event ()
 
--- | Dispatches an Event asyncronously
+-- | This function takes an IO which results in some Event, it runs the IO
+-- asynchronously and dispatches the event
 dispatchEventAsync :: Typeable event => IO event -> Action ()
 dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$> ioEvent) ()
 
--- | Dispatches an Action asyncronously
+-- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
+-- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
+-- an Action, note that the context in which the second action is executed is
+-- NOT the same context in which dispatchActionAsync is called; it is likely that text and
+-- other state have changed while the IO executed, so it's a good idea to check
+-- (inside the applying Action) that things are in a good state before making
+-- changes. Here's an example:
+--
+-- > asyncCapitalize :: Action ()
+-- > asyncCapitalize = do
+-- >   txt <- focusDo $ use text
+-- >   -- We give dispatchActionAsync an IO which resolves in an action
+-- >   dispatchActionAsync $ ioPart txt
+-- >
+-- > ioPart :: Text -> IO (Action ())
+-- > ioPart txt = do
+-- >   result <- longAsyncronousCapitalizationProgram txt
+-- >   -- Note that this returns an Action, but it's still wrapped in IO
+-- >   return $ maybeApplyResult txt result
+-- >
+-- > maybeApplyResult :: Text -> Text -> Action ()
+-- > maybeApplyResult oldTxt capitalized = do
+-- >   -- We get the current buffer's text, which may have changed since we started
+-- >   newTxt <- focusDo (use text)
+-- >   if newTxt == oldTxt
+-- >     -- If the text is the same as it was, we can apply the transformation
+-- >     then focusDo (text .= capitalized)
+-- >     -- Otherwise we can choose to re-queue the whole action and try again
+-- >     -- Or we could just give up.
+-- >     else asyncCapitalize
 dispatchActionAsync :: IO (Action ()) -> Action ()
 dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 
@@ -148,7 +177,7 @@ dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 addListener :: Typeable event => (event -> Action r) -> Action ListenerId
 addListener listener = liftActionF $ AddListener listener id
 
--- | Adds a new listener
+-- | This removes a listener and prevents it from responding to any more events.
 removeListener :: ListenerId -> Action ()
 removeListener listenerId = liftActionF $ RemoveListener listenerId ()
 
@@ -244,83 +273,3 @@ getListener = coerce
   where
     coerce :: Listener -> (a -> Action ())
     coerce (Listener _ x) = unsafeCoerce x
-
--- makeListener :: forall a b. Typeable a => (a -> Action b) -> Action (ListenerId, Listener)
--- makeListener listenerFunc = do
---   n <- nextListenerId <<+= 1
---   let listenerId = ListenerId n (typeRep (Proxy :: Proxy a))
---       listenerFunc' = void . listenerFunc
---   return (listenerId, Listener listenerId listenerFunc')
-
--- | This registers an event listener, as long as the listener is well-typed similar to this:
---
--- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
--- It returns an ID which may be used with 'removeListener' to cancel the listener
--- onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
--- onEveryTrigger listenerFunc = do
---   (listenerId, listener) <- makeListener listenerFunc
---   listeners %= insertWith mappend (typeRep (Proxy :: Proxy a)) [listener]
---   return listenerId
-
-
--- | This removes a listener and prevents it from responding to any more events.
--- removeListener :: ListenerId -> Action ()
--- removeListener hkIdA@(ListenerId _ typ) =
---   listeners.at typ._Just %= filter listenerMatches
---     where
---       listenerMatches (Listener hkIdB _) = hkIdA /= hkIdB
-
-
--- | This function takes an IO which results in some Event, it runs the IO
--- asynchronously and dispatches the event
--- dispatchEventAsync :: Typeable a => IO a -> Action ()
--- dispatchEventAsync getEventIO = do
---   out <- use actionQueue
---   liftIO $ void . forkIO $ do runEffect $ producer >-> toOutput out
---                               performGC
---   where
---     producer :: Producer (Action ()) IO ()
---     producer = do
---           evt <- lift getEventIO
---           yield (dispatchEvent evt)
-
-
--- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
--- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
--- an Action, note that the context in which the second action is executed is
--- NOT the same context in which dispatchActionAsync is called; it is likely that text and
--- other state have changed while the IO executed, so it's a good idea to check
--- (inside the applying Action) that things are in a good state before making
--- changes. Here's an example:
---
--- > asyncCapitalize :: Action ()
--- > asyncCapitalize = do
--- >   txt <- focusDo $ use text
--- >   -- We give dispatchActionAsync an IO which resolves in an action
--- >   dispatchActionAsync $ ioPart txt
--- >
--- > ioPart :: Text -> IO (Action ())
--- > ioPart txt = do
--- >   result <- longAsyncronousCapitalizationProgram txt
--- >   -- Note that this returns an Action, but it's still wrapped in IO
--- >   return $ maybeApplyResult txt result
--- >
--- > maybeApplyResult :: Text -> Text -> Action ()
--- > maybeApplyResult oldTxt capitalized = do
--- >   -- We get the current buffer's text, which may have changed since we started
--- >   newTxt <- focusDo (use text)
--- >   if newTxt == oldTxt
--- >     -- If the text is the same as it was, we can apply the transformation
--- >     then focusDo (text .= capitalized)
--- >     -- Otherwise we can choose to re-queue the whole action and try again
--- >     -- Or we could just give up.
--- >     else asyncCapitalize
-
--- dispatchActionAsync ::  IO (Action ()) -> Action ()
--- dispatchActionAsync asyncIO = do
---   queue <- use actionQueue
---   liftIO $ void $ forkIO $ do runEffect $ producer >-> toOutput queue
---                               performGC
---   where producer = do
---           action <- lift asyncIO
---           yield action

@@ -34,7 +34,6 @@ import qualified Yi.Rope as Y
 -- We keep the full ActionState here too so that 'Action's may be lifted inside a 'BufAction'
 data BufActionState = BufActionState
   { _buffer' :: Buffer
-  , _ed :: Editor
   }
 makeLenses ''BufActionState
 
@@ -145,9 +144,7 @@ bufActionInterpreter bRef (Free bufActionF) =
       case mBuf of
         Nothing -> return Nothing
         Just buf -> do
-          actState <- get
-          let (next, BufActionState newBuf newActState) = stateFunc (BufActionState buf actState)
-          put newActState
+          let (next, BufActionState newBuf) = stateFunc (BufActionState buf)
           bufAt bRef .= newBuf
           bufActionInterpreter bRef next
 

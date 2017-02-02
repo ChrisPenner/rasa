@@ -122,23 +122,18 @@ module Rasa.Ext
   , dispatchEvent
   , onEveryTrigger
   , onEveryTrigger_
-  , onNextEvent
   , removeListener
 
   -- * Built-in Event Listeners
   , onInit
   , beforeEveryEvent
   , beforeEveryEvent_
-  , beforeNextEvent
   , beforeEveryRender
   , beforeEveryRender_
-  , beforeNextRender
   , onEveryRender
   , onEveryRender_
-  , onNextRender
   , afterEveryRender
   , afterEveryRender_
-  , afterNextRender
   , onExit
   , onBufAdded
   , onBufTextChanged
