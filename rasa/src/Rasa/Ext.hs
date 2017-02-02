@@ -110,8 +110,11 @@ module Rasa.Ext
   -- typically need to do this unless you're doing something complicated.
   , HasExts(..)
   , ext
-  , HasBufExts(..)
+  , HasBufExts
   , bufExt
+  , getBufExt
+  , setBufExt
+  , overBufExt
 
   -- * Events
   , Keypress(..)

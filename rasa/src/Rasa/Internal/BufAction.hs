@@ -4,14 +4,17 @@
   , GeneralizedNewtypeDeriving
   , Rank2Types
   , ExistentialQuantification
-  , TemplateHaskell #-}
+  , TemplateHaskell
+#-}
 module Rasa.Internal.BufAction
   ( BufAction(..)
   , getText
   , setText
   , getRange
   , setRange
-  , liftState
+  , getBufExt
+  , setBufExt
+  , overBufExt
   , liftAction
   , runBufAction
   ) where
@@ -27,38 +30,34 @@ import Control.Arrow
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
+import Data.Default
+import Data.Typeable
 
 import qualified Yi.Rope as Y
-
--- | Contains all data about the editor; as well as a buffer which is in 'focus'.
--- We keep the full ActionState here too so that 'Action's may be lifted inside a 'BufAction'
-data BufActionState = BufActionState
-  { _buffer' :: Buffer
-  }
-makeLenses ''BufActionState
-
-instance HasBufExts BufActionState where
-  bufExts = buffer'.bufExts
 
 -- | Free Monad Actions for BufAction
 data BufActionF state next =
       GetText (Y.YiString -> next)
     | SetText Y.YiString next
+    | forall ext. (Typeable ext, Show ext, Default ext) => GetBufExt (ext -> next)
+    | forall ext. (Typeable ext, Show ext, Default ext) => SetBufExt ext next
     | SetRange CrdRange Y.YiString next
     | forall r. LiftAction (Action r) (r -> next)
-    | LiftState (state -> (next, state))
+    | LiftState (BufExts -> (next, BufExts))
     | LiftIO (IO next)
 
 instance Functor (BufActionF state) where
   fmap f (GetText next) = GetText (f <$> next)
   fmap f (SetText txt next) = SetText txt (f next)
+  fmap f (GetBufExt extToNext) = GetBufExt (f <$> extToNext)
+  fmap f (SetBufExt newExt next) = SetBufExt newExt (f next)
   fmap f (SetRange rng txt next) = SetRange rng txt (f next)
   fmap f (LiftAction act toNext) = LiftAction act (f <$> toNext)
   fmap f (LiftState stateF) = LiftState (first f <$> stateF)
   fmap f (LiftIO ioNext) = LiftIO (f <$> ioNext)
 
 -- | Embeds a BufActionF type into the BufAction Monad
-liftBufAction :: BufActionF BufActionState a -> BufAction a
+liftBufAction :: BufActionF Buffer a -> BufAction a
 liftBufAction = BufAction . liftF
 
 -- | Returns the text of the current buffer
@@ -77,8 +76,20 @@ getRange rng = view (range rng) <$> getText
 setRange :: CrdRange -> Y.YiString -> BufAction ()
 setRange rng txt = liftBufAction $ SetRange rng txt ()
 
+-- | Retrieve some buffer extension state
+getBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => BufAction ext
+getBufExt = liftBufAction $ GetBufExt id
+
+-- | Set some buffer extension state
+setBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => ext -> BufAction ()
+setBufExt newExt = liftBufAction $ SetBufExt newExt ()
+
+-- | Set some buffer extension state
+overBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
+overBufExt f = getBufExt >>= setBufExt . f
+
 -- | Allows running state actions over BufActionState; used to lift mtl state functions
-liftState :: (BufActionState -> (a, BufActionState)) -> BufAction a
+liftState :: (BufExts -> (a, BufExts)) -> BufAction a
 liftState = liftBufAction . LiftState
 
 -- | Allows running IO in BufAction.
@@ -97,10 +108,18 @@ liftFIO = liftBufAction . LiftIO
 --      * Access/edit buffer extensions; see 'bufExt'
 --      * Embed and sequence 'BufAction's from other extensions
 newtype BufAction a = BufAction
-  { getBufAction :: Free (BufActionF BufActionState) a
+  { getBufAction :: Free (BufActionF Buffer) a
   } deriving (Functor, Applicative, Monad)
 
-instance (MonadState BufActionState) BufAction where
+newtype BufExts = BufExts 
+  { _bExts :: ExtMap
+  }
+makeLenses ''BufExts
+
+instance HasBufExts BufExts where
+  bufExts = bExts
+
+instance (MonadState BufExts) BufAction where
   state = liftState
 
 instance MonadIO BufAction where
@@ -119,7 +138,7 @@ runBufAction :: BufAction a -> BufRef -> Action (Maybe a)
 runBufAction (BufAction bufActF) = flip bufActionInterpreter bufActF
 
 -- | Interpret the Free Monad; in this case it interprets it down to an Action.
-bufActionInterpreter :: BufRef -> Free (BufActionF BufActionState) r -> Action (Maybe r)
+bufActionInterpreter :: BufRef -> Free (BufActionF Buffer) r -> Action (Maybe r)
 bufActionInterpreter bRef (Free bufActionF) =
   case bufActionF of
     (GetText nextF) -> do
@@ -139,13 +158,19 @@ bufActionInterpreter bRef (Free bufActionF) =
 
     (LiftAction act toNext) -> act >>= bufActionInterpreter bRef . toNext
 
+    (GetBufExt extToNext) -> do
+      mBuf <- preuse (bufAt bRef)
+      case mBuf of
+        Nothing -> return Nothing
+        Just buf -> bufActionInterpreter bRef (extToNext (buf^.bufExt))
+
     (LiftState stateFunc) -> do
       mBuf <- preuse (bufAt bRef)
       case mBuf of
         Nothing -> return Nothing
         Just buf -> do
-          let (next, BufActionState newBuf) = stateFunc (BufActionState buf)
-          bufAt bRef .= newBuf
+          let (next, BufExts newBufExts) = stateFunc (BufExts $ buf^.bufExts)
+          bufAt bRef.bufExts .= newBufExts
           bufActionInterpreter bRef next
 
     (LiftIO ioNext) ->
