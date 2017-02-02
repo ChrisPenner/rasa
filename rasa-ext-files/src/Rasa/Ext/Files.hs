@@ -6,7 +6,6 @@ module Rasa.Ext.Files
   ) where
 
 import qualified Data.Text.IO as TIO
-import Control.Lens
 import System.Environment
 
 import Data.Foldable
@@ -22,19 +21,15 @@ import Rasa.Ext.Views
 import Rasa.Ext.Cmd
 import Rasa.Ext.StatusBar
 
-data FileInfo = FileInfo
-  { _filename :: Maybe Y.YiString
-  } deriving (Typeable, Show, Eq)
-
-makeLenses ''FileInfo
+data FileInfo =
+  FileInfo (Maybe Y.YiString)
+  deriving (Typeable, Show, Eq)
 
 instance Default FileInfo where
-  def = FileInfo {
-  _filename=Nothing
-}
+  def = FileInfo Nothing
 
 files :: Action ()
-files = do 
+files = do
   beforeEveryRender_ showFilename
   onInit $ do
     loadFiles
@@ -42,7 +37,7 @@ files = do
 
 showFilename :: Action ()
 showFilename = focusDo_ $ do
-  mName <- use $ bufExt.filename
+  FileInfo mName <- getBufExt
   traverse_ (leftStatus . disp) mName
       where disp name = "<" <> name <> ">"
 
@@ -51,13 +46,13 @@ saveAs fName = getText >>= liftIO . TIO.writeFile (Y.toString fName) . Y.toText
 
 save :: BufAction ()
 save = do
-  mName <- use $ bufExt.filename
+  FileInfo mName <- getBufExt
   case mName of
     Just fName -> saveAs fName
     Nothing -> return ()
 
 setFilename :: Y.YiString -> BufAction ()
-setFilename fname = bufExt.filename ?= fname
+setFilename fname = setBufExt $ FileInfo (Just fname)
 
 addFile :: Y.YiString -> Y.YiString -> Action ()
 addFile fname txt = do

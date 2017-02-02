@@ -60,6 +60,8 @@ instance Eq ListenerId where
 -- | A map of Event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
+
+-- TODO remove state from ActionF and replace LiftState with one over ExtMap
 -- | Free Monad Actions for Action
 data ActionF state next =
   LiftState (state -> (next, state))

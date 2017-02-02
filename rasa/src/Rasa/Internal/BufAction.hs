@@ -26,7 +26,6 @@ import Rasa.Internal.Range
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 
-import Control.Arrow
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
@@ -43,7 +42,6 @@ data BufActionF next =
     | forall ext. (Typeable ext, Show ext, Default ext) => SetBufExt ext next
     | SetRange CrdRange Y.YiString next
     | forall r. LiftAction (Action r) (r -> next)
-    | LiftState (BufExts -> (next, BufExts))
     | LiftIO (IO next)
 
 instance Functor BufActionF where
@@ -53,7 +51,6 @@ instance Functor BufActionF where
   fmap f (SetBufExt newExt next) = SetBufExt newExt (f next)
   fmap f (SetRange rng txt next) = SetRange rng txt (f next)
   fmap f (LiftAction act toNext) = LiftAction act (f <$> toNext)
-  fmap f (LiftState stateF) = LiftState (first f <$> stateF)
   fmap f (LiftIO ioNext) = LiftIO (f <$> ioNext)
 
 -- | Embeds a BufActionF type into the BufAction Monad
@@ -88,10 +85,6 @@ setBufExt newExt = liftBufAction $ SetBufExt newExt ()
 overBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
 overBufExt f = getBufExt >>= setBufExt . f
 
--- | Allows running state actions over BufActionState; used to lift mtl state functions
-liftState :: (BufExts -> (a, BufExts)) -> BufAction a
-liftState = liftBufAction . LiftState
-
 -- | Allows running IO in BufAction.
 liftFIO :: IO r -> BufAction r
 liftFIO = liftBufAction . LiftIO
@@ -118,9 +111,6 @@ makeLenses ''BufExts
 
 instance HasBufExts BufExts where
   bufExts = bExts
-
-instance (MonadState BufExts) BufAction where
-  state = liftState
 
 instance MonadIO BufAction where
   liftIO = liftFIO
@@ -164,14 +154,9 @@ bufActionInterpreter bRef (Free bufActionF) =
         Nothing -> return Nothing
         Just buf -> bufActionInterpreter bRef (extToNext (buf^.bufExt))
 
-    (LiftState stateFunc) -> do
-      mBuf <- preuse (bufAt bRef)
-      case mBuf of
-        Nothing -> return Nothing
-        Just buf -> do
-          let (next, BufExts newBufExts) = stateFunc (BufExts $ buf^.bufExts)
-          bufAt bRef.bufExts .= newBufExts
-          bufActionInterpreter bRef next
+    (SetBufExt new next) -> do
+      bufAt bRef.bufExt .= new
+      bufActionInterpreter bRef next
 
     (LiftIO ioNext) ->
       liftIO ioNext >>= bufActionInterpreter bRef

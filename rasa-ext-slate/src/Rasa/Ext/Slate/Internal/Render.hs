@@ -86,7 +86,7 @@ renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ te
     txt :: Y.YiString
     txt = buf^.text & trimText
     adjustedStyles :: [Span CrdRange V.Attr]
-    adjustedStyles = bimap adjustStylePositions convertStyle <$> buf^.styles
+    adjustedStyles = bimap adjustStylePositions convertStyle <$> buf^.bufExt.styles
     adjustStylePositions :: CrdRange -> CrdRange
     adjustStylePositions = both.coordRow -~ vw^.scrollPos
     sepBar :: V.Image
