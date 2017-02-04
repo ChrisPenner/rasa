@@ -50,7 +50,7 @@ bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
 newBuffer :: Y.YiString -> Action BufRef
 newBuffer txt = do
   bufRef <- addBuffer
-  bufferDo [bufRef] (setText txt)
+  void $ bufferDo [bufRef] (setText txt)
   dispatchEvent (BufAdded bufRef)
   return bufRef
 
@@ -60,7 +60,9 @@ nextBufRef br = do
   bufRefs <- getBufRefs
   return $ if null bufRefs
               then br
-              else fromMaybe (head bufRefs) $ listToMaybe $ filter (>br) bufRefs
+              else case dropWhile (<= br) bufRefs of
+                     [] -> head bufRefs
+                     (x:_) -> x
 
 -- | Gets 'BufRef' that comes before the one provided
 prevBufRef :: BufRef -> Action BufRef
@@ -68,5 +70,7 @@ prevBufRef br = do
   bufRefs <- getBufRefs
   return $ if null bufRefs
               then br
-              else fromMaybe (last bufRefs) $ listToMaybe $ filter (<br) bufRefs
+              else case dropWhile (>= br) (reverse bufRefs) of
+                     [] -> last bufRefs
+                     (x:_) -> x
 

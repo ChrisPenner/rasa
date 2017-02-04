@@ -1,11 +1,7 @@
-{-# language DeriveFunctor
+{-# language
+   DeriveFunctor
   , GADTs
-  , MultiParamTypeClasses
-  , FlexibleInstances
   , GeneralizedNewtypeDeriving
-  , RankNTypes
-  , ExistentialQuantification
-  , ScopedTypeVariables
   , StandaloneDeriving
 #-}
 module Rasa.Internal.ActionMonads
@@ -35,7 +31,8 @@ import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
-data Listener = forall a. Listener ListenerId (a -> Action ())
+data Listener where
+  Listener :: ListenerId -> (a -> Action ()) -> Listener
 
 -- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.

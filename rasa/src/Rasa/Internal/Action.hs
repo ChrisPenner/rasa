@@ -146,8 +146,6 @@ removeListener listenerId = liftActionF $ RemoveListener listenerId ()
 asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
 asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncActionProv ()
 
-
-
 -- | This is a type alias to make defining your event provider functions easier;
 -- It represents the function your event provider function will be passed to allow dispatching
 -- events. Using this type requires the @RankNTypes@ language pragma.
@@ -159,36 +157,40 @@ type Dispatcher = forall event. Typeable event => event -> IO ()
 --
 -- Let's break it down:
 --
--- Using 'Dispatcher' with asyncEventProvider requires the @Rank2Types@ language pragma.
+-- Using 'Dispatcher' with asyncEventProvider requires the @RankNTypes@ language pragma.
 --
 -- This type as a whole represents a function which accepts a 'Dispatcher' and returns an 'IO';
--- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event (see the "Rasa.Internal.Events").
+-- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event (see "Rasa.Internal.Events").
 --
 -- When you call 'asyncEventProvider' you pass it a function which accepts a @dispatch@ function as an argument
 -- and then calls it with various events within the resulting 'IO'.
 --
 -- Note that asyncEventProvider calls forkIO internally, so there's no need to do that yourself.
 --
--- Here's a simple example which fires a @Timer@ event every second.
+-- Here's an example which fires a @Timer@ event every second.
 --
--- > {-# language Rank2Types #-}
+-- > {-# language RankNTypes #-}
 -- > data Timer = Timer
 -- > myTimer :: Dispatcher -> IO ()
 -- > myTimer dispatch = forever $ dispatch Timer >> threadDelay 1000000
 -- >
 -- > myAction :: Action ()
 -- > myAction = onInit $ asyncEventProvider myTimer
--- asyncEventProvider eventProvidingIO = undefined -- do
-  -- out <- use actionQueue
-  -- liftIO $ void . forkIO $ eventProvidingIO (dispatchAction out . dispatchEvent)
-asyncEventProvider :: forall event. Typeable event => ((event -> IO ()) -> IO ()) -> Action ()
+asyncEventProvider :: (Dispatcher -> IO ()) -> Action ()
 asyncEventProvider asyncEventProv =
-  liftActionF $ AsyncActionProvider (lmap toAction asyncEventProv) ()
-    where toAction = lmap dispatchEvent
+  liftActionF $ AsyncActionProvider (eventsToActions asyncEventProv) ()
+    where
+      eventsToActions :: (Dispatcher -> IO ()) -> (Action () -> IO ()) -> IO ()
+      eventsToActions aEventProv dispatcher = aEventProv (dispatcher . dispatchEvent)
 
+-- | Runs a BufAction over the given BufRefs, returning any results.
+--
+-- Result list is not guaranteed to be the same length or positioning as input BufRef list; some buffers may no
+-- longer exist.
 bufferDo :: [BufRef] -> BufAction r -> Action [r]
 bufferDo bufRefs bufAct = liftActionF $ BufferDo bufRefs bufAct id
 
+-- | Adds a new buffer and returns the BufRef
 addBuffer :: Action BufRef
 addBuffer = liftActionF $ AddBuffer id
 
@@ -333,6 +335,7 @@ actionInterpreter (Pure res) = return res
 matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
 matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
+-- | Extract the listener function from a listener
 getListener :: Listener -> (a -> Action ())
 getListener = coerce
   where
