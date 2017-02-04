@@ -1,10 +1,12 @@
 {-# language DeriveFunctor
+  , GADTs
   , MultiParamTypeClasses
   , FlexibleInstances
   , GeneralizedNewtypeDeriving
   , RankNTypes
   , ExistentialQuantification
   , ScopedTypeVariables
+  , StandaloneDeriving
 #-}
 module Rasa.Internal.ActionMonads
   ( Action(..)
@@ -46,41 +48,24 @@ instance Eq ListenerId where
 -- | A map of Event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
-
 -- | Free Monad Actions for Action
-data ActionF next =
-    LiftIO (IO next)
-  | forall r. BufferDo [BufRef] (BufAction r) ([r] -> next)
-  | forall event r. Typeable event => AddListener (event -> Action r) (ListenerId -> next)
-  | RemoveListener ListenerId next
-  | forall event. Typeable event => DispatchEvent event next
-  | DispatchActionAsync (IO (Action ())) next
-  | AsyncActionProvider ((Action () -> IO ()) -> IO ()) next
-  | AddBuffer (BufRef -> next)
-  | GetBufRefs ([BufRef] -> next)
-  | forall ext. (Typeable ext, Show ext, Default ext) => GetExt (ext -> next)
-  | forall ext. (Typeable ext, Show ext, Default ext) => SetExt ext next
-  | GetEditor (Editor -> next)
-  | GetBuffer BufRef (Maybe Buffer -> next)
-  | Exit next
-  | ShouldExit (Bool -> next)
-
-instance Functor ActionF where
-  fmap f (LiftIO ioNext) = LiftIO $ f <$> ioNext
-  fmap f (BufferDo bufRefs bufAct toNext) = BufferDo bufRefs bufAct (f <$> toNext)
-  fmap f (AddListener listener next) = AddListener listener $ f <$> next
-  fmap f (RemoveListener listenerId next) = RemoveListener listenerId $ f next
-  fmap f (DispatchEvent event next) = DispatchEvent event (f next)
-  fmap f (DispatchActionAsync ioAction next) = DispatchActionAsync ioAction (f next)
-  fmap f (AsyncActionProvider actionProvider next) = AsyncActionProvider actionProvider (f next)
-  fmap f (AddBuffer toNext) = AddBuffer (f <$> toNext)
-  fmap f (GetBufRefs toNext) = GetBufRefs (f <$> toNext)
-  fmap f (GetExt extToNext) = GetExt (f <$> extToNext)
-  fmap f (SetExt newExt next) = SetExt newExt (f next)
-  fmap f (GetEditor toNext) = GetEditor (f <$> toNext)
-  fmap f (GetBuffer bufRef toNext) = GetBuffer bufRef (f <$> toNext)
-  fmap f (Exit next) = Exit (f next)
-  fmap f (ShouldExit toNext) = ShouldExit (f <$> toNext)
+data ActionF next where
+  LiftIO :: IO next -> ActionF next
+  BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
+  AddListener :: Typeable event => (event -> Action r) -> (ListenerId -> next) -> ActionF next
+  RemoveListener :: ListenerId -> next -> ActionF next
+  DispatchEvent :: Typeable event => event -> next -> ActionF next
+  DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
+  AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
+  AddBuffer :: (BufRef -> next) -> ActionF next
+  GetBufRefs :: ([BufRef] -> next) -> ActionF next
+  GetExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> ActionF next
+  SetExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> ActionF next
+  GetEditor :: (Editor -> next) -> ActionF next
+  GetBuffer :: BufRef -> (Maybe Buffer -> next)  -> ActionF next
+  Exit :: next -> ActionF next
+  ShouldExit :: (Bool -> next) -> ActionF next
+deriving instance Functor ActionF
 
 -- | Embeds a ActionF type into the Action Monad
 liftActionF :: ActionF a -> Action a
@@ -112,23 +97,15 @@ newtype Action a = Action
   } deriving (Functor, Applicative, Monad)
 
 -- | Free Monad Actions for BufAction
-data BufActionF next =
-      GetText (Y.YiString -> next)
-    | SetText Y.YiString next
-    | forall ext. (Typeable ext, Show ext, Default ext) => GetBufExt (ext -> next)
-    | forall ext. (Typeable ext, Show ext, Default ext) => SetBufExt ext next
-    | SetRange CrdRange Y.YiString next
-    | forall r. LiftAction (Action r) (r -> next)
-    | BufLiftIO (IO next)
-
-instance Functor BufActionF where
-  fmap f (GetText next) = GetText (f <$> next)
-  fmap f (SetText txt next) = SetText txt (f next)
-  fmap f (GetBufExt extToNext) = GetBufExt (f <$> extToNext)
-  fmap f (SetBufExt newExt next) = SetBufExt newExt (f next)
-  fmap f (SetRange rng txt next) = SetRange rng txt (f next)
-  fmap f (LiftAction act toNext) = LiftAction act (f <$> toNext)
-  fmap f (BufLiftIO ioNext) = BufLiftIO (f <$> ioNext)
+data BufActionF next where
+  GetText :: (Y.YiString -> next) -> BufActionF next
+  SetText :: Y.YiString -> next -> BufActionF next
+  GetBufExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> BufActionF next
+  SetBufExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> BufActionF next
+  SetRange :: CrdRange -> Y.YiString -> next -> BufActionF next
+  LiftAction :: Action r -> (r -> next) -> BufActionF next
+  BufLiftIO :: IO next -> BufActionF next
+deriving instance Functor BufActionF
 
 -- | This is a monad for performing actions on a specific buffer.
 -- You run 'BufAction's by embedding them in a 'Action' via 'Rasa.Internal.Actions.bufferDo' or

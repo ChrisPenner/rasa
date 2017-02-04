@@ -56,7 +56,6 @@ library
                        Rasa.Internal.ActionMonads
                        Rasa.Internal.Action
                        Rasa.Internal.Actions
-                       Rasa.Internal.Async
                        Rasa.Internal.BufAction
                        Rasa.Internal.BufActions
                        Rasa.Internal.Buffer

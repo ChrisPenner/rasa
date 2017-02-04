@@ -11,8 +11,6 @@ module Rasa.Internal.Actions
   , exit
   , newBuffer
   , getBufRefs
-  -- , getBuffers
-  -- , getBuffer
   , nextBufRef
   , prevBufRef
   ) where

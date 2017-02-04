@@ -185,7 +185,6 @@ module Rasa.Ext
 
 import Rasa.Internal.Action
 import Rasa.Internal.Actions
-import Rasa.Internal.Async
 import Rasa.Internal.BufAction
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer
