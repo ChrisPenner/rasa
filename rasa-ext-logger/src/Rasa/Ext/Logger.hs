@@ -12,7 +12,7 @@ logger :: Action ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
   onEveryRender_ $ do
-    ed <- get
+    ed <- getEditor
     liftIO $ appendFile "logs.log" (show ed)
 
 logInfo :: String -> Action ()

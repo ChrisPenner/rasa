@@ -10,7 +10,10 @@ module Rasa.Ext.Views.Internal.Views
   , focusViewRight
   , focusViewAbove
   , focusViewBelow
-  , windows
+  , getWindows
+  , setWindows
+  , setMaybeWindow
+  , overWindows
   , hSplit
   , vSplit
   , addSplit
@@ -19,7 +22,6 @@ module Rasa.Ext.Views.Internal.Views
   , SplitRule(..)
   , Window
   , Split(..)
-  , Views(..)
   , View(..)
   , BiTree(..)
   , BiTreeF(..)
@@ -86,18 +88,21 @@ makeLenses ''View
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
 
--- | Extension state storing the window layout
-data Views = Views
-  { _windows' :: Maybe Window
-  } deriving (Show)
-makeLenses ''Views
-
 -- | A lens to access the stored windows
-windows :: HasExts e => Lens' e (Maybe Window)
-windows = ext.windows'
+getWindows :: Action (Maybe Window)
+getWindows = getExt
 
-instance Default Views where
-  def = Views Nothing
+setWindows :: Window -> Action ()
+setWindows = setExt . Just
+
+setMaybeWindow :: Maybe Window -> Action ()
+setMaybeWindow = setExt
+
+overWindows :: (Window -> Window) -> Action ()
+overWindows f = overExt inner
+  where
+    inner :: Maybe Window -> Maybe Window
+    inner = fmap f
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Window -> Window

@@ -23,20 +23,17 @@ import Data.Default
 import qualified Yi.Rope as Y
 
 -- | Stores the cursor ranges in each buffer.
-data Cursors = Cursors
-  { _cursors :: [CrdRange]
-  } deriving (Typeable, Show)
-makeLenses ''Cursors
+data Cursors =
+  Cursors [CrdRange]
+  deriving (Typeable, Show)
 
 instance Default Cursors where
-  def = Cursors {
-  _cursors=[Range (Coord 0 0) (Coord 0 1)]
-}
+  def = Cursors [Range (Coord 0 0) (Coord 0 1)]
 
 -- | Adjusts input ranges to contain at least one character.
 ensureSize :: CrdRange -> CrdRange
 ensureSize r@(Range start end)
-  | start == end = 
+  | start == end =
     if start^.coordCol == 0 then r & rEnd %~ moveCursorByN 1
                           else r & rStart %~ moveCursorByN (-1)
   | otherwise = r
@@ -46,14 +43,16 @@ ensureSize r@(Range start end)
 cleanRanges :: Y.YiString -> [CrdRange] -> [CrdRange]
 cleanRanges txt = fmap (ensureSize . clampRange txt) . reverse . nub . sort
 
--- | A lens over all the stored cursor ranges for a buffer
+-- | Get the list of ranges
 getRanges :: BufAction [CrdRange]
-getRanges = use (bufExt.cursors)
+getRanges = do
+  Cursors ranges <- getBufExt
+  return ranges
 
 setRanges :: [CrdRange] -> BufAction ()
 setRanges new = do
   txt <- getText
-  bufExt.cursors .= cleanRanges txt new
+  setBufExt . Cursors $ cleanRanges txt new
 
 overRanges :: ([CrdRange] -> [CrdRange]) -> BufAction ()
 overRanges f = getRanges >>= setRanges . f

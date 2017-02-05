@@ -5,9 +5,6 @@ module Rasa.Ext.StatusBar
   , centerStatus
   , rightStatus
   , statusBar
-  , left
-  , center
-  , right
   , StatusBar(..)
   ) where
 
@@ -39,16 +36,13 @@ statusBar :: Action ()
 statusBar = beforeEveryEvent_ $ buffersDo_ clearStatus
 
 clearStatus :: BufAction ()
-clearStatus = do
-  bufExt.left .= []
-  bufExt.center .= []
-  bufExt.right .= []
+clearStatus = setBufExt $ StatusBar [] [] []
 
 leftStatus :: Y.YiString -> BufAction ()
-leftStatus txt = bufExt.left %= (txt:)
+leftStatus txt = overBufExt (left %~ (txt:))
 
 centerStatus :: Y.YiString -> BufAction ()
-centerStatus txt = bufExt.center %= (txt:)
+centerStatus txt = overBufExt (center %~ (txt:))
 
 rightStatus :: Y.YiString -> BufAction ()
-rightStatus txt = bufExt.right %= (txt:)
+rightStatus txt = overBufExt (right %~ (txt:))

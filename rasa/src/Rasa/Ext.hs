@@ -41,6 +41,8 @@ module Rasa.Ext
   (
   -- * Editor Actions
     Action
+  , getBuffer
+  , getEditor
   , exit
 
   -- * Managing Buffers
@@ -48,8 +50,6 @@ module Rasa.Ext
   , nextBufRef
   , prevBufRef
   , getBufRefs
-  , getBuffers
-  , getBuffer
 
   -- * Working with Buffers
   , Buffer
@@ -110,8 +110,14 @@ module Rasa.Ext
   -- typically need to do this unless you're doing something complicated.
   , HasExts(..)
   , ext
-  , HasBufExts(..)
+  , getExt
+  , setExt
+  , overExt
+  , HasBufExts
   , bufExt
+  , getBufExt
+  , setBufExt
+  , overBufExt
 
   -- * Events
   , Keypress(..)
@@ -122,23 +128,18 @@ module Rasa.Ext
   , dispatchEvent
   , onEveryTrigger
   , onEveryTrigger_
-  , onNextEvent
   , removeListener
 
   -- * Built-in Event Listeners
   , onInit
   , beforeEveryEvent
   , beforeEveryEvent_
-  , beforeNextEvent
   , beforeEveryRender
   , beforeEveryRender_
-  , beforeNextRender
   , onEveryRender
   , onEveryRender_
-  , onNextRender
   , afterEveryRender
   , afterEveryRender_
-  , afterNextRender
   , onExit
   , onBufAdded
   , onBufTextChanged
@@ -184,7 +185,6 @@ module Rasa.Ext
 
 import Rasa.Internal.Action
 import Rasa.Internal.Actions
-import Rasa.Internal.Async
 import Rasa.Internal.BufAction
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer

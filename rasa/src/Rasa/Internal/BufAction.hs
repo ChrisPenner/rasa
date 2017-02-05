@@ -1,57 +1,32 @@
 {-# language DeriveFunctor
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , GeneralizedNewtypeDeriving
-  , Rank2Types
-  , TemplateHaskell #-}
+  , ExistentialQuantification
+#-}
 module Rasa.Internal.BufAction
   ( BufAction(..)
   , getText
   , setText
   , getRange
   , setRange
-  , liftState
+  , getBufExt
+  , setBufExt
+  , overBufExt
   , liftAction
   , runBufAction
   ) where
 
+import Rasa.Internal.ActionMonads
 import Rasa.Internal.Buffer
-import Rasa.Internal.Editor
-import Rasa.Internal.Action
 import Rasa.Internal.Range
-import Rasa.Internal.Listeners
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
+import Data.Default
+import Data.Typeable
 
 import qualified Yi.Rope as Y
-
--- | Contains all data about the editor; as well as a buffer which is in 'focus'.
--- We keep the full ActionState here too so that 'Action's may be lifted inside a 'BufAction'
-data BufActionState = BufActionState
-  { _buffer' :: Buffer
-  , _actionState :: ActionState
-  }
-makeLenses ''BufActionState
-
-instance HasBufExts BufActionState where
-  bufExts = buffer'.bufExts
-
--- | Free Monad Actions for BufAction
-data BufActionF state next =
-      GetText (Y.YiString -> next)
-    | SetText Y.YiString next
-    | SetRange CrdRange Y.YiString next
-    | LiftState (state -> (next, state))
-    | LiftIO (IO next)
-  deriving (Functor)
-
--- | Embeds a BufActionF type into the BufAction Monad
-liftBufAction :: BufActionF BufActionState a -> BufAction a
-liftBufAction = BufAction . liftF
 
 -- | Returns the text of the current buffer
 getText :: BufAction Y.YiString
@@ -69,82 +44,52 @@ getRange rng = view (range rng) <$> getText
 setRange :: CrdRange -> Y.YiString -> BufAction ()
 setRange rng txt = liftBufAction $ SetRange rng txt ()
 
--- | Allows running state actions over BufActionState; used to lift mtl state functions
-liftState :: (BufActionState -> (a, BufActionState)) -> BufAction a
-liftState = liftBufAction . LiftState
+-- | Retrieve some buffer extension state
+getBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => BufAction ext
+getBufExt = liftBufAction $ GetBufExt id
 
--- | Allows running IO in BufAction.
-liftFIO :: IO r -> BufAction r
-liftFIO = liftBufAction . LiftIO
+-- | Set some buffer extension state
+setBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => ext -> BufAction ()
+setBufExt newExt = liftBufAction $ SetBufExt newExt ()
 
--- | This is a monad for performing actions on a specific buffer.
--- You run 'BufAction's by embedding them in a 'Action' via 'Rasa.Internal.Actions.bufferDo' or
--- 'Rasa.Internal.Actions.buffersDo'
---
--- Within a BufAction you can:
---
---      * Use 'liftAction' to run an 'Action'
---      * Use liftIO for IO
---      * Access/Edit the buffer's text; some commands are available in "Rasa.Internal.Actions".
---      * Access/edit buffer extensions; see 'bufExt'
---      * Embed and sequence 'BufAction's from other extensions
-newtype BufAction a = BufAction
-  { getBufAction :: Free (BufActionF BufActionState) a
-  } deriving (Functor, Applicative, Monad)
-
-instance (MonadState BufActionState) BufAction where
-  state = liftState
-
-instance MonadIO BufAction where
-  liftIO = liftFIO
+-- | Set some buffer extension state
+overBufExt :: forall ext. (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
+overBufExt f = getBufExt >>= setBufExt . f
 
 -- | This lifts up an 'Action' to be run inside a 'BufAction'
 liftAction :: Action r -> BufAction r
-liftAction action = do
-  actState <- use actionState
-  (res, endState) <- liftIO $ runAction actState action
-  actionState .= endState
-  return res
-
-bufAt :: BufRef -> Traversal' ActionState Buffer
-bufAt (BufRef bufInd) = buffers.at bufInd._Just
+liftAction action = liftBufAction $ LiftAction action id
 
 -- | This lifts up a bufAction into an Action which performs the 'BufAction'
 -- over the referenced buffer and returns the result (if the buffer existed)
-runBufAction :: BufAction a -> BufRef -> Action (Maybe a)
-runBufAction (BufAction bufActF) = flip bufActionInterpreter bufActF
+runBufAction :: BufAction a -> Buffer -> Action (a, Buffer)
+runBufAction (BufAction bufActF) buf = flip runStateT buf $ bufActionInterpreter bufActF
 
 -- | Interpret the Free Monad; in this case it interprets it down to an Action.
-bufActionInterpreter :: BufRef -> Free (BufActionF BufActionState) r -> Action (Maybe r)
-bufActionInterpreter bRef (Free bufActionF) =
+bufActionInterpreter :: Free BufActionF r -> StateT Buffer Action r
+bufActionInterpreter (Free bufActionF) =
   case bufActionF of
-    (GetText nextF) -> do
-      actState <- get
-      case actState^? bufAt bRef of
-        Nothing -> return Nothing
-        Just buf -> bufActionInterpreter bRef (nextF (buf^.text))
+    (GetText nextF) -> use text >>= bufActionInterpreter . nextF
 
     (SetText newText next) -> do
-      bufAt bRef.text .= newText
-      bufActionInterpreter bRef next
+      text .= newText
+      bufActionInterpreter next
 
     (SetRange rng newText next) -> do
-      bufAt bRef.text.range rng .= newText
-      dispatchEvent $ BufTextChanged rng newText
-      bufActionInterpreter bRef next
+      text.range rng .= newText
+      lift . dispatchEvent $ BufTextChanged rng newText
+      bufActionInterpreter next
 
-    (LiftState stateFunc) -> do
-      mBuf <- preuse (bufAt bRef)
-      case mBuf of
-        Nothing -> return Nothing
-        Just buf -> do
-          actState <- get
-          let (next, BufActionState newBuf newActState) = stateFunc (BufActionState buf actState)
-          put newActState
-          bufAt bRef .= newBuf
-          bufActionInterpreter bRef next
+    (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
 
-    (LiftIO ioNext) ->
-      liftIO ioNext >>= bufActionInterpreter bRef
+    (GetBufExt extToNext) ->
+      use bufExt >>= bufActionInterpreter . extToNext
 
-bufActionInterpreter _ (Pure res) = return $ Just res
+    (SetBufExt new next) -> do
+      bufExt .= new
+      bufActionInterpreter next
+
+    (BufLiftIO ioNext) ->
+      liftIO ioNext >>= bufActionInterpreter
+
+bufActionInterpreter (Pure res) = return res

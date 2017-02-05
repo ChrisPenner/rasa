@@ -1,5 +1,15 @@
 {-# language TemplateHaskell #-}
-module Rasa.Ext.Style (style, styles, addStyle, fg, bg, flair, Color(..), Flair(..),  Style(..)) where
+module Rasa.Ext.Style 
+  ( style
+  , styles
+  , addStyle
+  , fg
+  , bg
+  , flair
+  , Color(..)
+  , Flair(..)
+  , Style(..)
+  ) where
 
 import Rasa.Ext
 import Control.Lens
@@ -51,14 +61,10 @@ instance Monoid Style where
 newtype Styles =
   Styles {
   -- This list must always stay sorted by the index of the styles
-  _styles' :: [Span CrdRange Style]
+  _styles :: [Span CrdRange Style]
          } deriving (Show, Eq)
 
 makeLenses ''Styles
-
--- | A lens over the styles stored in the current buffer.
-styles :: HasBufExts s => Lens' s [Span CrdRange Style]
-styles = bufExt.styles'
 
 instance Default Styles where
   def = Styles []
@@ -77,7 +83,7 @@ flair a = Style (Nothing, Nothing, Just a)
 
 -- | Applies a style over a given range in the buffer's style list.
 addStyle :: CrdRange -> Style -> BufAction ()
-addStyle r st = styles %= (Span r st:)
+addStyle r st = overBufExt (styles %~ (Span r st:))
 
 -- | The main export for the style extension. Add this to your user config.
 --
@@ -87,4 +93,4 @@ addStyle r st = styles %= (Span r st:)
 -- >    style
 -- >    ...
 style :: Action ()
-style = afterEveryRender_ $ buffersDo_ $ styles .= []
+style = afterEveryRender_ . buffersDo_ . setBufExt $ Styles []

@@ -53,9 +53,9 @@ library
   exposed-modules:     Rasa
                        Rasa.Ext
                        Rasa.Testing
+                       Rasa.Internal.ActionMonads
                        Rasa.Internal.Action
                        Rasa.Internal.Actions
-                       Rasa.Internal.Async
                        Rasa.Internal.BufAction
                        Rasa.Internal.BufActions
                        Rasa.Internal.Buffer
@@ -70,6 +70,7 @@ library
   build-depends:       base >= 4.8 && < 5
                      , async
                      , bifunctors
+                     , profunctors
                      , containers
                      , data-default
                      , free

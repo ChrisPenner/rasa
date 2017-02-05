@@ -1,4 +1,22 @@
-module Rasa.Ext.Views.Internal.Actions where
+module Rasa.Ext.Views.Internal.Actions 
+  ( viewports
+  , rotate
+  , closeInactive
+  , focusViewLeft
+  , focusViewRight
+  , focusViewAbove
+  , focusViewBelow
+  , hSplit
+  , vSplit
+  , addSplit
+  , nextBuf
+  , prevBuf
+  , focusDo
+  , focusDo_
+  , focusedBufs
+  , scrollBy
+  , getBufferViews
+  ) where
 
 import Rasa.Ext
 import qualified Rasa.Ext.Views.Internal.Views as V
@@ -10,54 +28,56 @@ import Data.Maybe
 import Data.List
 
 -- | Main export from the views extension, add this to your rasa config.
-views :: Action ()
-views = void $ onBufAdded addSplit
+viewports :: Action ()
+viewports = void $ onBufAdded addSplit
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Action ()
-rotate = V.windows._Just %= V.rotate
+rotate = V.overWindows V.rotate
 
 -- | Move focus from any viewports one viewport to the left
 focusViewLeft :: Action ()
-focusViewLeft = V.windows._Just %= V.focusViewLeft
+focusViewLeft = V.overWindows V.focusViewLeft
 
 -- | Move focus from any viewports one viewport to the right
 focusViewRight :: Action ()
-focusViewRight = V.windows._Just %= V.focusViewRight
+focusViewRight = V.overWindows V.focusViewRight
 
 -- | Move focus from any viewports one viewport above
 focusViewAbove :: Action ()
-focusViewAbove = V.windows._Just %= V.focusViewAbove
+focusViewAbove = V.overWindows V.focusViewAbove
 
 -- | Move focus from any viewports one viewport below
 focusViewBelow :: Action ()
-focusViewBelow = V.windows._Just %= V.focusViewBelow
+focusViewBelow = V.overWindows V.focusViewBelow
 
 -- | Close all inactive viewports
 closeInactive :: Action ()
-closeInactive = V.windows %= (>>= V.closeBy (not . view V.active))
+closeInactive = do
+  mWindows <- V.getWindows
+  V.setMaybeWindow $ mWindows >>= V.closeBy (not . view V.active)
 
 -- | Split active views horizontally
 hSplit :: Action ()
-hSplit = V.windows._Just %= V.hSplit
+hSplit = V.overWindows V.hSplit
 
 -- | Split active views vertically
 vSplit :: Action ()
-vSplit = V.windows._Just %= V.vSplit
+vSplit = V.overWindows V.vSplit
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: BufRef -> Action ()
 addSplit bRef = do
-  mWin <- use V.windows
+  mWin <- V.getWindows
   case mWin of
-    Nothing -> V.windows ?= Leaf (V.View True bRef 0)
-    Just win -> V.windows ?= V.addSplit V.Vert bRef win
+    Nothing -> V.setWindows $ Leaf (V.View True bRef 0)
+    Just win -> V.setWindows $ V.addSplit V.Vert bRef win
 
 -- | Select the next buffer in any active viewports
 nextBuf :: Action ()
 nextBuf = do
-  mWin <- use V.windows
-  forM_ mWin $ \w -> V.windows._Just <~ traverse next w
+  mWin <- V.getWindows
+  forM_ mWin $ traverse next >=> V.setWindows
   where
     next vw
       | vw ^. V.active = do
@@ -68,8 +88,8 @@ nextBuf = do
 -- | Select the previous buffer in any active viewports
 prevBuf :: Action ()
 prevBuf = do
-  mWin <- use V.windows
-  forM_ mWin $ \w -> V.windows._Just <~ traverse prev w
+  mWin <- V.getWindows
+  forM_ mWin $ traverse prev >=> V.setWindows
   where
     prev vw
       | vw ^. V.active = do
@@ -79,7 +99,11 @@ prevBuf = do
 
 -- | Get bufRefs for all buffers that are selected in at least one viewport
 focusedBufs :: Action [BufRef]
-focusedBufs = use $ V.windows._Just.to activeBufRefs.to nub
+focusedBufs = do
+  mWindows <- V.getWindows
+  case mWindows of
+    Nothing -> return []
+    Just win -> return . nub . activeBufRefs $ win
   where activeBufRefs = toListOf $ traverse . filtered (view V.active) . V.bufRef
 
 -- | Run a bufAction over all focused buffers and return any results.
@@ -95,7 +119,7 @@ focusDo_ = void . focusDo
 -- | Retrieve a tree populated with views and their associated buffer
 getBufferViews :: Action (Maybe (BiTree V.Split (V.View, Buffer)))
 getBufferViews = do
-  mWin <- use V.windows
+  mWin <- V.getWindows
   case mWin of
     Nothing -> return Nothing
     Just win -> sequence <$> mapM collect win
@@ -105,4 +129,4 @@ getBufferViews = do
       return $ (,) vw <$> buf
 
 scrollBy :: Int -> Action ()
-scrollBy amt = V.windows._Just %= V.scrollBy amt
+scrollBy amt = V.overWindows $ V.scrollBy amt

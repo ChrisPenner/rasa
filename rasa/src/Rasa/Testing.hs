@@ -15,7 +15,7 @@ testBufAction :: (Show a, Eq a) => String -> Y.YiString -> a -> BufAction a -> S
 testBufAction description txt expectation bufAction = join . runIO $
   bootstrapAction $ do
     ref <- newBuffer txt
-    mResult <- runBufAction bufAction ref
+    mResult <- bufDo ref bufAction
     case mResult of
       Nothing -> error "(Err #75b72c) Buffer not found by BufRef"
       Just res -> return $ it description (res `shouldBe` expectation)

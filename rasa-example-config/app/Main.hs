@@ -12,8 +12,6 @@ import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
 
-import Control.Monad
-
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants
 --
@@ -21,7 +19,7 @@ import Control.Monad
 
 main :: IO ()
 main = rasa $ do
-  views
+  viewports
   vim
   statusBar
   files
