@@ -34,48 +34,6 @@ What people are saying
 
 > You should go outside one of these days. - Mother
 
-Installation
-------------
-
-At the moment you must build Rasa from source;
-
-1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
-2. Clone this repo and `cd` into the directory
-3. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
-
-### Troubleshooting
-
-- You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses. 
-- On linux, when the error message `Missing C libraries: icuuc, icui18n, icudata` appears, install `libicu-dev` (e.g. with `sudo apt install libicu-dev`).
-- You'll need to point to the icu4c lib in your stack.yaml wherever it's stored on your system. If you install
-    using brew on your Mac, then you can add the following to your stack.yaml:
-
-```yaml
-extra-lib-dirs:
-- /usr/local/opt/icu4c/lib 
-extra-include-dirs:
-- /usr/local/opt/icu4c/include
-```
-
-- Depending on which LTS you're on, you'll likely also have to add each rasa package you use to your stack.yaml as
-    extra-deps, here's an example:
-
-```yaml
-# in stack.yaml
-extra-deps:
-- rasa-0.1.0.0
-- rasa-ext-cursors-0.1.0.0
-- rasa-ext-logger-0.1.0.0
-- rasa-ext-status-bar-0.1.0.0
-- rasa-ext-vim-0.1.0.0
-- text-lens-0.1.0.0
-- rasa-ext-files-0.1.0.0
-- rasa-ext-cmd-0.1.0.0
-- rasa-ext-slate-0.1.0.0
-- rasa-ext-style-0.1.0.0
-- vty-5.14
-```
-
 Getting started
 ---------------
 
@@ -174,11 +132,59 @@ Run only tests for core editor:
 
 - `stack test rasa`
 
+
+Installation
+------------
+
+At the moment you must build Rasa from source;
+
+To provide reproducible builds, Rasa uses Stack & Nix.
+
+1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
+2. Install [nix](https://nixos.org/nix/)
+3. Clone this repo and `cd` into the directory
+4. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
+
+### Troubleshooting
+
+- You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses.
+- On linux, when the error message `Missing C libraries: icuuc, icui18n, icudata` appears, install `libicu-dev` (e.g. with `sudo apt install libicu-dev`).
+- You'll need to point to the icu4c lib in your stack.yaml wherever it's stored on your system. If you install
+    using brew on your Mac, then you can add the following to your stack.yaml:
+
+```yaml
+extra-lib-dirs:
+- /usr/local/opt/icu4c/lib 
+extra-include-dirs:
+- /usr/local/opt/icu4c/include
+```
+
+- Depending on which LTS you're on, you'll likely also have to add each rasa package you use to your stack.yaml as
+    extra-deps, here's an example:
+
+```yaml
+# in stack.yaml
+extra-deps:
+- rasa-0.1.0.0
+- rasa-ext-cursors-0.1.0.0
+- rasa-ext-logger-0.1.0.0
+- rasa-ext-status-bar-0.1.0.0
+- rasa-ext-vim-0.1.0.0
+- text-lens-0.1.0.0
+- rasa-ext-files-0.1.0.0
+- rasa-ext-cmd-0.1.0.0
+- rasa-ext-slate-0.1.0.0
+- rasa-ext-style-0.1.0.0
+- vty-5.14
+```
+
 Contributing
 ------------
 
 Things are moving quickly, but I'd love a hand! You can get a rough idea of
 where you can help out at the
 [Roadmap](https://github.com/ChrisPenner/rasa/issues/2), feel free to leave a
-comment there asking any questions, I'm often free to chat, join our [gitter
-here](https://gitter.im/rasa-editor/Lobby)!
+comment there asking any questions. 
+
+Chatting about features is a key part of Rasa's development; come join us in
+the [Chat Room](https://gitter.im/rasa-editor/Lobby)!
