@@ -3,6 +3,7 @@
   , GADTs
   , GeneralizedNewtypeDeriving
   , StandaloneDeriving
+  , ExistentialQuantification
 #-}
 module Rasa.Internal.ActionMonads
   ( Action(..)
@@ -15,12 +16,14 @@ module Rasa.Internal.ActionMonads
   , liftActionF
   , liftBufAction
   , dispatchEvent
+  , dispatchEvent_
   ) where
 
 import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
+import Control.Monad
 import Control.Monad.Free
 import Control.Monad.IO.Class
 
@@ -32,7 +35,7 @@ import qualified Yi.Rope as Y
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
 data Listener where
-  Listener :: ListenerId -> (a -> Action ()) -> Listener
+  Listener :: Monoid r => ListenerId -> (a -> Action r) -> Listener
 
 -- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
@@ -51,7 +54,7 @@ data ActionF next where
   BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
   AddListener :: Typeable event => (event -> Action r) -> (ListenerId -> next) -> ActionF next
   RemoveListener :: ListenerId -> next -> ActionF next
-  DispatchEvent :: Typeable event => event -> next -> ActionF next
+  DispatchEvent :: (Typeable event, Monoid response) => event -> (response -> next) -> ActionF next
   DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
   AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
   AddBuffer :: (BufRef -> next) -> ActionF next
@@ -75,9 +78,13 @@ liftFIO = liftActionF . LiftIO
 instance MonadIO Action where
   liftIO = liftFIO
 
--- | Dispatches an Event
-dispatchEvent :: Typeable event => event -> Action ()
-dispatchEvent event = liftActionF $ DispatchEvent event ()
+-- | Dispatches an Event and returns the collected result
+dispatchEvent :: (Typeable event, Monoid response) => event -> Action response
+dispatchEvent event = liftActionF $ DispatchEvent event id
+
+-- | Dispatches an Event ignoring the result
+dispatchEvent_ :: Typeable event => event -> Action ()
+dispatchEvent_ =  dispatchEvent
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'

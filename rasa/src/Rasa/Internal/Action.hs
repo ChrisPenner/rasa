@@ -12,6 +12,7 @@ module Rasa.Internal.Action
   , addListener
   , removeListener
   , dispatchEvent
+  , dispatchEvent_
   , dispatchEventAsync
   , dispatchActionAsync
   , asyncActionProvider
@@ -51,7 +52,6 @@ import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
 
-import Data.Foldable
 import Data.Default
 import Data.Maybe
 import Data.Typeable
@@ -281,10 +281,10 @@ actionInterpreter (Free actionF) =
         where
           notMatch idA (Listener idB _) = idA /= idB
 
-    (DispatchEvent evt next) -> do
+    (DispatchEvent evt toNext) -> do
       listeners' <- use listeners
-      let (Action action) = traverse_ ($ evt) (matchingListeners listeners')
-      actionInterpreter (action >> next)
+      let (Action action) = mconcat <$> traverse ($ evt) (matchingListeners listeners')
+      actionInterpreter (action >>= toNext)
 
     (DispatchActionAsync asyncActionIO next) -> do
       asyncQueue <- use actionQueue
@@ -332,12 +332,12 @@ actionInterpreter (Free actionF) =
 actionInterpreter (Pure res) = return res
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
+matchingListeners :: forall a r. Typeable a => Listeners -> [a -> Action r]
 matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
 -- | Extract the listener function from a listener
-getListener :: Listener -> (a -> Action ())
+getListener :: Listener -> (a -> Action r)
 getListener = coerce
   where
-    coerce :: Listener -> (a -> Action ())
+    coerce :: Listener -> (a -> Action r)
     coerce (Listener _ x) = unsafeCoerce x
