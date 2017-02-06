@@ -23,7 +23,6 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
-import Control.Monad
 import Control.Monad.Free
 import Control.Monad.IO.Class
 
@@ -35,7 +34,7 @@ import qualified Yi.Rope as Y
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
 data Listener where
-  Listener :: Monoid r => ListenerId -> (a -> Action r) -> Listener
+  Listener :: (Typeable a, Typeable r, Monoid r) => ListenerId -> (a -> Action r) -> Listener
 
 -- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
@@ -52,9 +51,9 @@ type Listeners = M.Map TypeRep [Listener]
 data ActionF next where
   LiftIO :: IO next -> ActionF next
   BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
-  AddListener :: Typeable event => (event -> Action r) -> (ListenerId -> next) -> ActionF next
+  AddListener :: (Typeable event, Typeable response, Monoid response) => (event -> Action response) -> (ListenerId -> next) -> ActionF next
   RemoveListener :: ListenerId -> next -> ActionF next
-  DispatchEvent :: (Typeable event, Monoid response) => event -> (response -> next) -> ActionF next
+  DispatchEvent :: (Typeable event, Typeable response, Monoid response) => event -> (response -> next) -> ActionF next
   DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
   AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
   AddBuffer :: (BufRef -> next) -> ActionF next
@@ -78,12 +77,14 @@ liftFIO = liftActionF . LiftIO
 instance MonadIO Action where
   liftIO = liftFIO
 
--- | Dispatches an Event and returns the collected result
-dispatchEvent :: (Typeable event, Monoid response) => event -> Action response
+-- | Dispatches an Event and returns the collected (monoidal) result
+dispatchEvent :: (Typeable event, Typeable response, Monoid response) => event -> Action response
 dispatchEvent event = liftActionF $ DispatchEvent event id
 
--- | Dispatches an Event ignoring the result
+-- | Dispatches an Event ignoring any result
 dispatchEvent_ :: Typeable event => event -> Action ()
+-- This looks a bit strange; but it's really just restricting the type
+-- to avoid ambiguous type errors.
 dispatchEvent_ =  dispatchEvent
 
 -- | This is a monad for performing actions against the editor.

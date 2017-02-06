@@ -12,6 +12,8 @@ import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
 
+import Control.Monad
+
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants
 --
@@ -27,4 +29,4 @@ main = rasa $ do
   logger
   slate
   style
-  onInit $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
+  onInit . void $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

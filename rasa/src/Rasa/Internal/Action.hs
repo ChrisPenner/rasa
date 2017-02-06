@@ -58,7 +58,6 @@ import Data.Typeable
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
 
-import Unsafe.Coerce
 import Pipes hiding (Proxy, next)
 import Pipes.Concurrent hiding (Buffer)
 
@@ -129,7 +128,7 @@ dispatchActionAsync :: IO (Action ()) -> Action ()
 dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 
 -- | Adds a new listener
-addListener :: Typeable event => (event -> Action r) -> Action ListenerId
+addListener :: (Typeable event, Typeable response, Monoid response) => (event -> Action response) -> Action ListenerId
 addListener listener = liftActionF $ AddListener listener id
 
 -- | This removes a listener and prevents it from responding to any more events.
@@ -268,9 +267,9 @@ actionInterpreter (Free actionF) =
       listeners %= M.insertWith mappend eventType [listener]
       actionInterpreter $ withListenerId listenerId
         where
-          mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+          mkListener :: forall event response. (Typeable event, Typeable response, Monoid response) => Int -> (event -> Action response) -> (Listener, ListenerId, TypeRep)
           mkListener n listenerFunc =
-            let list = Listener listId (void . listenerFunc)
+            let list = Listener listId listenerFunc
                 listId = ListenerId n (typeRep (Proxy :: Proxy event))
                 prox = typeRep (Proxy :: Proxy event)
              in (list, listId, prox)
@@ -332,12 +331,9 @@ actionInterpreter (Free actionF) =
 actionInterpreter (Pure res) = return res
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall a r. Typeable a => Listeners -> [a -> Action r]
-matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
+matchingListeners :: forall a r. (Typeable a, Typeable r) => Listeners -> [a -> Action r]
+matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
 -- | Extract the listener function from a listener
-getListener :: Listener -> (a -> Action r)
-getListener = coerce
-  where
-    coerce :: Listener -> (a -> Action r)
-    coerce (Listener _ x) = unsafeCoerce x
+getListener :: forall a r. (Typeable a, Typeable r) => Listener -> Maybe (a -> Action r)
+getListener (Listener _ x) = cast x
