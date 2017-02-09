@@ -1,5 +1,12 @@
 flags: {}
 extra-package-dbs: []
+
+nix:
+  enable: true
+  packages:
+    - libcxx
+    - icu
+
 packages:
 - ./rasa
 - ./rasa-ext-cmd
@@ -18,10 +25,13 @@ extra-deps:
 - vty-5.14
 - recursion-schemes-5.0.1
 
-extra-lib-dirs:
-- /usr/local/opt/icu4c/lib 
-extra-include-dirs:
-- /usr/local/opt/icu4c/include
+# Uncomment the following if you'd like to use a locally installed version
+# of icu4c INSTEAD of relying on nix.
+#
+# extra-lib-dirs:
+# - /usr/local/opt/icu4c/lib
+# extra-include-dirs:
+# - /usr/local/opt/icu4c/include
 
 resolver: lts-7.11
 pvp-bounds: both
