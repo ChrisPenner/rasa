@@ -116,8 +116,7 @@ module Rasa.Ext
   , getExt
   , setExt
   , overExt
-  , HasBufExts
-  , bufExt
+
   , getBufExt
   , setBufExt
   , overBufExt
@@ -148,6 +147,11 @@ module Rasa.Ext
   , dispatchEvent
   , addListener
   , removeListener
+
+  , dispatchBufEvent
+  , addBufListener
+  , removeBufListener
+
   , ListenerId
 
   -- * Built-in Events

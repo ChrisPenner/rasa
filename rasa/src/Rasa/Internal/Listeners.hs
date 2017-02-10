@@ -9,6 +9,11 @@ module Rasa.Internal.Listeners
   ( dispatchEvent
   , addListener
   , removeListener
+
+  , dispatchBufEvent
+  , addBufListener
+  , removeBufListener
+
   , Dispatcher
   , ListenerId
 
@@ -48,7 +53,9 @@ module Rasa.Internal.Listeners
   ) where
 
 import Rasa.Internal.Action
+import Rasa.Internal.BufAction
 import Rasa.Internal.Events
+import Rasa.Internal.Extensions
 
 import Control.Lens
 import Control.Monad
@@ -59,7 +66,7 @@ import qualified Data.Map as M
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
 data Listener where
-  Listener :: Typeable eventType => ListenerId -> (eventType -> Action ()) -> Listener
+  Listener :: (Typeable eventType, HasExtMonad m) => ListenerId -> (eventType -> m ()) -> Listener
 
 -- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
@@ -82,11 +89,11 @@ instance Default GlobalListeners where
   def = GlobalListeners 0 M.empty
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall eventType result. (Typeable eventType, Typeable result) => Listeners -> [eventType -> Action result]
+matchingListeners :: forall eventType result m. (Typeable eventType, Typeable result, HasExtMonad m) => Listeners -> [eventType -> m result]
 matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy eventType))._Just)
 
 -- | Extract the listener function from eventType listener
-getListener :: forall eventType r. (Typeable eventType, Typeable r) => Listener -> Maybe (eventType -> Action r)
+getListener :: forall eventType r m. (Typeable eventType, Typeable r, HasExtMonad m) => Listener -> Maybe (eventType -> m r)
 getListener (Listener _ x) = cast x
 
 
@@ -240,41 +247,68 @@ asyncEventProvider asyncEventProv =
 dispatchEventAsync :: Typeable event => IO event -> Action ()
 dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 
--- | Dispatches an event of any type. This should be used to define
--- your own custom event dispatchers (with more concrete types) which you can re-export.
--- You can collect results from all listeners if they were registered to return an @Action result@
--- where @result@ is a Monoid (for example a list).
-dispatchEvent :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
-dispatchEvent evt = do
+-- | Event dispatcher generic over its monad
+dispatchEventG :: forall result eventType m. (Monoid result, Typeable eventType, Typeable result, HasExtMonad m) => (eventType -> m result)
+dispatchEventG evt = do
       GlobalListeners _ listeners <- getExt
       results <- traverse ($ evt) (matchingListeners listeners)
       return $ mconcat results
 
--- | This adds an event listener which listens for events of @eventType@ and will run the resulting
--- @Action result@ when triggered by some 'dispatchEvent'.
---
--- This should primarily be used to create your own more specific addListener functions which you re-export.
-addListener :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
-addListener lFunc = do
+-- | addListener which is generic over its monad
+addListenerG :: forall result eventType m. (Typeable eventType, HasExtMonad m) => (eventType -> m result) -> m ListenerId
+addListenerG lFunc = do
   GlobalListeners nextListenerId listeners  <- getExt
   let (listener, listenerId, eventType) = mkListener nextListenerId lFunc
       newListeners = M.insertWith mappend eventType [listener] listeners
   setExt $ GlobalListeners (nextListenerId + 1) newListeners
   return listenerId
     where
-      mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+      mkListener :: forall event r. Typeable event => Int -> (event -> m r) -> (Listener, ListenerId, TypeRep)
       mkListener n listenerFunc =
         let list = Listener listId (void . listenerFunc)
             listId = ListenerId n (typeRep (Proxy :: Proxy event))
             prox = typeRep (Proxy :: Proxy event)
           in (list, listId, prox)
 
--- | Removes the listener represented by the given ListenerId.
-removeListener :: ListenerId -> Action ()
-removeListener listenerId@(ListenerId _ eventType) =
+-- | removeListener which is generic over its monad
+removeListenerG :: HasExtMonad m => ListenerId -> m ()
+removeListenerG listenerId@(ListenerId _ eventType) =
   overExt remover
     where
       remover (GlobalListeners nextListenerId listeners) =
         let newListeners = listeners & at eventType._Just %~ filter (notMatch listenerId)
          in GlobalListeners nextListenerId newListeners
       notMatch idA (Listener idB _) = idA /= idB
+
+-- | Dispatches an event of any type. This should be used to define
+-- your own custom event dispatchers (with more concrete types) which you can re-export.
+-- You can collect results from all listeners if they were registered to return an @Action result@
+-- where @result@ is a Monoid (for example a list).
+dispatchEvent :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
+dispatchEvent = dispatchEventG
+
+-- | This adds an event listener which listens for events of @eventType@ and will run the resulting
+-- @Action result@ when triggered by some 'dispatchEvent'.
+--
+-- This should primarily be used to create your own more specific addListener functions which you re-export.
+addListener :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
+addListener = addListenerG
+
+-- | Removes the listener represented by the given ListenerId.
+removeListener :: ListenerId -> Action ()
+removeListener = removeListenerG
+
+-- | Dispatches an event of any type to the BufAction's buffer.
+-- See 'dispatchEvent'
+dispatchBufEvent :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> BufAction result)
+dispatchBufEvent = dispatchEventG
+
+-- | Adds a listener to the BufAction's buffer.
+-- See 'addListener'
+addBufListener :: forall result eventType. (Typeable eventType) => (eventType -> BufAction result) -> BufAction ListenerId
+addBufListener = addListenerG
+
+-- | Removes a listener from the BufAction's buffer.
+-- See 'removeListener'
+removeBufListener :: ListenerId -> BufAction ()
+removeBufListener = removeListenerG

@@ -17,9 +17,7 @@ module Rasa.Internal.Action
 import Rasa.Internal.ActionMonads
 import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
-
-import Data.Default
-import Data.Typeable
+import Rasa.Internal.Extensions
 
 -- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
 -- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
@@ -90,18 +88,6 @@ addBuffer = liftActionF $ AddBuffer id
 -- | Returns an up-to-date list of all 'BufRef's
 getBufRefs :: Action [BufRef]
 getBufRefs = liftActionF $ GetBufRefs id
-
--- | Retrieve some extension state
-getExt :: (Typeable ext, Show ext, Default ext) => Action ext
-getExt = liftActionF $ GetExt id
-
--- | Set some extension state
-setExt :: (Typeable ext, Show ext, Default ext) => ext -> Action ()
-setExt newExt = liftActionF $ SetExt newExt ()
-
--- | Set some extension state
-overExt :: (Typeable ext, Show ext, Default ext) => (ext -> ext) -> Action ()
-overExt f = getExt >>= setExt . f
 
 -- | Retrieve the entire editor state. This is read-only for logging/rendering/debugging purposes only.
 getEditor :: Action Editor

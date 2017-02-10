@@ -157,10 +157,10 @@ bufActionInterpreter (Free bufActionF) =
     (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
 
     (GetBufExt extToNext) ->
-      use bufExt >>= bufActionInterpreter . extToNext
+      use ext >>= bufActionInterpreter . extToNext
 
     (SetBufExt new next) -> do
-      bufExt .= new
+      ext .= new
       bufActionInterpreter next
 
     (BufLiftIO ioNext) ->

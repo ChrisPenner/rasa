@@ -2,9 +2,8 @@
 module Rasa.Internal.Extensions
   ( Ext(..)
   , ExtMap
-  , HasBufExts(..)
   , HasExts(..)
-  , bufExt
+  , HasExtMonad(..)
   , ext
   ) where
 
@@ -52,33 +51,13 @@ ext = lens getter setter
         s
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
 
--- | Members of this class have access to buffer extensions. (Each 'Rasa.Internal.Buffer.Buffer' is a member of this class)
-class HasBufExts s where
-  -- | This lens focuses the Extensions States map of the in-scope buffer.
-  bufExts :: Lens' s (Map TypeRep Ext)
+class (Typeable m, Monad m) => HasExtMonad m where
+  -- | Retrieve some extension state
+  getExt :: (Typeable ext, Show ext, Default ext) => m ext
 
--- | 'bufExt' is a lens which will focus a given extension's state within a
--- buffer (within a 'Data.Action.BufAction'). The lens will automagically focus
--- the required extension by using type inference. It's a little bit of magic,
--- if you treat the focus as a member of your extension state it should just
--- work out.
---
--- This lens falls back on the extension's 'Data.Default.Default' instance (when getting) if
--- nothing has yet been stored.
+  -- | Set some extension state
+  setExt :: (Typeable ext, Show ext, Default ext) => ext -> m ()
 
-bufExt
-  :: forall a s.
-    (Show a, Typeable a, Default a, HasBufExts s)
-    => Lens' s a
-bufExt = lens getter setter
-  where
-    getter buf =
-      fromMaybe def $ buf ^. bufExts . at (typeRep (Proxy :: Proxy a)) .
-      mapping coerce
-    setter buf new =
-      set
-        (bufExts . at (typeRep (Proxy :: Proxy a)) . mapping coerce)
-        (Just new)
-        buf
-    coerce :: (Show a1) =>  Iso Ext Ext a a1
-    coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
+  -- | Set some extension state
+  overExt :: (Typeable ext, Show ext, Default ext) => (ext -> ext) -> m ()
+  overExt f = getExt >>= setExt . f

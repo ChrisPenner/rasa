@@ -14,6 +14,7 @@ module Rasa.Internal.ActionMonads
   ) where
 
 import Rasa.Internal.Editor
+import Rasa.Internal.Extensions
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
@@ -51,6 +52,13 @@ liftFIO = liftActionF . LiftIO
 
 instance MonadIO Action where
   liftIO = liftFIO
+
+instance HasExtMonad Action where
+  -- | Retrieve some extension state
+  getExt = liftActionF $ GetExt id
+
+  -- | Set some extension state
+  setExt newExt = liftActionF $ SetExt newExt ()
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
@@ -102,3 +110,10 @@ liftBufActionFIO = liftBufAction . BufLiftIO
 
 instance MonadIO BufAction where
   liftIO = liftBufActionFIO
+
+instance HasExtMonad BufAction where
+  -- | Retrieve some buffer extension state
+  getExt = liftBufAction $ GetBufExt id
+
+  -- | Set some buffer extension state
+  setExt newExt = liftBufAction $ SetBufExt newExt ()

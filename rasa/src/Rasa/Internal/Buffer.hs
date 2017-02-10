@@ -33,12 +33,12 @@ makeLenses ''Buffer
 instance Default Buffer where
   def = Buffer def def
 
-instance HasBufExts Buffer where
-  bufExts = bufExts'
+instance HasExts Buffer where
+  exts = bufExts'
 
 instance Show Buffer where
   show b = "<Buffer {text:" ++ show (b^..text . to (Y.take 30)) ++ "...,\n"
-           ++ "exts: " ++ show (b^.bufExts) ++ "}>\n"
+           ++ "exts: " ++ show (b^.exts) ++ "}>\n"
 
 -- | This allows creation of polymorphic lenses over any type which has access to a Buffer
 class HasBuffer a where
