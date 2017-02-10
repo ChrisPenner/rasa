@@ -8,10 +8,12 @@
 module Rasa.Internal.Listeners
   ( dispatchEvent
   , addListener
+  , addListener_
   , removeListener
 
   , dispatchBufEvent
   , addBufListener
+  , addBufListener_
   , removeBufListener
 
   , Dispatcher
@@ -294,6 +296,9 @@ dispatchEvent = dispatchEventG
 addListener :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
 addListener = addListenerG
 
+addListener_ :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ()
+addListener_ = void <$> addListener
+
 -- | Removes the listener represented by the given ListenerId.
 removeListener :: ListenerId -> Action ()
 removeListener = removeListenerG
@@ -307,6 +312,9 @@ dispatchBufEvent = dispatchEventG
 -- See 'addListener'
 addBufListener :: forall result eventType. (Typeable eventType) => (eventType -> BufAction result) -> BufAction ListenerId
 addBufListener = addListenerG
+
+addBufListener_ :: forall result eventType. (Typeable eventType) => (eventType -> BufAction result) -> BufAction ()
+addBufListener_ = void <$> addBufListener
 
 -- | Removes a listener from the BufAction's buffer.
 -- See 'removeListener'

@@ -1,5 +1,3 @@
-{-# LANGUAGE Rank2Types, FlexibleContexts #-}
-
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Rasa.Ext
@@ -146,10 +144,12 @@ module Rasa.Ext
   --
   , dispatchEvent
   , addListener
+  , addListener_
   , removeListener
 
   , dispatchBufEvent
   , addBufListener
+  , addBufListener_
   , removeBufListener
 
   , ListenerId
