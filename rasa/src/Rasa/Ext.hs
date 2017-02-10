@@ -24,13 +24,14 @@
 --
 -- > logKeypress :: Keypress -> Action ()
 -- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
+-- > logKeypress _ = return ()
 -- >
 -- > logger :: Action ()
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
 -- >   -- Listeners should also be registered using 'onInit'.
 -- >   -- It ensures all listeners are ready before any actions occur.
--- >   onInit $ onEveryTrigger_ logKeypress
+-- >   onInit $ onKeypress logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 --
 -- Check out this tutorial on building extensions, it's also just a great way to learn
@@ -86,7 +87,8 @@ module Rasa.Ext
   -- it.
   --
   -- Because Extension states are stored by their 'Data.Typeable.TypeRep', they must define an
-  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you.
+  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you with
+  -- @deriving Typeable@.
   --
   -- It is also required for all extension states to define an instance of
   -- 'Data.Default.Default', this is because accessing an extension which has not
@@ -106,8 +108,9 @@ module Rasa.Ext
   -- it'll all work out.
   --
   -- Since it's polymorphic, if ghc can't figure out the type the result is
-  -- supposed to be then you'll need to help it out. In practice you won't
-  -- typically need to do this unless you're doing something complicated.
+  -- supposed to be then you'll need to help it out with a type annotation. 
+  -- In practice you won't typically need to do this unless you're 
+  -- doing something complicated.
   , HasExts(..)
   , ext
   , getExt
@@ -120,36 +123,36 @@ module Rasa.Ext
   , overBufExt
 
   -- * Events
-  , Keypress(..)
-  , BufAdded(..)
-  , Mod(..)
-
-  -- * Dealing with events
+  , dispatchEvent
+  , addListener
   , ListenerId
+
+  -- * Built-in Events
+  , Keypress(..)
+  , Mod(..)
+  , BufAdded(..)
+  , BufTextChanged(..)
 
   -- * Built-in Event Listeners
   , onInit
-  , dispatchInit
   , beforeEveryEvent
   , beforeEveryEvent_
   , beforeEveryRender
   , beforeEveryRender_
-  , dispatchBeforeRender
   , onEveryRender
   , onEveryRender_
-  , dispatchOnRender
   , afterEveryRender
   , afterEveryRender_
-  , dispatchAfterRender
   , onExit
-  , dispatchExit
   , onBufAdded
   , onBufTextChanged
 
   -- * Working with Async Events/Actions
-  , Dispatcher
   , dispatchActionAsync
+  , dispatchEventAsync
   , asyncActionProvider
+  , asyncEventProvider
+  , Dispatcher
 
    -- * Ranges
   , Range(..)

@@ -3,6 +3,7 @@ module Rasa (rasa) where
 
 import Rasa.Internal.Listeners
 import Rasa.Internal.Action
+import Rasa.Internal.Interpreters
 
 import Control.Monad
 import Control.Monad.IO.Class

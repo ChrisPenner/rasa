@@ -1,13 +1,3 @@
-{-# language DeriveFunctor
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , GeneralizedNewtypeDeriving
-  , ExistentialQuantification
-  , ScopedTypeVariables
-  , TemplateHaskell
-  , RankNTypes
-  , GADTs
-#-}
 module Rasa.Internal.Action
   ( Action(..)
   , dispatchActionAsync
@@ -22,65 +12,14 @@ module Rasa.Internal.Action
   , shouldExit
   , getBuffer
   , getEditor
-  , runAction
-  , evalAction
-  , execAction
-  , bootstrapAction
-  , ActionState
-  , mkActionState
-  , actionQueue
-  , Dispatcher
-
-
-  , mkRegistrar
-  , mkDispatcher
-  , ListenerId
   ) where
 
 import Rasa.Internal.ActionMonads
-import Rasa.Internal.BufAction
 import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
-import Rasa.Internal.Extensions
-
-
-import qualified Data.Map as M
-
-import Control.Lens
-import Control.Monad.Free
-import Control.Monad.State
 
 import Data.Default
-import Data.Maybe
 import Data.Typeable
-import qualified Data.IntMap as IM
-
-import Pipes hiding (Proxy, next)
-import Pipes.Concurrent hiding (Buffer)
-
--- | This contains all data representing the editor's state. It acts as the state object for an 'Action
-data ActionState = ActionState
-  { _ed :: Editor
-  , _nextBufId :: Int
-  , _actionQueue :: Output (Action ())
-  }
-makeLenses ''ActionState
-
-instance Show ActionState where
-  show as = show (_ed as)
-
-mkActionState :: Output (Action ()) -> ActionState
-mkActionState out = ActionState
-    { _ed=def
-    , _nextBufId=0
-    , _actionQueue=out
-    }
-
-instance HasEditor ActionState where
-  editor = ed
-
-instance HasExts ActionState where
-  exts = ed.exts
 
 -- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
 -- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
@@ -137,11 +76,6 @@ dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
 asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncActionProv ()
 
--- | This is a type alias to make defining your event provider functions easier;
--- It represents the function your event provider function will be passed to allow dispatching
--- events. Using this type requires the @RankNTypes@ language pragma.
-type Dispatcher = forall event. Typeable event => event -> IO ()
-
 -- | Runs a BufAction over the given BufRefs, returning any results.
 --
 -- Result list is not guaranteed to be the same length or positioning as input BufRef list; some buffers may no
@@ -185,138 +119,3 @@ exit = liftActionF $ Exit ()
 
 shouldExit :: Action Bool
 shouldExit = liftActionF $ ShouldExit id
-
--- | Runs an Action into an IO
-runAction :: ActionState -> Action a -> IO (a, ActionState)
-runAction actionState (Action actionF) = flip runStateT actionState $ actionInterpreter actionF
-
--- | Evals an Action into an IO
-evalAction :: ActionState -> Action a -> IO a
-evalAction actionState action = fst <$> runAction actionState action
-
--- | Execs an Action into an IO
-execAction :: ActionState -> Action a -> IO ActionState
-execAction actionState action = snd <$> runAction actionState action
-
--- | Spawn the channels necessary to run action and do so.
-bootstrapAction :: Action a -> IO a
-bootstrapAction action = do
-    (output, _) <- spawn unbounded
-    evalAction (mkActionState output) action
-
--- | Interpret the Free Monad; in this case it interprets it down to an IO
-actionInterpreter :: Free ActionF r -> StateT ActionState IO r
-actionInterpreter (Free actionF) =
-  case actionF of
-    (LiftIO ioNext) ->
-      liftIO ioNext >>= actionInterpreter
-
-    (BufferDo bufRefs bufAct toNext) -> do
-      results <- forM bufRefs $ \(BufRef bInd) ->
-        use (buffers.at bInd) >>= traverse (handleBuf bInd)
-      actionInterpreter . toNext $ catMaybes results
-        where handleBuf bIndex buf = do
-                let Action act = runBufAction bufAct buf
-                (res, newBuffer) <- actionInterpreter act
-                buffers.at bIndex ?= newBuffer
-                return res
-
-    (DispatchActionAsync asyncActionIO next) -> do
-      asyncQueue <- use actionQueue
-      let effect = (liftIO asyncActionIO >>= yield) >-> toOutput asyncQueue
-      liftIO . void . forkIO $ runEffect effect >> performGC
-      actionInterpreter next
-
-    (AsyncActionProvider dispatcherToIO next) -> do
-      asyncQueue <- use actionQueue
-      let dispatcher action =
-            let effect = yield action >-> toOutput asyncQueue
-             in void . forkIO $ runEffect effect >> performGC
-      liftIO . void . forkIO $ dispatcherToIO dispatcher
-      actionInterpreter next
-
-    (AddBuffer toNext) -> do
-      bufId <- nextBufId <+= 1
-      buffers.at bufId ?= def
-      actionInterpreter . toNext $ BufRef bufId
-
-    (GetBufRefs toNext) ->
-      use (buffers.to IM.keys) >>= actionInterpreter . toNext . fmap BufRef
-
-    (GetExt toNext) ->
-      use ext >>= actionInterpreter . toNext
-
-    (SetExt new next) -> do
-      ext .= new
-      actionInterpreter next
-
-    (GetEditor toNext) ->
-      use ed >>= actionInterpreter . toNext
-
-    (GetBuffer (BufRef bufInd) toNext) ->
-      use (buffers.at bufInd) >>= actionInterpreter . toNext
-
-    (Exit next) -> do
-      exiting .= True
-      actionInterpreter next
-
-    (ShouldExit toNext) -> do
-      ex <- use exiting
-      actionInterpreter (toNext ex)
-
-actionInterpreter (Pure res) = return res
-
-
-
-
--- | A wrapper around event listeners so they can be stored in 'Listeners'.
-data Listener where
-  Listener :: Typeable eventType => ListenerId -> (eventType -> Action ()) -> Listener
-
--- | An opaque reverence to a specific registered event-listener.
--- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
-data ListenerId =
-  ListenerId Int TypeRep
-
-instance Eq ListenerId where
-  ListenerId a _ == ListenerId b _ = a == b
-
--- | A map of Event types to a list of listeners for that event
-type Listeners = M.Map TypeRep [Listener]
-
-data L = L Int Listeners
-
-instance Show L where
-  show _ = "Listeners"
-
-instance Default L where
-  def = L 0 M.empty
-
-mkDispatcher :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
-mkDispatcher evt = do
-      L _ listeners <- getExt
-      results <- traverse ($ evt) (matchingListeners listeners)
-      return $ mconcat results
-
-mkRegistrar :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
-mkRegistrar lFunc = do
-  L nextListenerId listeners  <- getExt
-  let (listener, listenerId, eventType) = mkListener nextListenerId lFunc
-      newListeners = M.insertWith mappend eventType [listener] listeners
-  setExt $ L (nextListenerId + 1) newListeners
-  return listenerId
-    where
-      mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
-      mkListener n listenerFunc =
-        let list = Listener listId (void . listenerFunc)
-            listId = ListenerId n (typeRep (Proxy :: Proxy event))
-            prox = typeRep (Proxy :: Proxy event)
-          in (list, listId, prox)
-
--- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall eventType result. (Typeable eventType, Typeable result) => Listeners -> [eventType -> Action result]
-matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy eventType))._Just)
-
--- | Extract the listener function from eventType listener
-getListener :: forall eventType r. (Typeable eventType, Typeable r) => Listener -> Maybe (eventType -> Action r)
-getListener (Listener _ x) = cast x

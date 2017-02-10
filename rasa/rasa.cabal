@@ -62,6 +62,7 @@ library
                        Rasa.Internal.Editor
                        Rasa.Internal.Events
                        Rasa.Internal.Extensions
+                       Rasa.Internal.Interpreters
                        Rasa.Internal.Listeners
                        Rasa.Internal.Range
                        Rasa.Internal.Text
