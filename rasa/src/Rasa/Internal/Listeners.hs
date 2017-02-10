@@ -17,10 +17,14 @@ module Rasa.Internal.Listeners
   , removeListener
   , onBufAdded
   , onBufTextChanged
+
+  , onKeypress
+  , dispatchKeypress
   ) where
 
 
 import Rasa.Internal.Action
+import qualified Rasa.Internal.Actions as A
 import Rasa.Internal.Events
 import Rasa.Internal.Editor
 import Rasa.Internal.Range
@@ -28,6 +32,12 @@ import Rasa.Internal.Range
 import Control.Monad
 import Data.Dynamic
 import qualified Yi.Rope as Y
+
+onKeypress :: (Keypress -> Action ()) -> Action A.ListenerId
+onKeypress = A.mkRegistrar
+
+dispatchKeypress :: Keypress -> Action ()
+dispatchKeypress = A.mkDispatcher
 
 -- | This registers an event listener, as long as the listener is well-typed similar to this:
 --

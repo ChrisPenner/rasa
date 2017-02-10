@@ -181,10 +181,13 @@ module Rasa.Ext
   , asString
   , asLines
   , clamp
+
+  , onKeypress
+  , dispatchKeypress
   ) where
 
 import Rasa.Internal.Action
-import Rasa.Internal.Actions
+import Rasa.Internal.Actions hiding (ListenerId)
 import Rasa.Internal.BufAction
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer

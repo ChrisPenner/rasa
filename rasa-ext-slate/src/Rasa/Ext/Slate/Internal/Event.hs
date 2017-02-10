@@ -11,9 +11,9 @@ import qualified Graphics.Vty as V
 terminalEvents :: Action ()
 terminalEvents = do
     v <- getVty
-    asyncEventProvider $ getEvents v
+    asyncActionProvider $ getEvents v
       where
-        getEvents v dispatch = forever $ V.nextEvent v >>= dispatch . convertEvent
+        getEvents v dispatch = forever $ V.nextEvent v >>= dispatch . dispatchKeypress . convertEvent
 
 -- | Converts a 'V.Event' into a keypress if possible.
 convertEvent :: V.Event -> Keypress

@@ -1,4 +1,9 @@
-{-# language Rank2Types, OverloadedStrings #-}
+{-# language
+    Rank2Types
+  , OverloadedStrings
+  , GADTs
+  , ScopedTypeVariables
+#-}
 module Rasa.Internal.Actions
   (
   -- * Performing Actions on Buffers
@@ -13,15 +18,24 @@ module Rasa.Internal.Actions
   , getBufRefs
   , nextBufRef
   , prevBufRef
+
+  , mkRegistrar
+  , mkDispatcher
+  , ListenerId
   ) where
 
 import Rasa.Internal.Editor
-import Rasa.Internal.Action
+import Rasa.Internal.Action hiding (Listener, Listeners, ListenerId, listeners, nextListenerId)
 import Rasa.Internal.BufAction
 import Rasa.Internal.Events
 
 import Control.Monad
+import Control.Lens
+import Data.Default
 import Data.Maybe
+import Data.Typeable
+
+import qualified Data.Map as M
 import qualified Yi.Rope as Y
 
 
@@ -74,3 +88,62 @@ prevBufRef br = do
                      [] -> last bufRefs
                      (x:_) -> x
 
+
+
+-- | A wrapper around event listeners so they can be stored in 'Listeners'.
+data Listener where
+  Listener :: Typeable eventType => ListenerId -> (eventType -> Action ()) -> Listener
+
+-- | An opaque reverence to a specific registered event-listener.
+-- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
+data ListenerId =
+  ListenerId Int TypeRep
+
+instance Eq ListenerId where
+  ListenerId a _ == ListenerId b _ = a == b
+
+-- | A map of Event types to a list of listeners for that event
+type Listeners = M.Map TypeRep [Listener]
+
+data L = L Int Listeners
+
+instance Show L where
+  show _ = "Listeners"
+
+instance Default L where
+  def = L 0 M.empty
+
+mkDispatcher :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
+mkDispatcher = dispatcher
+  where
+    dispatcher :: eventType -> Action result
+    dispatcher evt = do
+      L _ listeners <- getExt
+      results <- traverse ($ evt) (matchingListeners listeners)
+      return $ mconcat results
+
+mkRegistrar :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
+mkRegistrar = registrar
+  where
+    registrar :: (eventType -> Action result) -> Action ListenerId
+    registrar lFunc = do
+      L nextListenerId listeners  <- getExt
+      let (listener, listenerId, eventType) = mkListener nextListenerId lFunc
+          newListeners = M.insertWith mappend eventType [listener] listeners
+      setExt $ L (nextListenerId + 1) newListeners
+      return listenerId
+
+    mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+    mkListener n listenerFunc =
+      let list = Listener listId (void . listenerFunc)
+          listId = ListenerId n (typeRep (Proxy :: Proxy event))
+          prox = typeRep (Proxy :: Proxy event)
+        in (list, listId, prox)
+
+-- | This extracts all event listeners from a map of listeners which match the type of the provided event.
+matchingListeners :: forall eventType result. (Typeable eventType, Typeable result) => Listeners -> [eventType -> Action result]
+matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy eventType))._Just)
+
+-- | Extract the listener function from eventType listener
+getListener :: forall eventType r. (Typeable eventType, Typeable r) => Listener -> Maybe (eventType -> Action r)
+getListener (Listener _ x) = cast x
