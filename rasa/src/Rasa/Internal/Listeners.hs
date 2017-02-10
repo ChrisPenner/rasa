@@ -8,6 +8,7 @@
 module Rasa.Internal.Listeners
   ( dispatchEvent
   , addListener
+  , removeListener
   , Dispatcher
   , ListenerId
 
@@ -71,6 +72,7 @@ instance Eq ListenerId where
 -- | A map of Event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
+-- | Store the listeners in extensions
 data GlobalListeners = GlobalListeners Int Listeners
 
 instance Show GlobalListeners where
@@ -88,21 +90,13 @@ getListener :: forall eventType r. (Typeable eventType, Typeable r) => Listener 
 getListener (Listener _ x) = cast x
 
 
+-- | Trigger an 'Action' on a 'Keypress'
 onKeypress :: (Keypress -> Action ()) -> Action ListenerId
 onKeypress = addListener
 
+-- | Dispatch a 'Keypress' event.
 dispatchKeypress :: Keypress -> Action ()
 dispatchKeypress = dispatchEvent
-
--- | This registers an event listener, as long as the listener is well-typed similar to this:
---
--- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
--- It returns an ID which may be used with 'removeListener' to cancel the listener
--- onEveryTrigger :: Typeable event => (event -> Action b) -> Action ListenerId
--- onEveryTrigger = addListener
-
--- onEveryTrigger_ :: Typeable event => (event -> Action b) -> Action ()
--- onEveryTrigger_ = void . onEveryTrigger
 
 -- | Registers an action to be performed during the Initialization phase.
 --
@@ -113,6 +107,7 @@ dispatchKeypress = dispatchEvent
 onInit :: Action a -> Action ()
 onInit action = void $ addListener (const (void action) :: Init -> Action ())
 
+-- | Dispatch the 'Init' action.
 dispatchInit :: Action ()
 dispatchInit = dispatchEvent Init
 
@@ -123,6 +118,7 @@ beforeEveryEvent action = addListener (const (void action) :: BeforeEvent -> Act
 beforeEveryEvent_ :: Action a -> Action ()
 beforeEveryEvent_ = void . beforeEveryEvent
 
+-- | Dispatch the 'BeforeEvent' action.
 dispatchBeforeEvent :: Action ()
 dispatchBeforeEvent = dispatchEvent BeforeEvent
 
@@ -137,6 +133,7 @@ beforeEveryRender action = addListener (const (void action) :: BeforeRender -> A
 beforeEveryRender_ :: Action a -> Action ()
 beforeEveryRender_ = void . beforeEveryRender
 
+-- | Dispatch the 'BeforeRender' action.
 dispatchBeforeRender :: Action ()
 dispatchBeforeRender = dispatchEvent BeforeRender
 
@@ -149,6 +146,7 @@ onEveryRender action = addListener (const $ void action :: OnRender -> Action ()
 onEveryRender_ :: Action a -> Action ()
 onEveryRender_ = void . onEveryRender
 
+-- | Dispatch the 'OnRender' action.
 dispatchOnRender :: Action ()
 dispatchOnRender = dispatchEvent OnRender
 
@@ -162,6 +160,7 @@ afterEveryRender action = addListener (const $ void action :: AfterRender -> Act
 afterEveryRender_ :: Action a -> Action ()
 afterEveryRender_ = void . afterEveryRender
 
+-- | Dispatch the 'AfterRender' action.
 dispatchAfterRender :: Action ()
 dispatchAfterRender = dispatchEvent AfterRender
 
@@ -174,6 +173,7 @@ dispatchAfterRender = dispatchEvent AfterRender
 onExit :: Action a -> Action ()
 onExit action = void $ addListener (const $ void action :: Exit -> Action ())
 
+-- | Dispatch the 'Exit' action.
 dispatchExit :: Action ()
 dispatchExit = dispatchEvent Exit
 
@@ -183,6 +183,7 @@ dispatchExit = dispatchEvent Exit
 onBufAdded :: (BufAdded -> Action a) -> Action ListenerId
 onBufAdded actionF = addListener $ void <$> actionF
 
+-- | Dispatch the 'BufAdded' action.
 dispatchBufAdded :: BufAdded -> Action ()
 dispatchBufAdded = dispatchEvent
 
@@ -192,10 +193,11 @@ dispatchBufAdded = dispatchEvent
 onBufTextChanged :: (BufTextChanged -> Action a) -> Action ListenerId
 onBufTextChanged actionF = addListener $ void <$> actionF
 
+-- | Dispatch the 'BufBufTextChanged' action.
 dispatchBufTextChanged :: BufTextChanged -> Action ()
 dispatchBufTextChanged = dispatchEvent
 
--- | This is a type alias to make defining your event provider functions easier;
+-- | This is a type alias to make defining your functions for use with 'asyncEventProvider' easier;
 -- It represents the function your event provider function will be passed to allow dispatching
 -- events. Using this type requires the @RankNTypes@ language pragma.
 type Dispatcher = forall event. Typeable event => event -> IO ()
@@ -206,10 +208,10 @@ type Dispatcher = forall event. Typeable event => event -> IO ()
 --
 -- Let's break it down:
 --
--- Using 'dispatchEvent' with asyncEventProvider requires the @RankNTypes@ language pragma.
+-- Using the 'Dispatcher' type with asyncEventProvider requires the @RankNTypes@ language pragma.
 --
--- This type as a whole represents a function which accepts a 'dispatchEvent' and returns an 'IO';
--- the dispatchEvent itself accepts data of ANY 'Typeable' type and emits it as an event (see "Rasa.Internal.Events").
+-- This type as a whole represents a function which accepts a 'Dispatcher' and returns an 'IO';
+-- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event (see "Rasa.Internal.Events").
 --
 -- When you call 'asyncEventProvider' you pass it a function which accepts a @dispatch@ function as an argument
 -- and then calls it with various events within the resulting 'IO'.
@@ -220,7 +222,7 @@ type Dispatcher = forall event. Typeable event => event -> IO ()
 --
 -- > {-# language RankNTypes #-}
 -- > data Timer = Timer
--- > myTimer :: dispatchEvent -> IO ()
+-- > myTimer :: Dispatcher -> IO ()
 -- > myTimer dispatch = forever $ dispatch Timer >> threadDelay 1000000
 -- >
 -- > myAction :: Action ()
@@ -238,12 +240,20 @@ asyncEventProvider asyncEventProv =
 dispatchEventAsync :: Typeable event => IO event -> Action ()
 dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 
+-- | Dispatches an event of any type. This should be used to define
+-- your own custom event dispatchers (with more concrete types) which you can re-export.
+-- You can collect results from all listeners if they were registered to return an @Action result@
+-- where @result@ is a Monoid (for example a list).
 dispatchEvent :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
 dispatchEvent evt = do
       GlobalListeners _ listeners <- getExt
       results <- traverse ($ evt) (matchingListeners listeners)
       return $ mconcat results
 
+-- | This adds an event listener which listens for events of @eventType@ and will run the resulting
+-- @Action result@ when triggered by some 'dispatchEvent'.
+--
+-- This should primarily be used to create your own more specific addListener functions which you re-export.
 addListener :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
 addListener lFunc = do
   GlobalListeners nextListenerId listeners  <- getExt
@@ -259,3 +269,12 @@ addListener lFunc = do
             prox = typeRep (Proxy :: Proxy event)
           in (list, listId, prox)
 
+-- | Removes the listener represented by the given ListenerId.
+removeListener :: ListenerId -> Action ()
+removeListener listenerId@(ListenerId _ eventType) =
+  overExt remover
+    where
+      remover (GlobalListeners nextListenerId listeners) =
+        let newListeners = listeners & at eventType._Just %~ filter (notMatch listenerId)
+         in GlobalListeners nextListenerId newListeners
+      notMatch idA (Listener idB _) = idA /= idB

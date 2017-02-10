@@ -108,8 +108,8 @@ module Rasa.Ext
   -- it'll all work out.
   --
   -- Since it's polymorphic, if ghc can't figure out the type the result is
-  -- supposed to be then you'll need to help it out with a type annotation. 
-  -- In practice you won't typically need to do this unless you're 
+  -- supposed to be then you'll need to help it out with a type annotation.
+  -- In practice you won't typically need to do this unless you're
   -- doing something complicated.
   , HasExts(..)
   , ext
@@ -123,13 +123,37 @@ module Rasa.Ext
   , overBufExt
 
   -- * Events
+
+  -- | 'dispatchEvent' and 'addListener' are key parts of working with extensions.
+  -- Here's an example of how you might use them in some sort of clipboard extensions:
+  --
+  -- > -- The event type which is triggered whenever something is copied to clipboard
+  -- > data Copied = Copied Y.YiString
+  -- >
+  -- > -- This registers functions to be run when something is copied.
+  -- > -- you can see this is just addListener but with a more concrete type.
+  -- > onCopy :: (Copied -> Action ()) -> Action ListenerId
+  -- > onCopy = addListener
+  -- >
+  -- > -- This takes a Copied event and runs all the listeners associated.
+  -- > -- You can see it's just 'dispatchEvent' with a more concrete type.
+  -- > doCopy :: Copied -> Action ()
+  -- > doCopy = dispatchEvent
+  -- >
+  -- > copier :: Action ()
+  -- > copier = do
+  -- > -- ... do some stuff
+  -- > doCopy $ Copied copiedTxt
+  --
   , dispatchEvent
   , addListener
+  , removeListener
   , ListenerId
 
   -- * Built-in Events
   , Keypress(..)
   , Mod(..)
+  , dispatchKeypress
   , BufAdded(..)
   , BufTextChanged(..)
 
@@ -146,6 +170,7 @@ module Rasa.Ext
   , onExit
   , onBufAdded
   , onBufTextChanged
+  , onKeypress
 
   -- * Working with Async Events/Actions
   , dispatchActionAsync
@@ -184,9 +209,6 @@ module Rasa.Ext
   , asString
   , asLines
   , clamp
-
-  , onKeypress
-  , dispatchKeypress
   ) where
 
 import Rasa.Internal.Action
