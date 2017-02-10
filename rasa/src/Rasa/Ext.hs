@@ -121,34 +121,34 @@ module Rasa.Ext
 
   -- * Events
   , Keypress(..)
+  , BufAdded(..)
   , Mod(..)
 
   -- * Dealing with events
   , ListenerId
-  , dispatchEvent
-  , onEveryTrigger
-  , onEveryTrigger_
-  , removeListener
 
   -- * Built-in Event Listeners
   , onInit
+  , dispatchInit
   , beforeEveryEvent
   , beforeEveryEvent_
   , beforeEveryRender
   , beforeEveryRender_
+  , dispatchBeforeRender
   , onEveryRender
   , onEveryRender_
+  , dispatchOnRender
   , afterEveryRender
   , afterEveryRender_
+  , dispatchAfterRender
   , onExit
+  , dispatchExit
   , onBufAdded
   , onBufTextChanged
 
   -- * Working with Async Events/Actions
   , Dispatcher
   , dispatchActionAsync
-  , dispatchEventAsync
-  , asyncEventProvider
   , asyncActionProvider
 
    -- * Ranges
@@ -187,7 +187,7 @@ module Rasa.Ext
   ) where
 
 import Rasa.Internal.Action
-import Rasa.Internal.Actions hiding (ListenerId)
+import Rasa.Internal.Actions
 import Rasa.Internal.BufAction
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer

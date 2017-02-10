@@ -7,7 +7,6 @@ import Rasa.Ext
 import Rasa.Ext.Views
 import Rasa.Ext.Files (save)
 import Rasa.Ext.Cursors
-import Rasa.Ext.StatusBar
 
 import Control.Monad
 import Control.Lens
@@ -55,12 +54,7 @@ addHist keypress = overBufExt extend
 -- >    vim
 -- >    ...
 vim :: Action ()
-vim = do
-  -- Register to listen for keypresses
-  -- onEveryTrigger_ handleKeypress
-  onKeypress handleKeypress
-  -- Set the status bar to the current mode before each render
-  beforeEveryRender_ setStatus
+vim = void $ onKeypress handleKeypress
 
 -- | The event listener which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()
@@ -74,14 +68,6 @@ handleKeypress keypress = focusDo_ $ do
   VimHist postHist <- getBufExt
   -- If nothing changed than an action must have happened
   unless (preHist /= postHist) (setBufExt $ VimHist [])
-
--- | Sets the status bar to the current mode and current VimHist
-setStatus :: Action ()
-setStatus = focusDo_ $ do
-  mode <- getBufExt :: BufAction VimMode
-  VimHist hist <- getBufExt
-  centerStatus $ Y.fromString . show $ mode
-  rightStatus $ Y.fromString . show $ hist
 
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()

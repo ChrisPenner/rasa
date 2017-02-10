@@ -1,8 +1,8 @@
 {-# language ExistentialQuantification, Rank2Types, ScopedTypeVariables #-}
 module Rasa (rasa) where
 
+import Rasa.Internal.Listeners
 import Rasa.Internal.Action
-import Rasa.Internal.Events
 
 import Control.Monad
 import Control.Monad.IO.Class
@@ -29,19 +29,19 @@ rasa initialize = do
   (output, input) <- spawn unbounded
   evalAction (mkActionState output) $ do
     initialize
-    dispatchEvent Init
+    dispatchInit
     eventLoop $ fromInput input
-    dispatchEvent Exit
+    dispatchExit
 
 -- | This is the main event loop, it runs recursively forever until something
 -- sets 'Rasa.Editor.exiting'. It runs the pre-event listeners, then checks if any
 -- async events have finished, then runs the post event listeners and repeats.
 eventLoop :: Producer (Action ()) IO () -> Action ()
 eventLoop producer = do
-  dispatchEvent BeforeRender
-  dispatchEvent OnRender
-  dispatchEvent AfterRender
-  dispatchEvent BeforeEvent
+  dispatchBeforeRender
+  dispatchOnRender
+  dispatchAfterRender
+  dispatchBeforeEvent
   (mAction, nextProducer) <- liftIO $ runStateT draw producer
   fromMaybe (return ()) mAction
   isExiting <- shouldExit

@@ -6,16 +6,12 @@
   , ScopedTypeVariables
   , TemplateHaskell
   , RankNTypes
+  , GADTs
 #-}
 module Rasa.Internal.Action
   ( Action(..)
-  , addListener
-  , removeListener
-  , dispatchEvent
-  , dispatchEventAsync
   , dispatchActionAsync
   , asyncActionProvider
-  , asyncEventProvider
   , bufferDo
   , addBuffer
   , getBufRefs
@@ -32,13 +28,13 @@ module Rasa.Internal.Action
   , bootstrapAction
   , ActionState
   , mkActionState
-  , Listener
-  , ListenerId
-  , Listeners
-  , listeners
-  , nextListenerId
   , actionQueue
   , Dispatcher
+
+
+  , mkRegistrar
+  , mkDispatcher
+  , ListenerId
   ) where
 
 import Rasa.Internal.ActionMonads
@@ -47,26 +43,24 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
 import Rasa.Internal.Extensions
 
+
+import qualified Data.Map as M
+
 import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
 
-import Data.Foldable
 import Data.Default
 import Data.Maybe
 import Data.Typeable
-import qualified Data.Map as M
 import qualified Data.IntMap as IM
 
-import Unsafe.Coerce
 import Pipes hiding (Proxy, next)
 import Pipes.Concurrent hiding (Buffer)
 
 -- | This contains all data representing the editor's state. It acts as the state object for an 'Action
 data ActionState = ActionState
   { _ed :: Editor
-  , _listeners :: Listeners
-  , _nextListenerId :: Int
   , _nextBufId :: Int
   , _actionQueue :: Output (Action ())
   }
@@ -78,8 +72,6 @@ instance Show ActionState where
 mkActionState :: Output (Action ()) -> ActionState
 mkActionState out = ActionState
     { _ed=def
-    , _listeners=def
-    , _nextListenerId=0
     , _nextBufId=0
     , _actionQueue=out
     }
@@ -89,11 +81,6 @@ instance HasEditor ActionState where
 
 instance HasExts ActionState where
   exts = ed.exts
-
--- | This function takes an IO which results in some Event, it runs the IO
--- asynchronously and dispatches the event
-dispatchEventAsync :: Typeable event => IO event -> Action ()
-dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$> ioEvent) ()
 
 -- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
 -- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
@@ -128,14 +115,6 @@ dispatchEventAsync ioEvent = liftActionF $ DispatchActionAsync (dispatchEvent <$
 dispatchActionAsync :: IO (Action ()) -> Action ()
 dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 
--- | Adds a new listener
-addListener :: Typeable event => (event -> Action r) -> Action ListenerId
-addListener listener = liftActionF $ AddListener listener id
-
--- | This removes a listener and prevents it from responding to any more events.
-removeListener :: ListenerId -> Action ()
-removeListener listenerId = liftActionF $ RemoveListener listenerId ()
-
 -- | Don't let the type signature confuse you; it's much simpler than it seems.
 -- The first argument is a function which takes an action provider; the action provider
 -- will be passed a dispatch function which can be called as often as you like with @Action ()@s.
@@ -143,6 +122,18 @@ removeListener listenerId = liftActionF $ RemoveListener listenerId ()
 -- Note that the dispatch function calls forkIO on its own; so there's no need for you to do so.
 --
 -- Use this function when you have some long-running process which dispatches multiple 'Action's.
+--
+-- Here's an example which fires a @Timer@ event every second.
+--
+-- > data Timer = TimerFired
+-- > dispatchTimer :: Action ()
+-- > dispatchTimer = mkDispatcher Timer
+-- > myTimer :: (Action () -> IO ()) -> IO ()
+-- > myTimer dispatch = forever $ dispatch dispatchTimer >> threadDelay 1000000
+-- >
+-- > myAction :: Action ()
+-- > myAction = onInit $ asyncActionProvider myTimer
+
 asyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> Action ()
 asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncActionProv ()
 
@@ -150,38 +141,6 @@ asyncActionProvider asyncActionProv = liftActionF $ AsyncActionProvider asyncAct
 -- It represents the function your event provider function will be passed to allow dispatching
 -- events. Using this type requires the @RankNTypes@ language pragma.
 type Dispatcher = forall event. Typeable event => event -> IO ()
-
--- | This allows long-running IO processes to provide Events to Rasa asyncronously.
---
--- Don't let the type signature confuse you; it's much simpler than it seems.
---
--- Let's break it down:
---
--- Using 'Dispatcher' with asyncEventProvider requires the @RankNTypes@ language pragma.
---
--- This type as a whole represents a function which accepts a 'Dispatcher' and returns an 'IO';
--- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event (see "Rasa.Internal.Events").
---
--- When you call 'asyncEventProvider' you pass it a function which accepts a @dispatch@ function as an argument
--- and then calls it with various events within the resulting 'IO'.
---
--- Note that asyncEventProvider calls forkIO internally, so there's no need to do that yourself.
---
--- Here's an example which fires a @Timer@ event every second.
---
--- > {-# language RankNTypes #-}
--- > data Timer = Timer
--- > myTimer :: Dispatcher -> IO ()
--- > myTimer dispatch = forever $ dispatch Timer >> threadDelay 1000000
--- >
--- > myAction :: Action ()
--- > myAction = onInit $ asyncEventProvider myTimer
-asyncEventProvider :: (Dispatcher -> IO ()) -> Action ()
-asyncEventProvider asyncEventProv =
-  liftActionF $ AsyncActionProvider (eventsToActions asyncEventProv) ()
-    where
-      eventsToActions :: (Dispatcher -> IO ()) -> (Action () -> IO ()) -> IO ()
-      eventsToActions aEventProv dispatcher = aEventProv (dispatcher . dispatchEvent)
 
 -- | Runs a BufAction over the given BufRefs, returning any results.
 --
@@ -262,30 +221,6 @@ actionInterpreter (Free actionF) =
                 buffers.at bIndex ?= newBuffer
                 return res
 
-    (AddListener listenerF withListenerId) -> do
-      n <- nextListenerId <<+= 1
-      let (listener, listenerId, eventType) = mkListener n listenerF
-      listeners %= M.insertWith mappend eventType [listener]
-      actionInterpreter $ withListenerId listenerId
-        where
-          mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
-          mkListener n listenerFunc =
-            let list = Listener listId (void . listenerFunc)
-                listId = ListenerId n (typeRep (Proxy :: Proxy event))
-                prox = typeRep (Proxy :: Proxy event)
-             in (list, listId, prox)
-
-    (RemoveListener listenerId@(ListenerId _ eventType) next) -> do
-      listeners.at eventType._Just %= filter (notMatch listenerId)
-      actionInterpreter next
-        where
-          notMatch idA (Listener idB _) = idA /= idB
-
-    (DispatchEvent evt next) -> do
-      listeners' <- use listeners
-      let (Action action) = traverse_ ($ evt) (matchingListeners listeners')
-      actionInterpreter (action >> next)
-
     (DispatchActionAsync asyncActionIO next) -> do
       asyncQueue <- use actionQueue
       let effect = (liftIO asyncActionIO >>= yield) >-> toOutput asyncQueue
@@ -331,13 +266,57 @@ actionInterpreter (Free actionF) =
 
 actionInterpreter (Pure res) = return res
 
--- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
-matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
--- | Extract the listener function from a listener
-getListener :: Listener -> (a -> Action ())
-getListener = coerce
-  where
-    coerce :: Listener -> (a -> Action ())
-    coerce (Listener _ x) = unsafeCoerce x
+
+
+-- | A wrapper around event listeners so they can be stored in 'Listeners'.
+data Listener where
+  Listener :: Typeable eventType => ListenerId -> (eventType -> Action ()) -> Listener
+
+-- | An opaque reverence to a specific registered event-listener.
+-- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
+data ListenerId =
+  ListenerId Int TypeRep
+
+instance Eq ListenerId where
+  ListenerId a _ == ListenerId b _ = a == b
+
+-- | A map of Event types to a list of listeners for that event
+type Listeners = M.Map TypeRep [Listener]
+
+data L = L Int Listeners
+
+instance Show L where
+  show _ = "Listeners"
+
+instance Default L where
+  def = L 0 M.empty
+
+mkDispatcher :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> Action result)
+mkDispatcher evt = do
+      L _ listeners <- getExt
+      results <- traverse ($ evt) (matchingListeners listeners)
+      return $ mconcat results
+
+mkRegistrar :: forall result eventType. (Typeable eventType) => (eventType -> Action result) -> Action ListenerId
+mkRegistrar lFunc = do
+  L nextListenerId listeners  <- getExt
+  let (listener, listenerId, eventType) = mkListener nextListenerId lFunc
+      newListeners = M.insertWith mappend eventType [listener] listeners
+  setExt $ L (nextListenerId + 1) newListeners
+  return listenerId
+    where
+      mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+      mkListener n listenerFunc =
+        let list = Listener listId (void . listenerFunc)
+            listId = ListenerId n (typeRep (Proxy :: Proxy event))
+            prox = typeRep (Proxy :: Proxy event)
+          in (list, listId, prox)
+
+-- | This extracts all event listeners from a map of listeners which match the type of the provided event.
+matchingListeners :: forall eventType result. (Typeable eventType, Typeable result) => Listeners -> [eventType -> Action result]
+matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy eventType))._Just)
+
+-- | Extract the listener function from eventType listener
+getListener :: forall eventType r. (Typeable eventType, Typeable r) => Listener -> Maybe (eventType -> Action r)
+getListener (Listener _ x) = cast x

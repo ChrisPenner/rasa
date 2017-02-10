@@ -17,7 +17,6 @@ module Rasa.Internal.BufAction
 import Rasa.Internal.ActionMonads
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
-import Rasa.Internal.Events
 import Rasa.Internal.Extensions
 
 import Control.Lens
@@ -77,7 +76,7 @@ bufActionInterpreter (Free bufActionF) =
 
     (SetRange rng newText next) -> do
       text.range rng .= newText
-      lift . dispatchEvent $ BufTextChanged rng newText
+      -- lift . bufTextChanged $ BufTextChanged rng newText
       bufActionInterpreter next
 
     (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
