@@ -21,7 +21,11 @@ import Rasa.Internal.Extensions
 
 import Data.Default
 import Data.IntMap
+import qualified Data.Map as M
 import Control.Lens
+import Data.List
+
+import qualified Yi.Rope as Y
 
 -- | An opaque reference to a buffer.
 -- When operating over a BufRef Rasa checks if the 'Rasa.Internal.Buffer.Buffer' still
@@ -40,9 +44,13 @@ makeLenses ''Editor
 
 instance Show Editor where
   show ed =
-    "Buffers==============\n" ++ show (ed^.buffers) ++ "\n\n"
-    ++ "Editor Extensions==============\n" ++ show (ed^.exts) ++ "\n\n"
+    "Buffers==============\n" ++ bufferText ++ "\n\n"
+    ++ "Editor Extensions==============\n" ++ extText ++ "\n\n"
     ++ "---\n\n"
+    where
+      bufferText = intercalate "\n" $ zipWith ((++) . (++ ": ") .  show) [(1::Integer)..] ((take 30 . Y.toString) <$> ed^..buffers.traverse.text)
+      extText = intercalate "\n" $ show <$> ed^.exts.to M.toList
+
 
 -- | This allows polymorphic lenses over anything that has access to an Editor context
 class HasEditor a where
