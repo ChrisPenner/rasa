@@ -12,6 +12,7 @@ module Rasa.Internal.Action
   , addListener
   , removeListener
   , dispatchEvent
+  , dispatchEvent_
   , dispatchEventAsync
   , dispatchActionAsync
   , asyncActionProvider
@@ -51,14 +52,12 @@ import Control.Lens
 import Control.Monad.Free
 import Control.Monad.State
 
-import Data.Foldable
 import Data.Default
 import Data.Maybe
 import Data.Typeable
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
 
-import Unsafe.Coerce
 import Pipes hiding (Proxy, next)
 import Pipes.Concurrent hiding (Buffer)
 
@@ -129,7 +128,7 @@ dispatchActionAsync :: IO (Action ()) -> Action ()
 dispatchActionAsync ioAction = liftActionF $ DispatchActionAsync ioAction ()
 
 -- | Adds a new listener
-addListener :: Typeable event => (event -> Action r) -> Action ListenerId
+addListener :: (Typeable event, Typeable response, Monoid response) => (event -> Action response) -> Action ListenerId
 addListener listener = liftActionF $ AddListener listener id
 
 -- | This removes a listener and prevents it from responding to any more events.
@@ -268,9 +267,9 @@ actionInterpreter (Free actionF) =
       listeners %= M.insertWith mappend eventType [listener]
       actionInterpreter $ withListenerId listenerId
         where
-          mkListener :: forall event r. Typeable event => Int -> (event -> Action r) -> (Listener, ListenerId, TypeRep)
+          mkListener :: forall event response. (Typeable event, Typeable response, Monoid response) => Int -> (event -> Action response) -> (Listener, ListenerId, TypeRep)
           mkListener n listenerFunc =
-            let list = Listener listId (void . listenerFunc)
+            let list = Listener listId listenerFunc
                 listId = ListenerId n (typeRep (Proxy :: Proxy event))
                 prox = typeRep (Proxy :: Proxy event)
              in (list, listId, prox)
@@ -281,10 +280,10 @@ actionInterpreter (Free actionF) =
         where
           notMatch idA (Listener idB _) = idA /= idB
 
-    (DispatchEvent evt next) -> do
+    (DispatchEvent evt toNext) -> do
       listeners' <- use listeners
-      let (Action action) = traverse_ ($ evt) (matchingListeners listeners')
-      actionInterpreter (action >> next)
+      let (Action action) = mconcat <$> traverse ($ evt) (matchingListeners listeners')
+      actionInterpreter (action >>= toNext)
 
     (DispatchActionAsync asyncActionIO next) -> do
       asyncQueue <- use actionQueue
@@ -332,12 +331,9 @@ actionInterpreter (Free actionF) =
 actionInterpreter (Pure res) = return res
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
-matchingListeners :: forall a. Typeable a => Listeners -> [a -> Action ()]
-matchingListeners listeners' = getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
+matchingListeners :: forall a r. (Typeable a, Typeable r) => Listeners -> [a -> Action r]
+matchingListeners listeners' = catMaybes $ getListener <$> (listeners'^.at (typeRep (Proxy :: Proxy a))._Just)
 
 -- | Extract the listener function from a listener
-getListener :: Listener -> (a -> Action ())
-getListener = coerce
-  where
-    coerce :: Listener -> (a -> Action ())
-    coerce (Listener _ x) = unsafeCoerce x
+getListener :: forall a r. (Typeable a, Typeable r) => Listener -> Maybe (a -> Action r)
+getListener (Listener _ x) = cast x

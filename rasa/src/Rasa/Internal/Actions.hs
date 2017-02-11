@@ -51,7 +51,7 @@ newBuffer :: Y.YiString -> Action BufRef
 newBuffer txt = do
   bufRef <- addBuffer
   void $ bufferDo [bufRef] (setText txt)
-  dispatchEvent (BufAdded bufRef)
+  dispatchEvent_ (BufAdded bufRef)
   return bufRef
 
 -- | Gets 'BufRef' that comes after the one provided

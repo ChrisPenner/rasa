@@ -77,7 +77,7 @@ bufActionInterpreter (Free bufActionF) =
 
     (SetRange rng newText next) -> do
       text.range rng .= newText
-      lift . dispatchEvent $ BufTextChanged rng newText
+      lift . dispatchEvent_ $ BufTextChanged rng newText
       bufActionInterpreter next
 
     (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext

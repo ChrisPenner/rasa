@@ -4,7 +4,6 @@ module Rasa.Ext.Slate.Internal.Render (render) where
 import Rasa.Ext
 import Rasa.Ext.Views
 import Rasa.Ext.Style
--- import Rasa.Ext.StatusBar (left, center, right)
 import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 import Data.Functor.Foldable

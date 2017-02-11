@@ -33,10 +33,10 @@ import qualified Yi.Rope as Y
 --
 -- @MyEventType -> Action ()@ then it will be triggered on all dispatched events of type @MyEventType@.
 -- It returns an ID which may be used with 'removeListener' to cancel the listener
-onEveryTrigger :: Typeable event => (event -> Action b) -> Action ListenerId
+onEveryTrigger :: (Typeable event, Typeable response, Monoid response) => (event -> Action response) -> Action ListenerId
 onEveryTrigger = addListener
 
-onEveryTrigger_ :: Typeable event => (event -> Action b) -> Action ()
+onEveryTrigger_ :: (Typeable event, Typeable response, Monoid response) => (event -> Action response) -> Action ()
 onEveryTrigger_ = void . onEveryTrigger
 
 -- | Registers an action to be performed during the Initialization phase.
@@ -45,14 +45,14 @@ onEveryTrigger_ = void . onEveryTrigger
 -- Though arbitrary actions may be performed in the configuration block;
 -- it's recommended to embed such actions in the onInit event listener
 -- so that all event listeners are registered before anything Actions occur.
-onInit :: forall a. Action a -> Action ()
+onInit :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 onInit action = onEveryTrigger_ (const action :: Init -> Action a)
 
 -- | Registers an action to be performed BEFORE each event phase.
-beforeEveryEvent :: forall a. Action a -> Action ListenerId
+beforeEveryEvent :: forall a. (Monoid a, Typeable a) => Action a -> Action ListenerId
 beforeEveryEvent action = onEveryTrigger (const action :: BeforeEvent -> Action a)
 
-beforeEveryEvent_ :: forall a. Action a -> Action ()
+beforeEveryEvent_ :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 beforeEveryEvent_ = void . beforeEveryEvent
 
 -- | Registers an action to be performed BEFORE each render phase.
@@ -60,29 +60,29 @@ beforeEveryEvent_ = void . beforeEveryEvent
 -- This is a good spot to add information useful to the renderer
 -- since all actions have been performed. Only cosmetic changes should
 -- occur during this phase.
-beforeEveryRender :: forall a. Action a -> Action ListenerId
+beforeEveryRender :: forall a. (Monoid a, Typeable a) => Action a -> Action ListenerId
 beforeEveryRender action = onEveryTrigger (const action :: BeforeRender -> Action a)
 
-beforeEveryRender_ :: forall a. Action a -> Action ()
+beforeEveryRender_ :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 beforeEveryRender_ = void . beforeEveryRender
 
 -- | Registers an action to be performed during each render phase.
 --
 -- This phase should only be used by extensions which actually render something.
-onEveryRender :: forall a. Action a -> Action ListenerId
+onEveryRender :: forall a. (Monoid a, Typeable a) => Action a -> Action ListenerId
 onEveryRender action = onEveryTrigger (const action :: OnRender -> Action a)
 
-onEveryRender_ :: forall a. Action a -> Action ()
+onEveryRender_ :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 onEveryRender_ = void . onEveryRender
 
 -- | Registers an action to be performed AFTER each render phase.
 --
 -- This is useful for cleaning up extension state that was registered for the
 -- renderer, but needs to be cleared before the next iteration.
-afterEveryRender :: forall a. Action a -> Action ListenerId
+afterEveryRender :: forall a. (Monoid a, Typeable a) => Action a -> Action ListenerId
 afterEveryRender action = onEveryTrigger (const action :: AfterRender -> Action a)
 
-afterEveryRender_ :: forall a. Action a -> Action ()
+afterEveryRender_ :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 afterEveryRender_ = void . afterEveryRender
 
 -- | Registers an action to be performed during the exit phase.
@@ -91,13 +91,13 @@ afterEveryRender_ = void . afterEveryRender
 -- allows an opportunity to do clean-up, kill any processes you've started, or
 -- save any data before the editor terminates.
 
-onExit :: forall a. Action a -> Action ()
+onExit :: forall a. (Monoid a, Typeable a) => Action a -> Action ()
 onExit action = onEveryTrigger_ (const action :: Exit -> Action a)
 
 -- | Registers an action to be performed after a new buffer is added.
 --
 -- The supplied function will be called with a 'BufRef' to the new buffer, and the resulting 'Action' will be run.
-onBufAdded :: forall a. (BufRef -> Action a) -> Action ListenerId
+onBufAdded :: forall a. (Monoid a, Typeable a) => (BufRef -> Action a) -> Action ListenerId
 onBufAdded f = onEveryTrigger listener
   where
     listener (BufAdded bRef) = f bRef
@@ -105,7 +105,7 @@ onBufAdded f = onEveryTrigger listener
 -- | This is fired every time text in a buffer changes.
 --
 -- The range of text which was altered and the new value of that text are provided inside a 'BufTextChanged' event.
-onBufTextChanged :: forall a. (CrdRange -> Y.YiString -> Action a) -> Action ListenerId
+onBufTextChanged :: forall a. (Monoid a, Typeable a) => (CrdRange -> Y.YiString -> Action a) -> Action ListenerId
 onBufTextChanged f = onEveryTrigger listener
   where
     listener (BufTextChanged r newText) = f r newText

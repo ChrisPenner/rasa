@@ -126,6 +126,7 @@ module Rasa.Ext
   -- * Dealing with events
   , ListenerId
   , dispatchEvent
+  , dispatchEvent_
   , onEveryTrigger
   , onEveryTrigger_
   , removeListener
