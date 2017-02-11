@@ -174,6 +174,8 @@ normal [Keypress 's' [Ctrl]] = save
 normal [Keypress ';' []] = do
   rngs <- getRanges
   setRanges (rngs^.reversed.to (take 1))
+normal [Keypress 'r' []] = addHist $ Keypress 'r' []
+normal [Keypress 'r' [],Keypress c []] = delete >> insertText (Y.singleton c)
 normal _ = return ()
 
 -- | Move cursors to end of the line
