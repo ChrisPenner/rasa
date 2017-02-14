@@ -1,5 +1,3 @@
-{-# LANGUAGE Rank2Types, FlexibleContexts #-}
-
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Rasa.Ext
@@ -24,13 +22,14 @@
 --
 -- > logKeypress :: Keypress -> Action ()
 -- > logKeypress (Keypress char _) = liftIO $ appendFile "logs" ("You pressed " ++ [char] ++ "\n")
+-- > logKeypress _ = return ()
 -- >
 -- > logger :: Action ()
 -- > logger = do
 -- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
 -- >   -- Listeners should also be registered using 'onInit'.
 -- >   -- It ensures all listeners are ready before any actions occur.
--- >   onInit $ onEveryTrigger_ logKeypress
+-- >   onInit $ onKeypress logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 --
 -- Check out this tutorial on building extensions, it's also just a great way to learn
@@ -86,7 +85,8 @@ module Rasa.Ext
   -- it.
   --
   -- Because Extension states are stored by their 'Data.Typeable.TypeRep', they must define an
-  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you.
+  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you with
+  -- @deriving Typeable@.
   --
   -- It is also required for all extension states to define an instance of
   -- 'Data.Default.Default', this is because accessing an extension which has not
@@ -106,29 +106,60 @@ module Rasa.Ext
   -- it'll all work out.
   --
   -- Since it's polymorphic, if ghc can't figure out the type the result is
-  -- supposed to be then you'll need to help it out. In practice you won't
-  -- typically need to do this unless you're doing something complicated.
+  -- supposed to be then you'll need to help it out with a type annotation.
+  -- In practice you won't typically need to do this unless you're
+  -- doing something complicated.
   , HasExts(..)
   , ext
   , getExt
   , setExt
   , overExt
-  , HasBufExts
-  , bufExt
+
   , getBufExt
   , setBufExt
   , overBufExt
 
   -- * Events
+
+  -- | 'dispatchEvent' and 'addListener' are key parts of working with extensions.
+  -- Here's an example of how you might use them in some sort of clipboard extensions:
+  --
+  -- > -- The event type which is triggered whenever something is copied to clipboard
+  -- > data Copied = Copied Y.YiString
+  -- >
+  -- > -- This registers functions to be run when something is copied.
+  -- > -- you can see this is just addListener but with a more concrete type.
+  -- > onCopy :: (Copied -> Action ()) -> Action ListenerId
+  -- > onCopy = addListener
+  -- >
+  -- > -- This takes a Copied event and runs all the listeners associated.
+  -- > -- You can see it's just 'dispatchEvent' with a more concrete type.
+  -- > doCopy :: Copied -> Action ()
+  -- > doCopy = dispatchEvent
+  -- >
+  -- > copier :: Action ()
+  -- > copier = do
+  -- > -- ... do some stuff
+  -- > doCopy $ Copied copiedTxt
+  --
+  , dispatchEvent
+  , addListener
+  , addListener_
+  , removeListener
+
+  , dispatchBufEvent
+  , addBufListener
+  , addBufListener_
+  , removeBufListener
+
+  , ListenerId
+
+  -- * Built-in Events
   , Keypress(..)
   , Mod(..)
-
-  -- * Dealing with events
-  , ListenerId
-  , dispatchEvent
-  , onEveryTrigger
-  , onEveryTrigger_
-  , removeListener
+  , dispatchKeypress
+  , BufAdded(..)
+  , BufTextChanged(..)
 
   -- * Built-in Event Listeners
   , onInit
@@ -143,13 +174,14 @@ module Rasa.Ext
   , onExit
   , onBufAdded
   , onBufTextChanged
+  , onKeypress
 
   -- * Working with Async Events/Actions
-  , Dispatcher
   , dispatchActionAsync
   , dispatchEventAsync
-  , asyncEventProvider
   , asyncActionProvider
+  , asyncEventProvider
+  , Dispatcher
 
    -- * Ranges
   , Range(..)

@@ -9,15 +9,12 @@ module Rasa.Internal.ActionMonads
   , BufAction(..)
   , ActionF(..)
   , BufActionF(..)
-  , Listener(..)
-  , Listeners
-  , ListenerId(..)
   , liftActionF
   , liftBufAction
-  , dispatchEvent
   ) where
 
 import Rasa.Internal.Editor
+import Rasa.Internal.Extensions
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
@@ -26,32 +23,13 @@ import Control.Monad.IO.Class
 
 import Data.Default
 import Data.Typeable
-import qualified Data.Map as M
 
 import qualified Yi.Rope as Y
-
--- | A wrapper around event listeners so they can be stored in 'Listeners'.
-data Listener where
-  Listener :: ListenerId -> (a -> Action ()) -> Listener
-
--- | An opaque reverence to a specific registered event-listener.
--- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
-data ListenerId =
-  ListenerId Int TypeRep
-
-instance Eq ListenerId where
-  ListenerId a _ == ListenerId b _ = a == b
-
--- | A map of Event types to a list of listeners for that event
-type Listeners = M.Map TypeRep [Listener]
 
 -- | Free Monad Actions for Action
 data ActionF next where
   LiftIO :: IO next -> ActionF next
   BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
-  AddListener :: Typeable event => (event -> Action r) -> (ListenerId -> next) -> ActionF next
-  RemoveListener :: ListenerId -> next -> ActionF next
-  DispatchEvent :: Typeable event => event -> next -> ActionF next
   DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
   AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
   AddBuffer :: (BufRef -> next) -> ActionF next
@@ -75,9 +53,12 @@ liftFIO = liftActionF . LiftIO
 instance MonadIO Action where
   liftIO = liftFIO
 
--- | Dispatches an Event
-dispatchEvent :: Typeable event => event -> Action ()
-dispatchEvent event = liftActionF $ DispatchEvent event ()
+instance HasExtMonad Action where
+  -- | Retrieve some extension state
+  getExt = liftActionF $ GetExt id
+
+  -- | Set some extension state
+  setExt newExt = liftActionF $ SetExt newExt ()
 
 -- | This is a monad for performing actions against the editor.
 -- You can register Actions to be run in response to events using 'Rasa.Internal.Listeners.onEveryTrigger'
@@ -129,3 +110,10 @@ liftBufActionFIO = liftBufAction . BufLiftIO
 
 instance MonadIO BufAction where
   liftIO = liftBufActionFIO
+
+instance HasExtMonad BufAction where
+  -- | Retrieve some buffer extension state
+  getExt = liftBufAction $ GetBufExt id
+
+  -- | Set some buffer extension state
+  setExt newExt = liftBufAction $ SetBufExt newExt ()

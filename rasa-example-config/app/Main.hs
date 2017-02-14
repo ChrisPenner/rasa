@@ -1,4 +1,4 @@
-{-# language OverloadedStrings #-}
+{-# language OverloadedStrings, RankNTypes #-}
 module Main where
 
 import Rasa (rasa)

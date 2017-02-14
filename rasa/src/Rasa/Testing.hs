@@ -2,8 +2,7 @@ module Rasa.Testing (
   testBufAction
   ) where
 
-
-import Rasa.Internal.Action
+import Rasa.Internal.Interpreters
 import Rasa.Internal.Actions
 import Rasa.Internal.BufAction
 

@@ -1,4 +1,8 @@
-{-# language Rank2Types, OverloadedStrings #-}
+{-# language
+    Rank2Types
+  , OverloadedStrings
+  , ScopedTypeVariables
+#-}
 module Rasa.Internal.Actions
   (
   -- * Performing Actions on Buffers
@@ -17,11 +21,13 @@ module Rasa.Internal.Actions
 
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
-import Rasa.Internal.BufAction
 import Rasa.Internal.Events
+import Rasa.Internal.Listeners
+import Rasa.Internal.BufAction
 
 import Control.Monad
 import Data.Maybe
+
 import qualified Yi.Rope as Y
 
 
@@ -51,7 +57,7 @@ newBuffer :: Y.YiString -> Action BufRef
 newBuffer txt = do
   bufRef <- addBuffer
   void $ bufferDo [bufRef] (setText txt)
-  dispatchEvent (BufAdded bufRef)
+  dispatchBufAdded $ BufAdded bufRef
   return bufRef
 
 -- | Gets 'BufRef' that comes after the one provided
@@ -73,4 +79,3 @@ prevBufRef br = do
               else case dropWhile (>= br) (reverse bufRefs) of
                      [] -> last bufRefs
                      (x:_) -> x
-

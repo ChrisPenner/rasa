@@ -66,8 +66,8 @@ vSplit :: Action ()
 vSplit = V.overWindows V.vSplit
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: BufRef -> Action ()
-addSplit bRef = do
+addSplit :: BufAdded -> Action ()
+addSplit (BufAdded bRef) = do
   mWin <- V.getWindows
   case mWin of
     Nothing -> V.setWindows $ Leaf (V.View True bRef 0)
