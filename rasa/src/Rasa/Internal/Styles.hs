@@ -1,21 +1,24 @@
 {-# language TemplateHaskell #-}
-module Rasa.Ext.Style 
-  ( style
-  , styles
-  , addStyle
-  , fg
+module Rasa.Internal.Styles
+  ( fg
   , bg
   , flair
   , Color(..)
   , Flair(..)
   , Style(..)
+  , StyleMap
+  , addStyleProvider
+  , getStyles
   ) where
 
-import Rasa.Ext
+import Rasa.Internal.Range
+import Rasa.Internal.BufAction
+import Rasa.Internal.Listeners
+
+import Control.Applicative
 import Control.Lens
 
 import Data.Default
-import Control.Applicative
 
 -- | These represent the possible colors for 'fg' or 'bg'.
 -- 'DefColor' represents the terminal's default color.
@@ -59,10 +62,8 @@ instance Monoid Style where
   mempty = Style (Nothing, Nothing, Nothing)
 
 newtype Styles =
-  Styles {
-  -- This list must always stay sorted by the index of the styles
-  _styles :: [Span CrdRange Style]
-         } deriving (Show, Eq)
+  Styles [Span CrdRange Style]
+  deriving (Show, Eq)
 
 makeLenses ''Styles
 
@@ -81,16 +82,10 @@ bg a = Style (Nothing, Just a, Nothing)
 flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
--- | Applies a style over a given range in the buffer's style list.
-addStyle :: CrdRange -> Style -> BufAction ()
-addStyle r st = overBufExt (styles %~ (Span r st:))
+data ComputeStyles = ComputeStyles
+type StyleMap = [Span CrdRange Style]
+addStyleProvider :: BufAction StyleMap -> BufAction ListenerId
+addStyleProvider provider = addBufListener (const provider :: ComputeStyles -> BufAction StyleMap)
 
--- | The main export for the style extension. Add this to your user config.
---
--- e.g.
---
--- > rasa $ do
--- >    style
--- >    ...
-style :: Action ()
-style = afterEveryRender_ . buffersDo_ . setBufExt $ Styles []
+getStyles :: BufAction StyleMap
+getStyles = dispatchBufEvent ComputeStyles

@@ -2,7 +2,6 @@
 module Rasa.Ext.Slate.Internal.Attributes where
 
 import Rasa.Ext
-import Rasa.Ext.Style
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
 import Data.Bifunctor

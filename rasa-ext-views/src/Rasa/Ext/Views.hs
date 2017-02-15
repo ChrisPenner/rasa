@@ -1,10 +1,10 @@
 module Rasa.Ext.Views
   ( viewports
-  , getBufferViews
-  , bufRef
+  , viewable
   , splitRule
   , active
   , scrollPos
+  , getViews
   , A.rotate
   , A.closeInactive
   , A.focusViewLeft
@@ -25,6 +25,7 @@ module Rasa.Ext.Views
   , Window
   , Split(..)
   , View(..)
+  , Views(..)
   , BiTree(..)
   , BiTreeF(..)
   ) where

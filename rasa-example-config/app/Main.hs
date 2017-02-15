@@ -4,7 +4,6 @@ module Main where
 import Rasa (rasa)
 import Rasa.Ext
 import Rasa.Ext.Views
-import Rasa.Ext.Style
 import Rasa.Ext.Vim
 import Rasa.Ext.Files
 import Rasa.Ext.StatusBar
@@ -26,5 +25,4 @@ main = rasa $ do
   cursors
   logger
   slate
-  style
   onInit $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

@@ -25,6 +25,8 @@ import Rasa.Ext
 import Rasa.Ext.Cursors.Internal.Base
 import Rasa.Ext.Cursors.Internal.Actions
 
+import Control.Monad
+
 -- | Registers listeners for the extension. The user should add this to their config.
 cursors :: Action ()
-cursors = beforeEveryRender_ $ buffersDo_ displayRange
+cursors = void . onBufAdded $ \(BufAdded bufRef) -> bufDo_ bufRef setStyleProvider

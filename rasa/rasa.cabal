@@ -65,7 +65,9 @@ library
                        Rasa.Internal.Interpreters
                        Rasa.Internal.Listeners
                        Rasa.Internal.Range
+                       Rasa.Internal.Styles
                        Rasa.Internal.Text
+                       Rasa.Internal.Utility
 
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5

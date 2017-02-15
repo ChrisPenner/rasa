@@ -1,10 +1,11 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, OverloadedStrings #-}
-module Rasa.Ext.Slate.Internal.Render (render) where
+module Rasa.Ext.Slate.Internal.Render
+  ( renderAll
+  , Renderable(..)
+  ) where
 
 import Rasa.Ext
 import Rasa.Ext.Views
-import Rasa.Ext.Style
--- import Rasa.Ext.StatusBar (left, center, right)
 import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 import Data.Functor.Foldable
@@ -16,9 +17,6 @@ import Control.Monad.IO.Class
 
 import qualified Yi.Rope as Y
 
-type Width = Int
-type Height = Int
-
 -- | Get the current terminal size.
 getSize :: Action (Width, Height)
 getSize = do
@@ -26,17 +24,17 @@ getSize = do
   liftIO $ V.displayBounds $ V.outputIface v
 
 -- | Render the Editor
-render :: Action ()
-render = do
+renderAll :: Action ()
+renderAll = do
   (width, height) <- getSize
-  mBufViews <- getBufferViews
-  liftIO $ appendFile "bufs.log" (show mBufViews)
-  case mBufViews of
+  Views mViews <- getViews
+  case mViews of
     Nothing -> return ()
-    Just win ->
-      let img = renderWindow (width, height) win
-          pic = V.picForImage img
-       in getVty >>= liftIO . flip V.update pic
+    Just win -> do
+      img <- renderWindow win width height
+      let pic = V.picForImage img
+      v <- getVty
+      liftIO $ V.update v pic
 
 -- | Divides up available space according to the given 'SplitRule'.
 splitByRule :: SplitRule -> Int -> (Int, Int)
@@ -56,48 +54,61 @@ splitByRule (FromEnd amt) sz = (start, end)
     end = min sz amt
 
 -- | Recursively render components of a Window to a 'V.Image' combining the results in the proper locations.
-renderWindow :: (Width, Height) -> BiTree Split (View, Buffer) -> V.Image
-renderWindow sz win = cata alg win sz
+renderWindow :: BiTree Split View -> Width -> Height -> Action V.Image
+renderWindow win = cata alg win
   where
-    alg (BranchF (Split Vert spRule) left right) = \(width, height) ->
+    alg (BranchF (Split Vert spRule) left right) = \width height ->
       let availWidth = fromIntegral (width - 1)
           (leftWidth, rightWidth) = splitByRule spRule availWidth
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
-       in left (leftWidth, height) V.<|> border V.<|> right (rightWidth, height)
+       in do
+         leftView <- left leftWidth height 
+         rightView <-  right rightWidth height
+         return $ leftView V.<|> border V.<|> rightView
 
-    alg (BranchF (Split Hor spRule) top bottom) = \(width, height) ->
+    alg (BranchF (Split Hor spRule) top bottom) = \width height ->
       let availHeight = fromIntegral (height - 1)
           (topHeight, bottomHeight) = splitByRule spRule availHeight
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
-       in top (width, topHeight) V.<-> border V.<-> bottom (width, bottomHeight)
+       in do
+         topView <- top width topHeight
+         bottomView <- bottom width bottomHeight
+         return $ topView V.<-> border V.<-> bottomView
 
-    alg (LeafF bufInfo) = \(width, height) -> renderView (width, height) bufInfo
+    alg (LeafF vw) = \width height -> renderView width height vw
 
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
-renderView :: (Width, Height) -> (View, Buffer) -> V.Image
-renderView (width, height) (vw, buf) = appendActiveBar . resize . addEndBar $ textImage
+renderView :: Width -> Height -> View -> Action V.Image
+renderView width height vw = do
+  mInfo <- render vw width height
+  return $ case mInfo of
+             Nothing -> V.emptyImage
+             Just (txt, styles) -> appendActiveBar . resize . addEndBar $ renderText height (vw^.scrollPos) txt styles
   where
-    trimText :: Y.YiString -> Y.YiString
-    trimText = Y.concat . take height . drop (vw^.scrollPos) . Y.lines'
-    resize :: V.Image -> V.Image
-    resize = V.resize availWidth height
-    textImage :: V.Image
-    textImage = applyAttrs adjustedStyles txt
-    txt :: Y.YiString
-    txt = buf^.text & trimText
-    adjustedStyles :: [Span CrdRange V.Attr]
-    adjustedStyles = bimap adjustStylePositions convertStyle <$> buf^.ext.styles
-    adjustStylePositions :: CrdRange -> CrdRange
-    adjustStylePositions = both.coordRow -~ vw^.scrollPos
-    sepBar :: V.Image
-    sepBar = V.charFill (V.defAttr `V.withStyle` V.underline) ' ' width 1
-    addEndBar :: V.Image -> V.Image
-    addEndBar = (V.<-> sepBar)
     appendActiveBar :: V.Image -> V.Image
     appendActiveBar i
       | vw^.active = i V.<|> V.charFill (V.defAttr `V.withForeColor` V.magenta) '|' 1 height
       | otherwise = i
+    sepBar :: V.Image
+    sepBar = V.charFill (V.defAttr `V.withStyle` V.underline) ' ' width 1
+    addEndBar :: V.Image -> V.Image
+    addEndBar = (V.<-> sepBar)
+    resize :: V.Image -> V.Image
+    resize = V.resize availWidth height
     availWidth :: Height
     availWidth = if vw^.active then width - 1
                                 else width
+
+type ScrollPos = Int
+renderText :: Height -> ScrollPos -> Y.YiString -> StyleMap -> V.Image
+renderText height scrollAmt txt styles = textImage
+  where
+    trimText :: Y.YiString -> Y.YiString
+    trimText = Y.concat . take height . drop scrollAmt . Y.lines'
+    textImage :: V.Image
+    textImage = applyAttrs adjustedStyles (trimText txt)
+    adjustedStyles :: [Span CrdRange V.Attr]
+    adjustedStyles = bimap adjustStylePositions convertStyle <$> styles
+    adjustStylePositions :: CrdRange -> CrdRange
+    adjustStylePositions = both.coordRow -~ scrollAmt
 

@@ -1,18 +1,26 @@
-{-# language FlexibleInstances, TemplateHaskell, DeriveFunctor, GeneralizedNewtypeDeriving #-}
+{-# language
+    FlexibleInstances
+  , TemplateHaskell
+  , DeriveFunctor
+  , GeneralizedNewtypeDeriving
+  , ExistentialQuantification
+  , ScopedTypeVariables
+  , GADTs
+  , RankNTypes
+#-}
 module Rasa.Ext.Views.Internal.Views
   ( rotate
   , splitRule
   , active
-  , bufRef
+  , viewable
   , scrollPos
   , closeBy
   , focusViewLeft
   , focusViewRight
   , focusViewAbove
   , focusViewBelow
-  , getWindows
-  , setWindows
-  , setMaybeWindow
+  , getViews
+  , setViews
   , overWindows
   , hSplit
   , vSplit
@@ -23,8 +31,10 @@ module Rasa.Ext.Views.Internal.Views
   , Window
   , Split(..)
   , View(..)
-  , BiTree(..)
-  , BiTreeF(..)
+  , Views(..)
+  , Viewable(..)
+  , _BufViewRef
+  , traverseViews
   ) where
 
 import Rasa.Ext
@@ -77,32 +87,53 @@ makeLenses ''Split
 instance Default Split where
   def = Split def def
 
+data Viewable =
+  BufView BufRef
+    | EmptyView
+
+instance Renderable Viewable where
+  -- render :: r -> Width -> Height -> Action (Maybe RenderInfo)
+  render (BufView br) _ _ = bufDo br ((,) <$> getText <*> getStyles)
+  render EmptyView _ _ = return Nothing
+
+_BufViewRef :: Prism' Viewable BufRef
+_BufViewRef = prism' BufView maybeBufRef
+  where maybeBufRef (BufView br) = Just br
+        maybeBufRef _ = Nothing
+
 -- | A 'View' contains info about a viewport; Whether it's selected and which buffer should be displayed.
 data View = View
   { _active :: Bool
-  , _bufRef :: BufRef
+  , _viewable :: Viewable
   , _scrollPos :: Int
-  } deriving (Show)
+  }
 makeLenses ''View
+
+instance Renderable View where
+  render vw = render $ vw^.viewable
 
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
+data Views where
+  Views :: Maybe Window -> Views
+
+instance Show Views where
+  show _ = "Views"
+
+instance Default Views where
+  def = Views Nothing
 
 -- | A lens to access the stored windows
-getWindows :: Action (Maybe Window)
-getWindows = getExt
+getViews :: Action Views
+getViews = getExt
 
-setWindows :: Window -> Action ()
-setWindows = setExt . Just
-
-setMaybeWindow :: Maybe Window -> Action ()
-setMaybeWindow = setExt
+setViews :: Views -> Action ()
+setViews = setExt
 
 overWindows :: (Window -> Window) -> Action ()
-overWindows f = overExt inner
-  where
-    inner :: Maybe Window -> Maybe Window
-    inner = fmap f
+overWindows f = do
+  Views mWin <- getExt
+  setExt . Views $ fmap f mWin
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Window -> Window
@@ -129,8 +160,8 @@ vSplit :: Window -> Window
 vSplit = splitView Vert
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: Dir -> BufRef -> Window -> Window
-addSplit d bRef = Branch (def & dir .~ d) (Leaf View{_active=False, _bufRef=bRef, _scrollPos=0})
+addSplit :: Dir -> Viewable -> Window -> Window
+addSplit d vw = Branch (def & dir .~ d) (Leaf View{_active=False, _viewable=vw, _scrollPos=0})
 
 -- | Close any views which match a given predicate
 closeBy :: (View -> Bool) -> Window -> Maybe Window
@@ -216,3 +247,9 @@ scrollBy :: Int -> Window -> Window
 scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
   where
     scroll = max 0 . (+ amt)
+
+traverseViews :: (View -> Action View) -> Action ()
+traverseViews f = do
+  Views mWin <- getViews
+  mResult <- sequence $ traverse f <$> mWin
+  setViews . Views $ mResult

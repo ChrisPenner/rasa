@@ -1,7 +1,7 @@
 module Rasa.Ext.Slate (slate) where
 
 import Rasa.Ext
-import Rasa.Ext.Slate.Internal.Render (render)
+import Rasa.Ext.Slate.Internal.Render (renderAll)
 import Rasa.Ext.Slate.Internal.Event (terminalEvents)
 import Rasa.Ext.Slate.Internal.State (getVty)
 
@@ -18,7 +18,7 @@ import Control.Monad.IO.Class
 slate :: Action ()
 slate = do
   onInit terminalEvents
-  onEveryRender_ render
+  onEveryRender_ renderAll
   onExit shutdown
 
 -- | Call vty shutdown procedure (if this doesn't happen the terminal ends up in strange states)
