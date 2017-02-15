@@ -147,6 +147,9 @@ To provide reproducible builds, Rasa uses Stack & Nix.
 
 ### Troubleshooting
 
+If you have issues with nix; you may try running rasa without it with `stack build --no-nix && stack exec rasa`;
+You'll likely have to consider the following:
+
 - You may need to install icu4c (`brew install icu4c`), it's a dependency of the rope library rasa uses.
 - On linux, when the error message `Missing C libraries: icuuc, icui18n, icudata` appears, install `libicu-dev` (e.g. with `sudo apt install libicu-dev`).
 - You'll need to point to the icu4c lib in your stack.yaml wherever it's stored on your system. If you install
