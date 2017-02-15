@@ -45,7 +45,7 @@ module Rasa.Ext
   , exit
 
   -- * Managing Buffers
-  , newBuffer
+  , addBuffer
   , nextBufRef
   , prevBufRef
   , getBufRefs
@@ -163,6 +163,7 @@ module Rasa.Ext
 
   -- * Built-in Event Listeners
   , onInit
+  , afterInit
   , beforeEveryEvent
   , beforeEveryEvent_
   , beforeEveryRender
@@ -216,7 +217,7 @@ module Rasa.Ext
   , Color(..)
   , Flair(..)
   , Style(..)
-  , StyleMap
+  , Styles
   , addStyleProvider
   , getStyles
 

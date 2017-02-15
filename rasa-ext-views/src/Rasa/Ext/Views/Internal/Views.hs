@@ -87,15 +87,16 @@ makeLenses ''Split
 instance Default Split where
   def = Split def def
 
+-- | Represents a renderable entity
 data Viewable =
   BufView BufRef
     | EmptyView
 
 instance Renderable Viewable where
-  -- render :: r -> Width -> Height -> Action (Maybe RenderInfo)
   render (BufView br) _ _ = bufDo br ((,) <$> getText <*> getStyles)
   render EmptyView _ _ = return Nothing
 
+-- | Prism BufView to its bufref
 _BufViewRef :: Prism' Viewable BufRef
 _BufViewRef = prism' BufView maybeBufRef
   where maybeBufRef (BufView br) = Just br
@@ -123,13 +124,15 @@ instance Show Views where
 instance Default Views where
   def = Views Nothing
 
--- | A lens to access the stored windows
+-- | Gets the stored views
 getViews :: Action Views
 getViews = getExt
 
+-- | Sets the stored views
 setViews :: Views -> Action ()
 setViews = setExt
 
+-- | Run function over stored windows
 overWindows :: (Window -> Window) -> Action ()
 overWindows f = do
   Views mWin <- getExt
@@ -248,6 +251,7 @@ scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
   where
     scroll = max 0 . (+ amt)
 
+-- | Alters views by a given function.
 traverseViews :: (View -> Action View) -> Action ()
 traverseViews f = do
   Views mWin <- getViews

@@ -56,7 +56,7 @@ setFilename fname = setBufExt $ FileInfo (Just fname)
 
 addFile :: Y.YiString -> Y.YiString -> Action ()
 addFile fname txt = do
-  newBuf <- newBuffer txt
+  newBuf <- addBuffer txt
   bufDo_ newBuf (setFilename fname)
 
 loadFiles :: Action ()

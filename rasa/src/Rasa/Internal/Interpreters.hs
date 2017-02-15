@@ -103,10 +103,12 @@ actionInterpreter (Free actionF) =
       liftIO . void . forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
 
-    (AddBuffer toNext) -> do
+    (AddBuffer txt toNext) -> do
       bufId <- nextBufId <+= 1
-      buffers.at bufId ?= def
-      actionInterpreter . toNext $ BufRef bufId
+      buffers.at bufId ?= mkBuffer txt
+      let bufRef = BufRef bufId
+          Action dBufAdded = dispatchBufAdded (BufAdded bufRef)
+      actionInterpreter (dBufAdded >> toNext bufRef)
 
     (GetBufRefs toNext) ->
       use (buffers.to IM.keys) >>= actionInterpreter . toNext . fmap BufRef

@@ -6,10 +6,12 @@ import Rasa.Ext
 import Rasa.Ext.Views
 import Rasa.Ext.Vim
 import Rasa.Ext.Files
-import Rasa.Ext.StatusBar
 import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
+
+-- import Control.Monad
+-- import Control.Monad.Trans
 
 -- | This is the main of an executable that runs rasa with any extensions the
 -- user wants
@@ -20,9 +22,8 @@ main :: IO ()
 main = rasa $ do
   viewports
   vim
-  statusBar
   files
   cursors
   logger
   slate
-  onInit $ newBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
+  afterInit $ addBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

@@ -21,7 +21,6 @@ executable rasa
                      , rasa-ext-views
                      , rasa-ext-vim
                      , rasa-ext-cursors
-                     , rasa-ext-status-bar
                      , rasa-ext-logger
                      , rasa-ext-files
                      , rasa-ext-slate

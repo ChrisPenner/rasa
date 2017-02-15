@@ -72,9 +72,9 @@ overEachRange f = rangeDo f >>= setRanges
 addRange :: CrdRange -> BufAction ()
 addRange r = overRanges (++[r])
 
--- | Sets style attributes to show a given range.
-setStyleProvider :: BufAction StyleMap
-setStyleProvider = rangeDo setStyle
+-- | Adds cursor specific styles
+setStyleProvider :: BufAction ()
+setStyleProvider = void . addStyleProvider $ rangeDo setStyle
   where
     setStyle :: CrdRange -> BufAction (Span CrdRange Style)
     setStyle r = return $ Span r (flair ReverseVideo)

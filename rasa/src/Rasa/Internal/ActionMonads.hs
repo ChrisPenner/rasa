@@ -32,7 +32,7 @@ data ActionF next where
   BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
   DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
   AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
-  AddBuffer :: (BufRef -> next) -> ActionF next
+  AddBuffer :: Y.YiString -> (BufRef -> next) -> ActionF next
   GetBufRefs :: ([BufRef] -> next) -> ActionF next
   GetExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> ActionF next
   SetExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> ActionF next

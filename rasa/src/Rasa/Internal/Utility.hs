@@ -7,7 +7,6 @@ module Rasa.Internal.Utility
 
 import Rasa.Internal.ActionMonads
 import Rasa.Internal.Editor
-import Rasa.Internal.Range
 import Rasa.Internal.Actions
 import Rasa.Internal.Styles
 import Rasa.Internal.BufAction
@@ -16,7 +15,9 @@ import qualified Yi.Rope as Y
 
 type Width = Int
 type Height = Int
-type RenderInfo = (Y.YiString, [Span CrdRange Style])
+type RenderInfo = (Y.YiString, Styles)
+
+-- | Represents how to render an entity
 class Renderable r where
   render :: r -> Width -> Height -> Action (Maybe RenderInfo)
 

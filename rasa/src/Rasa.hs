@@ -31,6 +31,7 @@ rasa initialize = do
   evalAction (mkActionState output) $ do
     initialize
     dispatchInit
+    dispatchAfterInit
     eventLoop $ fromInput input
     dispatchExit
 

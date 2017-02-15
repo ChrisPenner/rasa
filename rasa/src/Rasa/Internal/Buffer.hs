@@ -21,7 +21,8 @@ import Rasa.Internal.Extensions
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
 import Data.Default
-import Data.Map
+import Data.Map as M
+import Data.List
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
 data Buffer = Buffer
@@ -37,8 +38,10 @@ instance HasExts Buffer where
   exts = bufExts'
 
 instance Show Buffer where
-  show b = "<Buffer {text:" ++ show (b^..text . to (Y.take 30)) ++ "...,\n"
-           ++ "exts: " ++ show (b^.exts) ++ "}>\n"
+  show b = "text:" ++ (Y.toString . Y.take 30 $ (b^.text)) ++ "...,\n"
+           ++ "exts: " ++ extText ++ "}>\n"
+    where
+      extText = intercalate "\n" $ show <$> b^.exts.to M.toList
 
 -- | This allows creation of polymorphic lenses over any type which has access to a Buffer
 class HasBuffer a where

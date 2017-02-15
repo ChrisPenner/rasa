@@ -1,4 +1,6 @@
-{-# language TemplateHaskell #-}
+{-# language
+  GeneralizedNewtypeDeriving
+#-}
 module Rasa.Internal.Styles
   ( fg
   , bg
@@ -6,7 +8,7 @@ module Rasa.Internal.Styles
   , Color(..)
   , Flair(..)
   , Style(..)
-  , StyleMap
+  , Styles
   , addStyleProvider
   , getStyles
   ) where
@@ -16,7 +18,6 @@ import Rasa.Internal.BufAction
 import Rasa.Internal.Listeners
 
 import Control.Applicative
-import Control.Lens
 
 import Data.Default
 
@@ -61,14 +62,13 @@ instance Monoid Style where
 
   mempty = Style (Nothing, Nothing, Nothing)
 
-newtype Styles =
-  Styles [Span CrdRange Style]
-  deriving (Show, Eq)
+type Styles = [Span CrdRange Style]
+newtype StyleMap =
+  StyleMap Styles
+  deriving (Show, Eq, Monoid)
 
-makeLenses ''Styles
-
-instance Default Styles where
-  def = Styles []
+instance Default StyleMap where
+  def = StyleMap []
 
 -- | Create a new 'Style' with the given 'Color' as the foreground.
 fg :: Color -> Style
@@ -83,9 +83,9 @@ flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
 data ComputeStyles = ComputeStyles
-type StyleMap = [Span CrdRange Style]
-addStyleProvider :: BufAction StyleMap -> BufAction ListenerId
-addStyleProvider provider = addBufListener (const provider :: ComputeStyles -> BufAction StyleMap)
 
-getStyles :: BufAction StyleMap
+addStyleProvider :: BufAction Styles -> BufAction ListenerId
+addStyleProvider provider = addBufListener (const provider :: ComputeStyles -> BufAction Styles)
+
+getStyles :: BufAction Styles
 getStyles = dispatchBufEvent ComputeStyles

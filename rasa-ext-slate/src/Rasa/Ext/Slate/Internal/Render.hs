@@ -100,7 +100,9 @@ renderView width height vw = do
                                 else width
 
 type ScrollPos = Int
-renderText :: Height -> ScrollPos -> Y.YiString -> StyleMap -> V.Image
+
+-- | Renders text and styles to an image
+renderText :: Height -> ScrollPos -> Y.YiString -> Styles -> V.Image
 renderText height scrollAmt txt styles = textImage
   where
     trimText :: Y.YiString -> Y.YiString
@@ -111,4 +113,3 @@ renderText height scrollAmt txt styles = textImage
     adjustedStyles = bimap adjustStylePositions convertStyle <$> styles
     adjustStylePositions :: CrdRange -> CrdRange
     adjustStylePositions = both.coordRow -~ scrollAmt
-

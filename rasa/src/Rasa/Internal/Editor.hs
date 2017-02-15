@@ -25,8 +25,6 @@ import qualified Data.Map as M
 import Control.Lens
 import Data.List
 
-import qualified Yi.Rope as Y
-
 -- | An opaque reference to a buffer.
 -- When operating over a BufRef Rasa checks if the 'Rasa.Internal.Buffer.Buffer' still
 -- exists and simply ignores any operations over non-existent buffers; typically returning 'Nothing'
@@ -48,7 +46,7 @@ instance Show Editor where
     ++ "Editor Extensions==============\n" ++ extText ++ "\n\n"
     ++ "---\n\n"
     where
-      bufferText = intercalate "\n" $ zipWith ((++) . (++ ": ") .  show) [(1::Integer)..] ((take 30 . Y.toString) <$> ed^..buffers.traverse.text)
+      bufferText = intercalate "\n" $ zipWith ((++) . (++ ": ") .  show) [(1::Integer)..] (ed^..buffers.traverse.to show)
       extText = intercalate "\n" $ show <$> ed^.exts.to M.toList
 
 

@@ -56,11 +56,11 @@ applyAttrs atts txt = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines tx
         -- Newlines aren't rendered; so we replace them with spaces so they're selectable
         padSpaces = (`Y.append` "  ")
 
+-- | Makes and image from text and styles
 textAndStylesToImage :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
-textAndStylesToImage atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
+textAndStylesToImage atts lines' = V.vertCat $ wrapResets . uncurry attrLine <$> pairLines atts lines'
   where
-    vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
-
+    wrapResets img = reset V.<|> img V.<|> reset
 
 -- | Applies the list of attrs to the line and returns a 'V.Image'. It assumes that the list
 -- contains only 'Coord's on the same line (i.e. row == 0)
