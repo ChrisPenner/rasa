@@ -14,33 +14,41 @@ Downloading and Setting up Rasa
 
 Rasa is a Haskell project, configured in Haskell; so we're going to need a
 basic Haskell working environment if we're going to get anywhere. This guide
-assumes at least a basic familiarity with both Haskell & [Stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html).
-Go ahead and install Stack now, I'll wait! (Psst! I'd recommend `brew update && brew install haskell-stack`). Make sure
-you run `stack setup` before we get started.
+assumes at least a basic familiarity with both Haskell &
+[Stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html).
+Go ahead and install Stack now, I'll wait! (Psst! I'd recommend
+`brew update && brew install haskell-stack`). Make sure you run `stack setup`
+before we get started.
+
+You'll also want to install 'nix' which is a tool which stack uses to guarantee
+reproducible builds. You can find installation instructions for nix
+[here](https://nixos.org/nix/).
 
 Okay, so first clone the Rasa repository; go to your favourite project's
 directory and run `git clone https://github.com/ChrisPenner/rasa`; this will
 create a new `rasa` directory, go ahead and `cd rasa` into there.
 
-Instead of going through the trouble of making a new package for our extension, we'll just
-build the new functionality into our user-config. You can extract it later if you like!
+Instead of going through the trouble of making a new package for our extension,
+we'll just build the new functionality into our user-config. You can extract it
+later if you like!
 
-Let's just edit the existing configuration for now, you can find it in `rasa-example-config/app/Main.hs`.
-It should look something like this:
+Let's just edit the existing configuration for now, you can find it in
+`rasa-example-config/app/Main.hs`. It should look something like this:
 
 ```haskell
+module Main where
+
 import Rasa (rasa)
+import Rasa.Ext
 -- ... some other imports
 main :: IO ()
 main = rasa $ do
-  views
+  viewports
   vim
-  statusBar
   files
   cursors
   logger
   slate
-  style
   -- some more plugins...
 ```
 
@@ -83,7 +91,7 @@ fully understand what's going on here, you can just follow along for now!
 
 ```haskell
 -- new import at the top!
-import Control.Monad.IO.Class
+import Control.Monad.Trans
 
 -- Let's lift the writeFile call into an `Action`
 helloWorld :: Action ()
@@ -92,7 +100,7 @@ helloWorld = liftIO $ writeFile "hello-world.txt" "Hello, World!"
 
 If we've done this right, then when we rebuild the editor should compile and
 start up! If you get an error stating that Haskell couldn't find the
-`Control.Monad.IO.Class` module then you may need to add 'mtl' to the list of
+`Control.Monad.Trans` module then you may need to add 'mtl' to the list of
 build-depends in `rasa-example-config.cabal`. Okay, so how can we see whether
 it worked? If you're using the Vim key-bindings then you can quit using
 `Ctrl-C` and check your directory to see if you've got any new files!
@@ -113,7 +121,10 @@ takes a `Keypress` and writes the pressed key to a file!
 
 ```haskell
 helloWorld :: Keypress -> Action ()
+-- Print out the characters we type!
 helloWorld (Keypress char _) = liftIO $ appendFile "keylog.txt" ("You pressed: " ++ [char] ++ "\n")
+-- Ignore other types of keypresses (arrows, escape sequences, etc.)
+helloWorld _ = return ()
 ```
 
 Okay cool! Now it should record each keypress to the `keylog.txt` file!
@@ -126,31 +137,25 @@ rasa/rasa-example-config/app/Main.hs:28:10: error:
 ```
 
 Hrmm, right! Now that we're listening for keypress events we don't want to use
-`onInit` anymore.  Time for the more general `onEveryTrigger`! Let's look
-at the type signature:
+`onInit` anymore, Rasa provides a way to register listeners for different events;
+we'll learn how to listen for any arbitrary event later; but for now it's time for
+`onKeypress`! 
 
 ```haskell
-onEveryTrigger :: forall a b. Typeable a => (a -> Action b) -> Action ListenerId
+onKeypress :: (Keypress -> Action ()) -> Action ListenerId
 ```
 
-Whoah, what?? It's tough to unpack exactly what's going on here, but the basic
-idea is that you can see it takes a function from ANY (Typeable) event `a` to
-any `Action b` and then returns an `Action ()` that will respond to events.
-There's a bit of magic behind the scenes that stores the function and calls it
-on any events that come that match the type which that function expects,
-running the resulting Action.  Check out the source code behind
-`onEveryTrigger` if you're interested!  It's pretty cool!  But for now we'll
-just move on and trust that it does what it says. So we've got our function
-from our event type (Keypress), so let's try embedding it using
-`onEveryTrigger` instead of `onInit`; the function normally returns a reference to the newly
-created listener so that we could cancel the listener using `removeListener`
-later if we wanted to; but since we don't want to do that we'll use
-`onEveryTrigger_` which just discards it instead.
+So we've got our function from our event type (Keypress), so let's try
+registering it using `onKeypress`; we'll do all of this within `onInit` so the
+listener is registered when Rasa starts. The onKeypress function
+returns a reference to the newly created listener so that we could cancel the
+listener using `removeListener` later if we wanted to; but since we don't need
+to do that; we'll just ignore it.
 
 ```haskell
 main = rasa $ do
   -- other extensions
-  onEveryTrigger_ helloWorld
+  onInit $ onKeypress helloWorld
 ```
 
 Okay, let's build that and run it, now in a separate terminal we'll run
@@ -194,16 +199,21 @@ can get it working, first let's write a basic version that just writes out the
 contents of each range to a file! Things get a bit tougher here, but we're
 going to power through it!
 
+We need a few other packages soon, so we'll have to tell stack that we want
+to include them in the build! We can do this by going to the
+`rasa-example-config.cabal` file and we'll add `data-default` and `yi-rope` to
+the `build-depends` list there.
+
 ```haskell
 -- Make sure we have these imports
 import Rasa.Ext.Cursors
 import Rasa.Ext.Views
-import Control.Lens hiding (views)
+import qualified Yi.Rope as Y
 
 main = rasa $ do
   -- other extensions
   cursors
-  onEveryTrigger_ copyPasta
+  onInit $ onKeypress copyPasta
 
 copyPasta :: Keypress -> Action ()
 copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
@@ -211,7 +221,7 @@ copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
     copier :: CrdRange -> BufAction ()
     copier r = do
       txt <- getRange r
-      liftIO $ appendFile "copy-pasta.txt" ("You copied: " ++ txt^.asString ++ "\n")
+      liftIO $ appendFile "copy-pasta.txt" ("You copied: " ++ Y.toString txt ++ "\n")
 copyPasta _ = return ()
 ```
 
@@ -224,14 +234,12 @@ the focused buffer(s). The `BufAction` that we're running is handled by
 `rangeDo` which discards return values resulting in just `BufAction ()`.
 
 As we discovered earlier `rangeDo` takes a function over a range, which we've
-defined as `copier`. The next line `str <- getRange r` uses a rasa command
+defined as `copier`. The next line `txt <- getRange r` uses a rasa command
 `getRange` which just gets the text of a specific range from the buffer.
 There's a trick though, the text which comes out is actually a `YiString` which
-comes from the `Yi.Rope` library, we need to convert it to a string using
-`asString` so we can write it to file. We can do this by viewing it through the
-provided `asString` lens. Or you could `import qualified Yi.Rope as Y` and use
-`Y.toString`. On the next line we just append the text to the `copy-pasta.txt`
-file.
+comes from the `Yi.Rope` library, we need to convert it to a string from the
+rope so we'll use `Y.toString` from the rope library so we can write it to
+file. We then append the text to the `copy-pasta.txt` file.
 
 Let's try it out. Hopefully it builds for you and you can test it out by moving
 the cursor around and pressing 'y' to write out the current character to the
@@ -279,11 +287,6 @@ requires it because it simplifies initializing the extensions by a great deal.
 
 Okay, let's write the Default instance!
 
-We need a few other packages now, so we'll have to tell stack that we want
-to include them in the build! We can do this by going to the
-`rasa-example-config.cabal` file and we'll add `data-default` and `yi-rope` to
-the `build-depends` list there.
-
 ```haskell
 -- New import at the top of your file!
 import Data.Default
@@ -304,20 +307,26 @@ copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
     copier :: CrdRange -> BufAction ()
     copier r = do
       txt <- getRange r
-      bufExt .= CopyPasta (txt^.asString)
+      setBufExt $ CopyPasta (Y.toString txt)
 copyPasta _ = return ()
 ```
 
-`bufExt` is a special lens into a map of extension states, it's special because
-it will check the type of the thing we're trying to set and will only get
-or set objects of the same type in the map! This is why we needed to wrap our string
-up in a `newtype`. It also ensures that no-one else can alter our state unless
+`setBufExt` is a special function of the following type:
+
+```haskell
+setBufExt :: (Typeable ext, Show ext, Default ext) => ext -> BufAction ()
+```
+
+This shows us that for a value of ANY type `ext`; so long as it can be shown, typed,
+and has a default, then we can store that information for later. This is also why 
+we must wrap our types up into something unique to our extension; if we used setBufExt
+on an unwrapped Int it would be overwritten any time another extension stored an Int!
+Using a custom type ensures that no-one else can alter our state unless
 they have access to the `CopyPasta` type, so if we don't expose it, then we're
-the only ones who can make changes! The `.=` symbol comes from the lens library,
-it just sets the `bufExt` to be the new value.
+the only ones who can make changes! 
 
 So even if this builds, how can we tell if it's actually working? Well if you
-like you can include the `logger` extension (it should have been included in
+like you can include the `logger` extension (it should be included in
 the config already). This extension will print out the state of the editor after
 every event that it processes, so it's great for debugging! It prints them out
 to a file called 'logs.log' (original I know...). If `logger` is in the config
@@ -340,28 +349,31 @@ copyPasta function that listens for the user to press the 'p' key instead, if
 they press 'p', then we'll paste whatever we have stored!
 
 ```haskell
--- Another import!
-import qualified Yi.Rope as Y
-
 copyPasta :: Keypress -> Action ()
 copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
   where
     copier :: CrdRange -> BufAction ()
     copier r = do
       txt <- getRange r
-      bufExt .= CopyPasta (txt^.asString)
+      setBufExt $ CopyPasta (Y.toString txt)
 copyPasta (Keypress 'p' _) = focusDo_ paster
   where
     paster :: BufAction ()
     paster = do
-      CopyPasta str <- use bufExt
+      CopyPasta str <- getBufExt
       insertText (Y.fromString str)
 copyPasta _ = return ()
 ```
 
-Let's break down the new section. You'll see that this time we don't have to run
-something over every range because there's actually a useful `insertText` function
-exposed by the `cursors` extension! Here's the signature:
+Firstly; notice that `getBufExt` lets us get back any state we've set with
+`setBufExt`. If we've never set a value of that type it will return the default
+instead. `getBufExt` is also able to return a value of any type; luckily by
+pattern matching on the left hand side `CopyPasta str <- getBufExt` the
+compiler infers which state to retrieve for us! Pretty cool eh?
+
+You'll see that this time we don't have to run something over every range
+because there's actually a useful `insertText` function exposed by the
+`cursors` extension! Here's the signature:
 
 ```haskell
 insertText :: YiString -> BufAction ()
@@ -369,14 +381,10 @@ insertText :: YiString -> BufAction ()
 
 It takes a YiString and inserts it at the beginning of every range! How
 convenient! That means we can just a write a single `BufAction` that does what
-we need and embed it using `focusDo_`. This time we're EXTRACTING our extension
-state from the buffer, so we again use the bufExt lens. `use` is a lens utility
-that allows us to pull out the focus of a lens. Again, we can magically use the
-bufExt lens, and since we later use the result as the `CopyPasta` type the lens
-infers which state to retrieve for us! Pretty cool eh?
+we need and embed it using `focusDo_`. 
 
 We'll do a simple pattern match on the left of the arrow
-`CopyPasta str <- use bufExt` to get the string we stored earlier. Now we can
+`CopyPasta str <- getbufExt` to get the string we stored earlier. Now we can
 use the nifty `insertText` function! It returns a `BufAction ()`, so we can
 just us it in-line with the other `BufAction` where we extract the state. Like
 most parts of Rasa `insertText` accepts a YiString; so we'll need to convert
@@ -411,19 +419,32 @@ the string that the user copied as part of the event)!
 
 If we were writing this as an extension in a separate package we'd expose the
 type (and probably the constructor so that people can pattern match on it). Then
-other folks could use `onEveryTrigger` to listen for the event just like we
+other folks could use the functions we expose to listen for the event just like we
 did with `Keypress` events!
 
 Now that we've defined the type, we need to dispatch an event each time
-the user copies something! Say hello to `dispatchEvent`!
+the user copies something! Say hello to `dispatchBufEvent`!
 
 ```haskell
-dispatchEvent :: Typeable a => a -> Action ()
+dispatchBufEvent :: forall result eventType. (Monoid result, Typeable eventType, Typeable result) => (eventType -> BufAction result)
 ```
 
-This looks pretty similar to the `onEveryTrigger` signature, but all that it does
-is take any event type and will trigger any listeners that are listening for events
-of that type! Let's give it a go!
+Whoah! What's going on there!?
+
+Well; because Rasa is built to be extensible; the event system is polymorphic;
+which means it can accept arguments of any type. The important part of the type
+is: `eventType -> BufAction result`. This tells us that we can use the function
+to dispatch any event and get a `BufAction` of the result. The first part of
+the signature tells us that it works for any such event or result (`forall`)
+where the result is a Monoid, and both can are Typeable. We won't be using the
+`result` of the dispatch; so we'll mostly ignore it from now. Just know that
+it's possible to use events to 'ask' extensions to provide you with a value in
+response to an event; it turns out that `()` is a Monoid; so we'll
+just use that when we don't want a response.
+
+Note that we're using `dispatchBufEvent` here; there's also a `dispatchEvent`;
+the difference is that `dispatchBufEvent` will only trigger listeners registered on
+the buffer where it's dispatched; and `dispatchEvent` only triggers global listeners.
 
 ```haskell
 newtype Copied = Copied String
@@ -434,75 +455,74 @@ copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
     copier :: CrdRange -> BufAction ()
     copier r = do
       txt <- getRange r
-      bufExt .= CopyPasta (txt^.asString)
+      setBufExt $ CopyPasta (Y.toString txt)
       -- We'll dispatch the copied event with the text we copied!
-      dispatchEvent $ Copied (txt^.asString)
+      dispatchBufEvent $ Copied (Y.toString txt)
 copyPasta (Keypress 'p' _) = focusDo_ paster
   where
     paster :: BufAction ()
     paster = do
-      CopyPasta str <- use bufExt
+      CopyPasta str <- getBufExt
       insertText (Y.fromString str)
 copyPasta _ = return ()
 ```
 
 This is what we'd expect to do, but uh-oh! We build this and we get an error!
 
-```
-rasa/rasa-example-config/app/Main.hs:48:7: error:
-    - Couldn't match type ‘Action’ with ‘BufAction’
-```
-
-Ahh, looks like `dispatchEvent` is an `Action`, but inside `copier` we're
-inside a `BufAction`! Luckily Rasa's got our back! We can convert any `BufAction`
-into an `Action` by just calling `liftAction`!
-
-```haskell
-liftAction :: Action r -> BufAction r
-```
-
-It works like you'd expect; in this case we're not returning anything so it takes the form:
-
-```haskell
-liftAction :: Action () -> BufAction ()
-```
-
 Here's a version that works!
-
-```haskell
-copyPasta :: Keypress -> Action ()
-copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
-  where
-    copier :: CrdRange -> BufAction ()
-    copier r = do
-      txt <- getRange r
-      bufExt .= CopyPasta (txt^.asString)
-      -- We'll dispatch the copied event with the text we copied!
-      liftAction $ dispatchEvent $ Copied (txt^.asString)
-copyPasta (Keypress 'p' _) = focusDo_ paster
-  where
-    paster :: BufAction ()
-    paster = do
-      CopyPasta str <- use bufExt
-      insertText (Y.fromString str)
-copyPasta _ = return ()
-```
 
 Now we're alerting any listeners each time we copy something! Don't believe me?
 Okay fine! Let's listen for the events so we can see them coming through!
 
+At this stage will create a utility function for other extensions to listen for
+our `Copied` event. We do this with the provided `addListener` or
+`addBufListener` functions. These are a bit confusing like `dispatchEvent`; but
+we'll get through it!
+
 ```haskell
-copyListener :: Copied -> Action ()
+addBufListener :: forall result eventType. (Typeable eventType) => (eventType -> BufAction result) -> BufAction ListenerId
+```
+
+Similar to the dispatch functions this is a polymorphic function; except notice
+that this time the first argument is a function! `addBufListener` takes a
+function which accepts some event and builds a `BufAction` which ends in some
+result. We need to make sure that the results and event types that people use
+when adding listeners matches the types that we expect when we dispatch
+otherwise listeners won't trigger properly; so the best idea is to constrain
+the types and re-export the function with the proper signature. We can do that
+just like this:
+
+```haskell
+addCopyListener :: (Copied -> BufAction ()) -> BufAction ListenerId
+addCopyListener = addBufListener
+
+copyListener :: Copied -> BufAction ()
 copyListener (Copied str) = liftIO $ appendFile "copied.txt" ("Copied: " ++ str ++ "\n")
+
+newBuf :: BufAdded -> Action ()
+newBuf (BufAdded bufRef) = bufDo_ bufRef (addCopyListener copyListener)
 
 main = rasa $ do
   -- other extensions
-  onEveryTrigger_ copyListener
+  onInit . onBufAdded $ newBuf
 ```
 
-Magical! Just like before, all we need to do is write a function that uses
-events of the type we want to listen for and then register the function with
-`onEveryTrigger_`.
+Okay so this works; but there was a bit of boiler-plate to get it going!
+The biggest problem is that the `Copied` event is dispatched to the Buffer where
+it occured; so we'll need to listen for it on that buffer. But how do we register
+a listener not only for all buffers; but all FUTURE buffers too? We can use
+the `onBufAdded` function to register an event listener which triggers each
+time a new buffer is added; the BufRef of the new buffer will be passed into
+the function via the `BufAdded` event; which we can then use with `bufDo` to
+run BufActions against. This is probably pretty confusing right now; that's fine. 
+As you read the docs and use other extensions it will hopefully become more clear!
+
+So we wrote a function `newBuf` which will be run each time a new buffer is
+added; inside we use the BufRef we get from the event and call `bufDo_` which
+runs a BufAction against the buffer referred to by the given `BufRef`. The `_`
+means we want to ignore the result (in this case it's a ListenerId). The
+BufAction we pass to `bufDo` is `addCopyListener copyListener` which registers
+our listener for the copied event in the given buffer.
 
 ### Extracting the Extension to its own Package
 
@@ -511,7 +531,7 @@ Now that we've built an extension we should share it with the community!
 If we extract it into its own package then other extensions and users can
 depend on it and use it in their own extensions and configurations. To do this
 we can use stack to create a new project for us. `cd` into the top-level rasa
-directory where the rest of the `rasa-ext` foldrs are and run
+directory where the rest of the `rasa-ext` folders are and run
 `stack new rasa-ext-copy-pasta simple-library`.
 
 It's good practice to prefix your rasa extension package name with `rasa-ext`
@@ -542,12 +562,14 @@ rasa-ext-copy-pasta
 └── LICENSE
 ```
 
-All extensions should be stored as a new module inside `Rasa.Ext`.
-Now we can go ahead and copy those functions we wrote inside `Main.hs` into our
-new `CopyPasta.hs` and add a module definition at the top. We'll want to only
-export things we're okay with other people using, so how about we export a
-`Action ()` which sets up the key-listener and also the `Copied` type so
-that users can write their own event listeners for it.
+All extensions should be stored as a new module inside `Rasa.Ext`. Now we can
+go ahead and copy those functions we wrote inside `Main.hs` into our new
+`CopyPasta.hs` and add a module definition at the top. We'll want to only
+export things we're okay with other people using, so how about we export the
+`addCopyListener` function which sets up a custom listener, and also the
+`Copied` type so that users can write their own event listeners and unpack the
+string inside. We'll also pack up all of the setup for the key-listeners into a single
+Action which the user can put into their config.
 
 We'll end up with something like this:
 
@@ -562,10 +584,9 @@ module Rasa.Ext.CopyPasta (
 import Rasa.Ext
 import Rasa.Ext.Cursors
 
-import Control.Monad.IO.Class
-import Control.Lens
+import Control.Monad.Trans
 import Data.Default
-import qualified Data.Text as T
+import qualified Yi.Rope as Y
 
 newtype CopyPasta = CopyPasta String
   deriving Show
@@ -578,7 +599,7 @@ newtype Copied = Copied String
 -- We've renamed things so we can export a single 'Action'
 -- that the user can embed in their config.
 copyPasta :: Action ()
-copyPasta = onEveryTrigger_ keyListener
+copyPasta = onInit $ onKeypress keyListener
 
 keyListener :: Keypress -> Action ()
 keyListener (Keypress 'y' _) = do
@@ -587,13 +608,13 @@ keyListener (Keypress 'y' _) = do
     copier :: CrdRange -> BufAction String
     copier r = do
       txt <- getRange r
-      bufExt .= CopyPasta (txt^.asString)
-      dispatchEvent $ Copied (txt^.asString)
+      setBufExt $ CopyPasta (Y.toString txt)
+      dispatchBufEvent $ Copied (Y.toString txt)
 keyListener (Keypress 'p' _) = focusDo_ paster
   where
     paster :: BufAction ()
     paster = do
-      CopyPasta str <- use bufExt
+      CopyPasta str <- getBufExt
       insertText (Y.fromString str)
 keyListener _ = return ()
 ```
@@ -623,9 +644,8 @@ anyone could use! All that would be left is to
 `stack upload rasa-ext-copy-pasta` to upload it to hackage (but please don't do
 that or we'll have a ton of copies of this tutorial uploaded).
 
-That's all for this episode! The API will be changing (see: improving) over
-time so stay tuned for updates. For now go and make some of your own
-extensions! I'm excited to see what you come up with!
+That's all for this episode! Go and make some of your own extensions!
+I'm excited to see what you come up with!
 
 There are a few other extensions included in this repo, so go ahead and take a
 look at how they're doing things to get a few more ideas on how to do the
