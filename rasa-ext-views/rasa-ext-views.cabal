@@ -18,6 +18,7 @@ library
                        Rasa.Ext.Views.Internal.BiTree
                        Rasa.Ext.Views.Internal.Views
                        Rasa.Ext.Views.Internal.Actions
+                       Rasa.Ext.Views.Internal.Widgets
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , lens

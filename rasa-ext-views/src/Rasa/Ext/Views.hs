@@ -28,8 +28,21 @@ module Rasa.Ext.Views
   , Views(..)
   , BiTree(..)
   , BiTreeF(..)
+
+  -- * Widgets
+  , Widgets
+  , RenderWidgets(..)
+  , addTopBar
+  , addBottomBar
+  , addLeftBar
+  , addRightBar
+  , topBar
+  , bottomBar
+  , leftBar
+  , rightBar
   ) where
 
 import Rasa.Ext.Views.Internal.BiTree
 import Rasa.Ext.Views.Internal.Views
+import Rasa.Ext.Views.Internal.Widgets
 import Rasa.Ext.Views.Internal.Actions as A

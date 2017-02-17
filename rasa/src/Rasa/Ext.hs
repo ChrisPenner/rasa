@@ -226,6 +226,7 @@ module Rasa.Ext
   , asString
   , asLines
   , clamp
+  , cropToViewport
 
   -- * Common Types/Interfaces
   -- | These exist to help unify the interfaces of many different extensions without

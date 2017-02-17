@@ -3,6 +3,7 @@ module Rasa.Internal.Utility
   , Height
   , Renderable(..)
   , RenderInfo
+  , cropToViewport
   ) where
 
 import Rasa.Internal.ActionMonads
@@ -10,6 +11,10 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Actions
 import Rasa.Internal.Styles
 import Rasa.Internal.BufAction
+import Rasa.Internal.Range
+
+import Control.Lens
+import Data.Bifunctor
 
 import qualified Yi.Rope as Y
 
@@ -19,7 +24,25 @@ type RenderInfo = (Y.YiString, Styles)
 
 -- | Represents how to render an entity
 class Renderable r where
-  render :: r -> Width -> Height -> Action (Maybe RenderInfo)
+  render :: Width -> Height -> ScrollPos -> r -> Action (Maybe RenderInfo)
 
 instance Renderable BufRef where
-  render bufRef _ _ = bufDo bufRef $ (,) <$> getText <*> getStyles
+  render _ height scrollPos bufRef = bufDo bufRef $ do
+    txt <- getText
+    styles <- getStyles
+    return $ cropToViewport height scrollPos (txt, styles)
+
+instance Renderable Y.YiString where
+  render _ height scrollPos txt = return . Just $ cropToViewport height scrollPos (txt, [])
+
+type ScrollPos = Int
+-- | Crop to only the in-view portion.
+cropToViewport :: Height -> ScrollPos -> RenderInfo -> RenderInfo
+cropToViewport height scrollAmt (txt, styles) = (trimmedText, adjustedStyles)
+  where
+    adjustedStyles :: Styles
+    adjustedStyles = first adjustStylePositions <$> styles
+    adjustStylePositions :: CrdRange -> CrdRange
+    adjustStylePositions = both.coordRow -~ scrollAmt
+    trimmedText :: Y.YiString
+    trimmedText = Y.concat . take height . drop scrollAmt . Y.lines' $ txt

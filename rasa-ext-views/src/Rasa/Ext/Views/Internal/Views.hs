@@ -93,8 +93,11 @@ data Viewable =
     | EmptyView
 
 instance Renderable Viewable where
-  render (BufView br) _ _ = bufDo br ((,) <$> getText <*> getStyles)
-  render EmptyView _ _ = return Nothing
+  render _ height scrollPos (BufView br) = bufDo br $ do
+    txt <- getText
+    styles <- getStyles
+    return $ cropToViewport height scrollPos (txt, styles)
+  render _ _ _ EmptyView = return Nothing
 
 -- | Prism BufView to its bufref
 _BufViewRef :: Prism' Viewable BufRef
@@ -109,9 +112,6 @@ data View = View
   , _scrollPos :: Int
   }
 makeLenses ''View
-
-instance Renderable View where
-  render vw = render $ vw^.viewable
 
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
