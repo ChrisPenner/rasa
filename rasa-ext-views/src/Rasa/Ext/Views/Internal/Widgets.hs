@@ -4,12 +4,12 @@
   , RankNTypes
 #-}
 module Rasa.Ext.Views.Internal.Widgets
-  ( RenderWidgets(..)
+  ( Widgets
+  , RenderWidgets(..)
   , addTopBar
   , addBottomBar
   , addLeftBar
   , addRightBar
-  , Widgets
   , topBar
   , bottomBar
   , leftBar
@@ -51,6 +51,13 @@ instance Default Widgets where
 class RenderWidgets r where
   renderWidgets :: r -> Action Widgets
 
+instance RenderWidgets Viewable where
+  renderWidgets EmptyView = return def
+  renderWidgets (BufView br) = fromMaybe mempty <$> bufDo br getWidgets
+
+instance RenderWidgets View where
+  renderWidgets vw = renderWidgets (vw^.viewable)
+
 data GetWidgets = GetWidgets
 
 widgetOf :: Renderable r => Lens' Widgets [ARenderable] -> r -> Widgets
@@ -73,10 +80,3 @@ addBottomBar = mkListenerFor bottomBar
 
 getWidgets :: BufAction Widgets
 getWidgets = dispatchBufEvent GetWidgets
-
-instance RenderWidgets Viewable where
-  renderWidgets EmptyView = return def
-  renderWidgets (BufView br) = fromMaybe mempty <$> bufDo br getWidgets
-
-instance RenderWidgets View where
-  renderWidgets vw = renderWidgets (vw^.viewable)
