@@ -19,6 +19,7 @@ module Rasa.Ext.Views
   , A.focusDo
   , A.focusDo_
   , A.focusedBufs
+  , A.isFocused
   , A.scrollBy
   , Dir(..)
   , SplitRule(..)
@@ -29,7 +30,7 @@ module Rasa.Ext.Views
   , BiTree(..)
   , BiTreeF(..)
 
-  -- * Widgets
+  -- * Creating Widgets
   , Widgets
   , RenderWidgets(..)
   , addTopBar
@@ -40,9 +41,25 @@ module Rasa.Ext.Views
   , bottomBar
   , leftBar
   , rightBar
+
+  -- * Provided Widgets
+  , enableLineNumbers
+  , disableLineNumbers
+  , toggleLineNumbers
+  , checkLineNumbers
   ) where
 
+import Rasa.Ext
 import Rasa.Ext.Views.Internal.BiTree
 import Rasa.Ext.Views.Internal.Views
 import Rasa.Ext.Views.Internal.Widgets
+import Rasa.Ext.Views.Internal.LineNumbers
+import Rasa.Ext.Views.Internal.ActiveBar
 import Rasa.Ext.Views.Internal.Actions as A
+
+-- | Main export from the views extension, add this to your rasa config.
+viewports :: Action ()
+viewports = do
+  onBufAdded_ A.addSplit
+  activeBar
+  lineNumbers

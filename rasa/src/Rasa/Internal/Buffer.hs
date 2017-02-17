@@ -12,27 +12,33 @@
 module Rasa.Internal.Buffer
   ( Buffer
   , HasBuffer(..)
+  , BufRef(..)
   , text
   , mkBuffer
+  , ref
   ) where
 
 import Rasa.Internal.Extensions
 
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
-import Data.Default
 import Data.Map as M
 import Data.List
+
+-- | An opaque reference to a buffer.
+-- When operating over a BufRef Rasa checks if the 'Rasa.Internal.Buffer.Buffer' still
+-- exists and simply ignores any operations over non-existent buffers; typically returning 'Nothing'
+newtype BufRef =
+  BufRef Int
+  deriving (Show, Eq, Ord)
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
 data Buffer = Buffer
   { _text' :: Y.YiString
   , _bufExts' :: ExtMap
+  , _ref :: BufRef
   }
 makeLenses ''Buffer
-
-instance Default Buffer where
-  def = Buffer def def
 
 instance HasExts Buffer where
   exts = bufExts'
@@ -55,9 +61,10 @@ text :: HasBuffer b => Lens' b Y.YiString
 text = buffer.text'
 
 -- | Creates a new buffer from the given text.
-mkBuffer :: Y.YiString -> Buffer
-mkBuffer txt =
+mkBuffer :: Y.YiString -> BufRef -> Buffer
+mkBuffer txt bRef =
   Buffer
     { _text' = txt
     , _bufExts' = empty
+    , _ref = bRef
     }

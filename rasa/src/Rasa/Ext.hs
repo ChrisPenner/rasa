@@ -58,6 +58,7 @@ module Rasa.Ext
   , HasEditor
   , getText
   , getRange
+  , getBufRef
 
   -- * Actions over Buffers
   , BufAction
@@ -174,6 +175,9 @@ module Rasa.Ext
   , afterEveryRender_
   , onExit
   , onBufAdded
+  , onBufAdded_
+  , onEveryNewBuffer
+  , onEveryNewBuffer_
   , onBufTextChanged
   , onKeypress
 

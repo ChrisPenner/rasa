@@ -45,7 +45,10 @@ module Rasa.Internal.Listeners
   , dispatchExit
 
   , onBufAdded
+  , onBufAdded_
   , dispatchBufAdded
+  , onEveryNewBuffer
+  , onEveryNewBuffer_
 
   , onBufTextChanged
   , dispatchBufTextChanged
@@ -58,6 +61,7 @@ module Rasa.Internal.Listeners
   ) where
 
 import Rasa.Internal.Action
+import Rasa.Internal.Actions
 import Rasa.Internal.BufAction
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
@@ -205,6 +209,17 @@ dispatchExit = dispatchEvent Exit
 onBufAdded :: (BufAdded -> Action result) -> Action ListenerId
 onBufAdded actionF = addListener (void . actionF)
 
+onBufAdded_ :: (BufAdded -> Action result) -> Action ()
+onBufAdded_ = void . onBufAdded
+
+-- | Run the given 'BufAction' over all new buffers
+onEveryNewBuffer :: BufAction a -> Action ListenerId
+onEveryNewBuffer bufAction = onBufAdded $
+  \(BufAdded br) -> bufDo_ br bufAction
+
+onEveryNewBuffer_ :: BufAction a -> Action ()
+onEveryNewBuffer_ = void . onEveryNewBuffer
+
 -- | Dispatch the 'BufAdded' action.
 dispatchBufAdded :: BufAdded -> Action ()
 dispatchBufAdded = dispatchEvent
@@ -267,7 +282,7 @@ dispatchEventG :: forall m result eventType. (Monoid result, Typeable eventType,
 dispatchEventG evt = do
       LocalListeners _ listeners <- getExt
       results <- traverse ($ evt) (matchingListeners listeners :: [eventType -> m result])
-      return $ (mconcat results :: result)
+      return (mconcat results :: result)
 
 -- | addListener which is generic over its monad
 addListenerG :: forall result eventType m. (Typeable eventType, Typeable result, Monoid result, HasExtMonad m) => (eventType -> m result) -> m ListenerId

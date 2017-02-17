@@ -1,6 +1,5 @@
 module Rasa.Ext.Views.Internal.Actions
-  ( viewports
-  , rotate
+  ( rotate
   , closeInactive
   , focusViewLeft
   , focusViewRight
@@ -14,6 +13,7 @@ module Rasa.Ext.Views.Internal.Actions
   , focusDo
   , focusDo_
   , focusedBufs
+  , isFocused
   , scrollBy
   ) where
 
@@ -25,10 +25,6 @@ import Control.Lens
 import Control.Monad
 import Data.Maybe
 import Data.List
-
--- | Main export from the views extension, add this to your rasa config.
-viewports :: Action ()
-viewports = void $ onBufAdded addSplit
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Action ()
@@ -106,6 +102,12 @@ focusedBufs = do
     Nothing -> return []
     Just win -> return . nub . activeBufRefs $ win
   where activeBufRefs = toListOf $ traverse . filtered (view V.active) . V.viewable . V._BufViewRef
+
+isFocused :: BufAction Bool
+isFocused = do
+  inFocus <- liftAction focusedBufs
+  br <- getBufRef
+  return $ br `elem` inFocus
 
 -- | Run a bufAction over all focused buffers and return any results.
 focusDo :: BufAction a -> Action [a]

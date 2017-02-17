@@ -19,6 +19,8 @@ library
                        Rasa.Ext.Views.Internal.Views
                        Rasa.Ext.Views.Internal.Actions
                        Rasa.Ext.Views.Internal.Widgets
+                       Rasa.Ext.Views.Internal.LineNumbers
+                       Rasa.Ext.Views.Internal.ActiveBar
   build-depends:       base >= 4.8 && < 5
                      , rasa
                      , lens
@@ -26,6 +28,7 @@ library
                      , bifunctors
                      , recursion-schemes
                      , mtl
+                     , yi-rope
   default-language:    Haskell2010
 
   default-extensions:

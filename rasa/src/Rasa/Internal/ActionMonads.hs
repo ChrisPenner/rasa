@@ -78,6 +78,7 @@ newtype Action a = Action
 data BufActionF next where
   GetText :: (Y.YiString -> next) -> BufActionF next
   SetText :: Y.YiString -> next -> BufActionF next
+  GetBufRef :: (BufRef -> next) -> BufActionF next
   GetBufExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> BufActionF next
   SetBufExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> BufActionF next
   SetRange :: CrdRange -> Y.YiString -> next -> BufActionF next

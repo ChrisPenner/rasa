@@ -1,4 +1,7 @@
-module Rasa.Internal.Utility 
+{-# language
+    FlexibleInstances
+#-}
+module Rasa.Internal.Utility
   ( Width
   , Height
   , Renderable(..)
@@ -26,6 +29,10 @@ type RenderInfo = (Y.YiString, Styles)
 class Renderable r where
   render :: Width -> Height -> ScrollPos -> r -> Action (Maybe RenderInfo)
 
+instance Renderable r => Renderable (Maybe r) where
+  render width height scrollPos (Just r) = render width height scrollPos r
+  render width height scrollPos Nothing = return Nothing
+
 instance Renderable BufRef where
   render _ height scrollPos bufRef = bufDo bufRef $ do
     txt <- getText
@@ -34,6 +41,9 @@ instance Renderable BufRef where
 
 instance Renderable Y.YiString where
   render _ height scrollPos txt = return . Just $ cropToViewport height scrollPos (txt, [])
+
+instance Renderable RenderInfo where
+  render _ _ _ r = return (Just r)
 
 type ScrollPos = Int
 -- | Crop to only the in-view portion.

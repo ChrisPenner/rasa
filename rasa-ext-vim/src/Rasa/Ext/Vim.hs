@@ -1,4 +1,4 @@
-{-# Language OverloadedStrings, TemplateHaskell #-}
+{-# Language OverloadedStrings #-}
 module Rasa.Ext.Vim
   ( vim
   ) where
@@ -98,6 +98,8 @@ normal [Keypress '0' []] = startOfLine
 normal [Keypress '$' []] = endOfLine
 normal [Keypress 'g' []] = addHist $ Keypress 'g' []
 normal [Keypress 'g' [], Keypress 'g' []] = setRanges [Range (Coord 0 0) (Coord 0 1)]
+normal [Keypress 's' []] = addHist $ Keypress 's' []
+normal [Keypress 's' [], Keypress 'n' []] = toggleLineNumbers
 
 normal [Keypress '+' []] = liftAction nextBuf
 normal [Keypress '-' []] = liftAction prevBuf

@@ -30,12 +30,4 @@ main = rasa $ do
   cursors
   logger
   slate
-  onInit $ onBufAdded eachNewBuffer
   afterInit $ addBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"
-
-eachNewBuffer :: BufAdded -> Action ()
-eachNewBuffer (BufAdded br) = bufDo_ br $ do
-  addBottomBar $ return ("Hello!" :: Y.YiString)
-  addLeftBar $ do
-    numLines <- Y.countNewLines <$> getText
-    return . Y.unlines $ Y.fromString . show <$> [1.. numLines + 1]

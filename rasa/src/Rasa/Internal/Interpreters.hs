@@ -105,9 +105,9 @@ actionInterpreter (Free actionF) =
 
     (AddBuffer txt toNext) -> do
       bufId <- nextBufId <+= 1
-      buffers.at bufId ?= mkBuffer txt
       let bufRef = BufRef bufId
-          Action dBufAdded = dispatchBufAdded (BufAdded bufRef)
+      buffers.at bufId ?= mkBuffer txt bufRef
+      let Action dBufAdded = dispatchBufAdded (BufAdded bufRef)
       actionInterpreter (dBufAdded >> toNext bufRef)
 
     (GetBufRefs toNext) ->
@@ -150,6 +150,11 @@ bufActionInterpreter (Free bufActionF) =
     (SetText newText next) -> do
       text .= newText
       bufActionInterpreter next
+
+    (GetBufRef toNext) -> do
+      bref <- use ref
+      bufActionInterpreter $ toNext bref
+
 
     (SetRange rng newText next) -> do
       text.range rng .= newText
