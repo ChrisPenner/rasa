@@ -1,7 +1,7 @@
-{-# language 
+{-# language
    FlexibleInstances
   , MultiParamTypeClasses
-  , OverloadedStrings 
+  , OverloadedStrings
   , ExistentialQuantification
 #-}
 module Rasa.Ext.Slate.Internal.Render
@@ -23,6 +23,8 @@ import Control.Lens
 import Control.Monad.IO.Class
 
 import qualified Yi.Rope as Y
+
+type ScrollPos = Int
 
 -- | Get the current terminal size.
 getSize :: Action (Width, Height)
@@ -65,7 +67,7 @@ renderWindow :: BiTree Split View -> Width -> Height -> Action V.Image
 renderWindow = cata alg
   where
     alg (BranchF (Split Vert spRule) left right) = \width height ->
-      let availWidth = fromIntegral (width - 1)
+      let availWidth = max 0 $ fromIntegral (width - 1)
           (leftWidth, rightWidth) = splitByRule spRule availWidth
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '|' 1 height
        in do
@@ -74,7 +76,7 @@ renderWindow = cata alg
          return $ leftView V.<|> border V.<|> rightView
 
     alg (BranchF (Split Hor spRule) top bottom) = \width height ->
-      let availHeight = fromIntegral (height - 1)
+      let availHeight = max 0 $ fromIntegral (height - 1)
           (topHeight, bottomHeight) = splitByRule spRule availHeight
           border = V.charFill (V.defAttr `V.withForeColor` V.green) '-' width 1
        in do
@@ -84,28 +86,35 @@ renderWindow = cata alg
 
     alg (LeafF vw) = \width height -> renderView width height vw
 
+
+type Top = V.Image
+type Bottom = V.Image
+type Left = V.Image
+type Right = V.Image
+
+-- | Renders widgets to images
+widgetsToImages :: Width -> Height -> ScrollPos -> Widgets -> Action (Top, Bottom, Left, Right)
+widgetsToImages width height scrollAmt widgets = do
+  top <- V.vertCat . catMaybes <$> traverse (renderHorBar width) (widgets^.topBar)
+  bottom <- V.vertCat . catMaybes <$> traverse (renderHorBar width) (widgets^.bottomBar)
+  left <- V.horizCat . catMaybes <$> traverse (renderVertBar height) (widgets^.leftBar)
+  right <- V.horizCat . catMaybes <$> traverse (renderVertBar height) (widgets^.rightBar)
+  return (top, bottom, left, right)
+    where
+      renderHorBar :: forall r. Renderable r => Width -> r -> Action (Maybe V.Image)
+      renderHorBar w r = fmap applyAttrs <$> render w 1 0 r
+      renderVertBar :: forall r. Renderable r => Height -> r -> Action (Maybe V.Image)
+      renderVertBar h r = fmap applyAttrs <$> render 1 h scrollAmt r
+
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
 renderView :: Width -> Height -> View -> Action V.Image
 renderView width height vw = do
-  mInfo <- render width height scrollAmt (vw^.viewable)
   widgets <- renderWidgets vw
-  top <- V.vertCat . catMaybes <$> traverse (renderHorBar width) (widgets^.topBar)
-  bottom <- V.vertCat . catMaybes <$> traverse (renderHorBar width) (widgets^.bottomBar)
-  left <- V.vertCat . catMaybes <$> traverse (renderVertBar height) (widgets^.leftBar)
-  right <- V.vertCat . catMaybes <$> traverse (renderVertBar height) (widgets^.rightBar)
-  let remainingHeight = height - (V.imageHeight top + V.imageHeight bottom)
-      remainingWidth = width - (V.imageWidth left + V.imageWidth right)
-      img = maybe V.emptyImage (V.resize remainingWidth remainingHeight . applyAttrs) mInfo
+  (top, bottom, left, right)  <- widgetsToImages width height scrollAmt widgets
+  let remainingHeight = max 0 $ height - (V.imageHeight top + V.imageHeight bottom)
+      remainingWidth = max 0 $ width - (V.imageWidth left + V.imageWidth right)
+  bufRenderInfo <- render remainingWidth remainingHeight scrollAmt (vw^.viewable)
+  let img = V.resize remainingWidth remainingHeight $ maybe V.emptyImage applyAttrs bufRenderInfo
   return $ top V.<-> (left V.<|> img V.<|> right) V.<-> bottom
   where
     scrollAmt = vw^.scrollPos
-    renderHorBar :: forall r. Renderable r => Width -> r -> Action (Maybe V.Image)
-    renderHorBar w r = fmap applyAttrs <$> render w 1 scrollAmt r
-    renderVertBar :: forall r. Renderable r => Height -> r -> Action (Maybe V.Image)
-    renderVertBar h r = fmap applyAttrs <$> render 1 h scrollAmt r
-
-type ScrollPos = Int
-
--- | Renders text and styles to an image
-renderToImage :: Width -> Height -> RenderInfo -> V.Image
-renderToImage width height = V.resize width height . applyAttrs

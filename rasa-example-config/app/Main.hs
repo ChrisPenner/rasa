@@ -36,4 +36,6 @@ main = rasa $ do
 eachNewBuffer :: BufAdded -> Action ()
 eachNewBuffer (BufAdded br) = bufDo_ br $ do
   addBottomBar $ return ("Hello!" :: Y.YiString)
-  addLeftBar $ return ("1\n2\n3\n4\n5\n6\n7" :: Y.YiString)
+  addLeftBar $ do
+    numLines <- Y.countNewLines <$> getText
+    return . Y.unlines $ Y.fromString . show <$> [1.. numLines + 1]
