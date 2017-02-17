@@ -2,6 +2,7 @@
     TemplateHaskell
   , ExistentialQuantification
   , RankNTypes
+  , OverloadedStrings
 #-}
 module Rasa.Ext.Views.Internal.Widgets
   ( Widgets
@@ -18,11 +19,13 @@ module Rasa.Ext.Views.Internal.Widgets
 
 import Rasa.Ext
 import Rasa.Ext.Views.Internal.Views
+import Rasa.Ext.Views.Internal.ActiveBar
 
 import Control.Lens
-import Data.Default
 import Data.Maybe
 import Data.Monoid
+
+import qualified Yi.Rope as Y
 
 data ARenderable =
   forall r. Renderable r => ARenderable r
@@ -45,23 +48,23 @@ instance Monoid Widgets where
   (Widgets a b c d) `mappend` (Widgets a' b' c' d') =
     Widgets (a<>a') (b<>b') (c<>c') (d<>d')
 
-instance Default Widgets where
-  def = mempty
-
 class RenderWidgets r where
   renderWidgets :: r -> Action Widgets
 
-instance RenderWidgets Viewable where
-  renderWidgets EmptyView = return def
-  renderWidgets (BufView br) = fromMaybe mempty <$> bufDo br getWidgets
-
 instance RenderWidgets View where
-  renderWidgets vw = renderWidgets (vw^.viewable)
+  renderWidgets vw = do
+    let activeBar = if vw^.active
+        then mempty & bottomBar .~ [ARenderable ActiveBar]
+        else mempty
+    rest <- case vw^.viewable of
+      EmptyView -> return mempty
+      (BufView br) -> fromMaybe mempty <$> bufDo br getWidgets
+    return $ activeBar `mappend` rest
 
 data GetWidgets = GetWidgets
 
 widgetOf :: Renderable r => Lens' Widgets [ARenderable] -> r -> Widgets
-widgetOf l r = def & l .~ [ARenderable r]
+widgetOf l r = mempty & l .~ [ARenderable r]
 
 mkListenerFor :: Renderable r => Lens' Widgets [ARenderable] -> BufAction r -> BufAction ListenerId
 mkListenerFor l bufAction = addBufListener (const (widgetOf l <$> bufAction) :: GetWidgets -> BufAction Widgets)

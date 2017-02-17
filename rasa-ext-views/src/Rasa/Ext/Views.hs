@@ -61,5 +61,4 @@ import Rasa.Ext.Views.Internal.Actions as A
 viewports :: Action ()
 viewports = do
   onBufAdded_ A.addSplit
-  activeBar
   lineNumbers
