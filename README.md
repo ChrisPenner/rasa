@@ -145,15 +145,12 @@ To provide reproducible builds, Rasa uses Stack & Nix.
 3. Clone this repo and `cd` into the directory
 4. Run `stack build && stack exec rasa` (you may want to alias this to `rasa`)
 
-Installation without nix
-------------------------
-
-Note: This method will not provide reproducible builds.
+Installation without nix (not-recommended)
+------------------------------------------
 
 1. Install [stack](http://seanhess.github.io/2015/08/04/practical-haskell-getting-started.html)
 2. Clone this repo and `cd` into the directory
-3. Run `stack build --no-nix`
-4. Run `stack exec rasa --no-nix` (you may have to alias this to `rasa`)
+3. Run `stack build --no-nix && stack exec rasa --no-nix` (you may want to alias this to `rasa`)
 
 ### Troubleshooting
 
