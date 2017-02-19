@@ -29,6 +29,7 @@ toggleLineNumbers :: BufAction ()
 toggleLineNumbers = overBufExt $
   \(LineNumbers b) -> LineNumbers $ not b
 
+-- | Returns whether line numbers are currently enabled.
 checkLineNumbers :: BufAction Bool
 checkLineNumbers = do
   LineNumbers b <- getBufExt

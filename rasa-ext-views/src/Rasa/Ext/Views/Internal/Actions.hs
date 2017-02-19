@@ -49,8 +49,8 @@ focusViewBelow = V.overWindows V.focusViewBelow
 -- | Close all inactive viewports
 closeInactive :: Action ()
 closeInactive = do
-  V.Views mWindows <- V.getViews
-  V.setViews . V.Views $ mWindows >>= V.closeBy (not . view V.active)
+  mWindows <- V.getViews
+  V.setViews $ mWindows >>= V.closeBy (not . view V.active)
 
 -- | Split active views horizontally
 hSplit :: Action ()
@@ -63,10 +63,10 @@ vSplit = V.overWindows V.vSplit
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: BufAdded -> Action ()
 addSplit (BufAdded bRef) = do
-  V.Views mWin <- V.getViews
+  mWin <- V.getViews
   case mWin of
-    Nothing -> V.setViews . V.Views . Just $ Leaf (V.View True (V.BufView bRef) 0)
-    Just win -> V.setViews .  V.Views . Just $ V.addSplit V.Vert (V.BufView bRef) win
+    Nothing -> V.setViews . Just $ Leaf (V.View True (V.BufView bRef) 0)
+    Just win -> V.setViews . Just $ V.addSplit V.Vert (V.BufView bRef) win
 
 -- | Select the next buffer in any active viewports
 nextBuf :: Action ()
@@ -97,12 +97,13 @@ prevBuf = V.traverseViews prev
 -- | Get bufRefs for all buffers that are selected in at least one viewport
 focusedBufs :: Action [BufRef]
 focusedBufs = do
-  V.Views mWindows <- V.getViews
+  mWindows <- V.getViews
   case mWindows of
     Nothing -> return []
     Just win -> return . nub . activeBufRefs $ win
   where activeBufRefs = toListOf $ traverse . filtered (view V.active) . V.viewable . V._BufViewRef
 
+-- | Returns whether the current buffer is focused in at least one view.
 isFocused :: BufAction Bool
 isFocused = do
   inFocus <- liftAction focusedBufs
@@ -119,5 +120,6 @@ focusDo bufAct = do
 focusDo_ :: BufAction a -> Action ()
 focusDo_ = void . focusDo
 
+-- | Scrolls each focused viewport by the given amount.
 scrollBy :: Int -> Action ()
 scrollBy amt = V.overWindows $ V.scrollBy amt

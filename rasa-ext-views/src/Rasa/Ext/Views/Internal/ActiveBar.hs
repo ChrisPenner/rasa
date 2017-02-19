@@ -7,8 +7,6 @@ module Rasa.Ext.Views.Internal.ActiveBar
 
 import Rasa.Ext
 
-import Rasa.Ext.Views.Internal.Actions
-import Data.Default
 import qualified Yi.Rope as Y
 
 data ActiveBar = ActiveBar

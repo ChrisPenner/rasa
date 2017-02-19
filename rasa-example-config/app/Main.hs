@@ -10,10 +10,6 @@ import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
 
-import Control.Lens
-import Data.Maybe
-import Data.Default
-import qualified Yi.Rope as Y
 -- import Control.Monad
 -- import Control.Monad.Trans
 

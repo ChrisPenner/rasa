@@ -6,6 +6,7 @@ module Rasa.Internal.Utility
   , Height
   , Renderable(..)
   , RenderInfo
+  , ScrollPos
   , cropToViewport
   ) where
 
@@ -31,7 +32,7 @@ class Renderable r where
 
 instance Renderable r => Renderable (Maybe r) where
   render width height scrollPos (Just r) = render width height scrollPos r
-  render width height scrollPos Nothing = return Nothing
+  render _ _ _ Nothing = return Nothing
 
 instance Renderable BufRef where
   render _ height scrollPos bufRef = bufDo bufRef $ do

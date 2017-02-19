@@ -14,17 +14,10 @@ import Rasa.Ext.Views
 import Rasa.Ext.Slate.Internal.State
 import Rasa.Ext.Slate.Internal.Attributes
 import Data.Functor.Foldable
-import Data.Bifunctor
-import Data.Monoid
-import Data.Maybe
 
 import qualified Graphics.Vty as V
 import Control.Lens
 import Control.Monad.IO.Class
-
-import qualified Yi.Rope as Y
-
-type ScrollPos = Int
 
 -- | Get the current terminal size.
 getSize :: Action (Width, Height)
@@ -36,7 +29,7 @@ getSize = do
 renderAll :: Action ()
 renderAll = do
   (width, height) <- getSize
-  Views mViews <- getViews
+  mViews <- getViews
   maybe (return ()) (vtyUpdate width height) mViews
   where
     vtyUpdate width height win = do
@@ -97,12 +90,12 @@ type Right = V.Image
 -- | Renders widgets to images
 widgetsToImages :: Width -> Height -> ScrollPos -> Widgets -> Action (Top, Bottom, Left, Right)
 widgetsToImages width height scrollAmt widgets = do
-  topBar <- renderHorBar width (widgets^.topBar)
-  bottomBar <- renderHorBar width (widgets^.bottomBar)
-  let remainingHeight = max 0 $ height - (V.imageHeight topBar + V.imageHeight bottomBar)
-  leftBar <- renderVertBar remainingHeight (widgets^.leftBar)
-  rightBar <- renderVertBar remainingHeight (widgets^.rightBar)
-  return (topBar, bottomBar, leftBar, rightBar)
+  top <- renderHorBar width (widgets^.topBar)
+  bottom <- renderHorBar width (widgets^.bottomBar)
+  let remainingHeight = max 0 $ height - (V.imageHeight top+ V.imageHeight bottom)
+  left <- renderVertBar remainingHeight (widgets^.leftBar)
+  right <- renderVertBar remainingHeight (widgets^.rightBar)
+  return (top, bottom, left, right)
     where
       renderHorBar w rs = V.resizeWidth w . V.vertCat <$> traverse (renderToImage w 1 0) rs
       renderVertBar h rs = V.resizeHeight h . V.horizCat <$> traverse (renderToImage 1 h scrollAmt) rs

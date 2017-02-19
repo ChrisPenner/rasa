@@ -31,7 +31,6 @@ module Rasa.Ext.Views.Internal.Views
   , Window
   , Split(..)
   , View(..)
-  , Views(..)
   , Viewable(..)
   , _BufViewRef
   , traverseViews
@@ -125,12 +124,14 @@ instance Default Views where
   def = Views Nothing
 
 -- | Gets the stored views
-getViews :: Action Views
-getViews = getExt
+getViews :: Action (Maybe Window)
+getViews = do
+  Views mWin <- getExt
+  return mWin
 
 -- | Sets the stored views
-setViews :: Views -> Action ()
-setViews = setExt
+setViews :: Maybe Window -> Action ()
+setViews = setExt . Views
 
 -- | Run function over stored windows
 overWindows :: (Window -> Window) -> Action ()
@@ -254,6 +255,6 @@ scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
 -- | Alters views by a given function.
 traverseViews :: (View -> Action View) -> Action ()
 traverseViews f = do
-  Views mWin <- getViews
+  mWin <- getViews
   mResult <- sequence $ traverse f <$> mWin
-  setViews . Views $ mResult
+  setViews mResult

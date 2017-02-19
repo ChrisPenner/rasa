@@ -237,8 +237,9 @@ module Rasa.Ext
   -- requiring them to depend upon each other. Use them liberally in your own extensions.
   , Width
   , Height
-  , Renderable(..)
   , RenderInfo
+  , ScrollPos
+  , Renderable(..)
   ) where
 
 import Rasa.Internal.Action
