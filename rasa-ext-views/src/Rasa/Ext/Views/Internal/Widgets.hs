@@ -6,7 +6,7 @@
 #-}
 module Rasa.Ext.Views.Internal.Widgets
   ( Widgets
-  , RenderWidgets(..)
+  , HasWidgets(..)
   , addTopBar
   , addBottomBar
   , addLeftBar
@@ -19,17 +19,13 @@ module Rasa.Ext.Views.Internal.Widgets
 
 import Rasa.Ext
 import Rasa.Ext.Views.Internal.Views
+import Rasa.Ext.Views.Internal.AnyRenderable
 import Rasa.Ext.Views.Internal.ActiveBar
+import Rasa.Ext.Views.Internal.StatusBar
 
 import Control.Lens
 import Data.Maybe
 import Data.Monoid
-
-data AnyRenderable =
-  forall r. Renderable r => AnyRenderable r
-
-instance Renderable AnyRenderable where
-  render width height scrollAmt (AnyRenderable r) = render width height scrollAmt r
 
 
 -- | Represents all widgets for a given view. Can be added onto using the Monoid instance.
@@ -47,19 +43,26 @@ instance Monoid Widgets where
   (Widgets a b c d) `mappend` (Widgets a' b' c' d') =
     Widgets (a<>a') (b<>b') (c<>c') (d<>d')
 
-class RenderWidgets r where
-  renderWidgets :: r -> Action Widgets
+class HasWidgets r where
+  computeWidgets :: r -> Action Widgets
 
 -- | This represents types which can provide a set of widgets
-instance RenderWidgets View where
-  renderWidgets vw = do
-    let activeBar = if vw^.active
-        then mempty & bottomBar .~ [AnyRenderable ActiveBar]
-        else mempty
+instance HasWidgets View where
+  computeWidgets vw = do
     rest <- case vw^.viewable of
-      EmptyView -> return mempty
-      (BufView br) -> fromMaybe mempty <$> bufDo br getWidgets
+              EmptyView -> return mempty
+              (BufView br) -> getBufWidgets br
     return $ activeBar `mappend` rest
+    where
+      activeBar =
+        if vw^.active
+          then mempty & bottomBar .~ [AnyRenderable ActiveBar]
+          else mempty
+
+      getBufWidgets br = fmap (fromMaybe mempty) . bufDo br $ do
+        mainWidgets <- getWidgets
+        statusBar <- getStatusBar
+        return $ mainWidgets <> widgetOf bottomBar statusBar
 
 data GetWidgets = GetWidgets
 

@@ -5,9 +5,10 @@ module Rasa.Internal.Utility
   ( Width
   , Height
   , Renderable(..)
-  , RenderInfo
+  , RenderInfo(..)
   , ScrollPos
   , cropToViewport
+  , styleText
   ) where
 
 import Rasa.Internal.ActionMonads
@@ -24,7 +25,18 @@ import qualified Yi.Rope as Y
 
 type Width = Int
 type Height = Int
-type RenderInfo = (Y.YiString, Styles)
+
+data RenderInfo =
+  RenderInfo Y.YiString Styles
+
+-- | Appends to RenderInfo by appending the text and styles while preserving
+-- proper text/style alignment
+instance Monoid RenderInfo where
+  mempty = RenderInfo mempty mempty
+  RenderInfo txtA stylesA `mappend` RenderInfo txtB stylesB =
+    RenderInfo
+      (txtA `mappend` txtB)
+      (mappend stylesA $ first (moveRange (sizeOf txtA)) <$> stylesB)
 
 -- | Represents how to render an entity
 class Renderable r where
@@ -38,10 +50,10 @@ instance Renderable BufRef where
   render _ height scrollPos bufRef = bufDo bufRef $ do
     txt <- getText
     styles <- getStyles
-    return $ cropToViewport height scrollPos (txt, styles)
+    return $ cropToViewport height scrollPos (RenderInfo txt styles)
 
 instance Renderable Y.YiString where
-  render _ height scrollPos txt = return . Just $ cropToViewport height scrollPos (txt, [])
+  render _ height scrollPos txt = return . Just $ cropToViewport height scrollPos (RenderInfo txt [])
 
 instance Renderable RenderInfo where
   render _ _ _ r = return (Just r)
@@ -49,7 +61,7 @@ instance Renderable RenderInfo where
 type ScrollPos = Int
 -- | Crop to only the in-view portion.
 cropToViewport :: Height -> ScrollPos -> RenderInfo -> RenderInfo
-cropToViewport height scrollAmt (txt, styles) = (trimmedText, adjustedStyles)
+cropToViewport height scrollAmt (RenderInfo txt styles) = RenderInfo trimmedText adjustedStyles
   where
     adjustedStyles :: Styles
     adjustedStyles = first adjustStylePositions <$> styles
@@ -57,3 +69,7 @@ cropToViewport height scrollAmt (txt, styles) = (trimmedText, adjustedStyles)
     adjustStylePositions = both.coordRow -~ scrollAmt
     trimmedText :: Y.YiString
     trimmedText = Y.concat . take height . drop scrollAmt . Y.lines' $ txt
+
+-- | Add a style to some text resulting in a 'RenderInfo'
+styleText :: Y.YiString -> Style -> RenderInfo
+styleText txt style = RenderInfo txt [Span (Range (Coord 0 0) (sizeOf txt)) style]

@@ -1,4 +1,6 @@
-{-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
+{-# language
+   OverloadedStrings
+#-}
 
 module Rasa.Ext.Files
   ( files
@@ -31,7 +33,7 @@ instance Default FileInfo where
 files :: Action ()
 files = do
   beforeEveryRender_ showFilename
-  onInit $ do
+  afterInit $ do
     loadFiles
     addCmd "save" $ focusDo_ . saveAs . Y.fromString
 

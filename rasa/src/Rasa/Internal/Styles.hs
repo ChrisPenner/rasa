@@ -18,7 +18,6 @@ import Rasa.Internal.BufAction
 import Rasa.Internal.Listeners
 
 import Control.Applicative
-
 import Data.Default
 
 -- | These represent the possible colors for 'fg' or 'bg'.

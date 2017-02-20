@@ -23,6 +23,9 @@ data VimMode
 instance Default VimMode where
   def = Normal
 
+getMode :: BufAction VimMode
+getMode = getBufExt
+
 setMode :: VimMode -> BufAction ()
 setMode = setBufExt
 
@@ -38,13 +41,13 @@ addHist :: Keypress -> BufAction ()
 addHist keypress = overBufExt extend
   where extend (VimHist hist) = VimHist $ hist ++ [keypress]
 
--- | A hlens into vim's current mode.
--- mode :: HasBufExts s => Lens' s VimMode
--- mode = bufExt
+getHist :: BufAction [Keypress]
+getHist = do
+  VimHist h <- getBufExt
+  return h
 
--- | A lens into the current unresolved keypress history
--- hist :: HasBufExts s => Lens' s [Keypress]
--- hist = bufExt.histKeys
+setHist :: [Keypress] -> BufAction ()
+setHist = setBufExt . VimHist
 
 -- | The main export for the vim keybinding extension. Add this to your user config.
 --
@@ -54,20 +57,26 @@ addHist keypress = overBufExt extend
 -- >    vim
 -- >    ...
 vim :: Action ()
-vim = void $ onKeypress handleKeypress
+vim = do
+  void $ onKeypress handleKeypress
+  onEveryNewBuffer_ . addStatus $ do
+    mode <- getMode
+    return $ case mode of
+      Normal -> styleText "NORMAL" $ fg Magenta
+      Insert -> styleText "INSERT" $ fg Green
 
 -- | The event listener which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> Action ()
 handleKeypress keypress = focusDo_ $ do
-  mode <- getBufExt
-  VimHist preHist <- getBufExt
+  mode <- getMode
+  preHist <- getHist
   case mode of
     Normal -> normal $ preHist ++ [keypress]
     Insert -> insert $ preHist ++ [keypress]
   anyMode $ preHist ++ [keypress]
-  VimHist postHist <- getBufExt
+  postHist <- getHist
   -- If nothing changed than an action must have happened
-  unless (preHist /= postHist) (setBufExt $ VimHist [])
+  unless (preHist /= postHist) (setHist [])
 
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()

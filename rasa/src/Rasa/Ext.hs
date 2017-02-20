@@ -224,6 +224,7 @@ module Rasa.Ext
   , Styles
   , addStyleProvider
   , getStyles
+  , styleText
 
    -- * Useful Utilities
   , asText
@@ -237,7 +238,7 @@ module Rasa.Ext
   -- requiring them to depend upon each other. Use them liberally in your own extensions.
   , Width
   , Height
-  , RenderInfo
+  , RenderInfo(..)
   , ScrollPos
   , Renderable(..)
   ) where

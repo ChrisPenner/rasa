@@ -103,7 +103,7 @@ widgetsToImages width height scrollAmt widgets = do
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
 renderView :: Width -> Height -> View -> Action V.Image
 renderView width height vw = do
-  widgets <- renderWidgets vw
+  widgets <- computeWidgets vw
   (top, bottom, left, right)  <- widgetsToImages width height scrollAmt widgets
   let remainingHeight = max 0 $ height - (V.imageHeight top + V.imageHeight bottom)
       remainingWidth = max 0 $ width - (V.imageWidth left + V.imageWidth right)

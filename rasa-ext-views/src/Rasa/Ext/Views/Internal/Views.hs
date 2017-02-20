@@ -95,7 +95,7 @@ instance Renderable Viewable where
   render _ height scrollPos (BufView br) = bufDo br $ do
     txt <- getText
     styles <- getStyles
-    return $ cropToViewport height scrollPos (txt, styles)
+    return $ cropToViewport height scrollPos (RenderInfo txt styles)
   render _ _ _ EmptyView = return Nothing
 
 -- | Prism BufView to its bufref

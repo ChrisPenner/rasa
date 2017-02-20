@@ -45,7 +45,7 @@ module Rasa.Ext.Views
   , bottomBar
   , leftBar
   , rightBar
-  , RenderWidgets(..)
+  , HasWidgets(..)
 
   -- ** Providing Widgets
   -- | The following functions register a BufAction which yields some renderable;
@@ -60,6 +60,8 @@ module Rasa.Ext.Views
   , disableLineNumbers
   , toggleLineNumbers
   , checkLineNumbers
+
+  , addStatus
   ) where
 
 import Rasa.Ext
@@ -67,6 +69,7 @@ import Rasa.Ext.Views.Internal.BiTree
 import Rasa.Ext.Views.Internal.Views
 import Rasa.Ext.Views.Internal.Widgets
 import Rasa.Ext.Views.Internal.LineNumbers
+import Rasa.Ext.Views.Internal.StatusBar
 import Rasa.Ext.Views.Internal.Actions as A
 
 -- | Main export from the views extension, add this to your rasa config.
