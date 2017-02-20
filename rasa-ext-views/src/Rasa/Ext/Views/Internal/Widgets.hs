@@ -61,8 +61,9 @@ instance HasWidgets View where
 
       getBufWidgets br = fmap (fromMaybe mempty) . bufDo br $ do
         mainWidgets <- getWidgets
-        statusBar <- getStatusBar
-        return $ mainWidgets <> widgetOf bottomBar statusBar
+        topStatusBar <- getTopStatusBar
+        bottomStatusBar <- getBottomStatusBar
+        return $ mainWidgets <> widgetOf bottomBar bottomStatusBar <> widgetOf topBar topStatusBar
 
 data GetWidgets = GetWidgets
 

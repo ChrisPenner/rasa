@@ -158,8 +158,8 @@ bufActionInterpreter (Free bufActionF) =
 
     (SetRange rng newText next) -> do
       text.range rng .= newText
-      lift . dispatchBufTextChanged $ BufTextChanged rng newText
-      bufActionInterpreter next
+      let (BufAction dispatchChange) = dispatchBufTextChanged $ BufTextChanged rng newText
+      bufActionInterpreter (dispatchChange >> next)
 
     (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
 

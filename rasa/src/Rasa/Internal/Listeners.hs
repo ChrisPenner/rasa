@@ -227,12 +227,12 @@ dispatchBufAdded = dispatchEvent
 -- | This is fired every time text in a buffer changes.
 --
 -- The range of text which was altered and the new value of that text are provided inside a 'BufTextChanged' event.
-onBufTextChanged :: (BufTextChanged -> Action result) -> Action ListenerId
-onBufTextChanged actionF = addListener (void . actionF)
+onBufTextChanged :: (BufTextChanged -> BufAction result) -> BufAction ListenerId
+onBufTextChanged bufActionF = addBufListener (void . bufActionF)
 
 -- | Dispatch the 'BufBufTextChanged' action.
-dispatchBufTextChanged :: BufTextChanged -> Action ()
-dispatchBufTextChanged = dispatchEvent
+dispatchBufTextChanged :: BufTextChanged -> BufAction ()
+dispatchBufTextChanged = dispatchBufEvent
 
 -- | This is a type alias to make defining your functions for use with 'asyncEventProvider' easier;
 -- It represents the function your event provider function will be passed to allow dispatching

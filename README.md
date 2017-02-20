@@ -22,8 +22,6 @@ You can find hackage documentation for rasa and some extensions here:
 - [rasa-ext-cursors](https://hackage.haskell.org/package/rasa-ext-cursors)
 - [rasa-ext-files](https://hackage.haskell.org/package/rasa-ext-files)
 - [rasa-ext-logger](https://hackage.haskell.org/package/rasa-ext-logger)
-- [rasa-ext-status-bar](https://hackage.haskell.org/package/rasa-ext-status-bar)
-- [rasa-ext-style](https://hackage.haskell.org/package/rasa-ext-style)
 
 What people are saying
 ----------------------
@@ -168,13 +166,11 @@ extra-deps:
 - rasa-0.1.0.0
 - rasa-ext-cursors-0.1.0.0
 - rasa-ext-logger-0.1.0.0
-- rasa-ext-status-bar-0.1.0.0
 - rasa-ext-vim-0.1.0.0
 - text-lens-0.1.0.0
 - rasa-ext-files-0.1.0.0
 - rasa-ext-cmd-0.1.0.0
 - rasa-ext-slate-0.1.0.0
-- rasa-ext-style-0.1.0.0
 - vty-5.14
 ```
 

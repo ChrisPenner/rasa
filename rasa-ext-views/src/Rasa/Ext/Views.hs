@@ -61,7 +61,8 @@ module Rasa.Ext.Views
   , toggleLineNumbers
   , checkLineNumbers
 
-  , addStatus
+  , addTopStatus
+  , addBottomStatus
   ) where
 
 import Rasa.Ext

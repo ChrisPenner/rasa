@@ -59,7 +59,7 @@ setHist = setBufExt . VimHist
 vim :: Action ()
 vim = do
   void $ onKeypress handleKeypress
-  onEveryNewBuffer_ . addStatus $ do
+  onEveryNewBuffer_ . addBottomStatus $ do
     mode <- getMode
     return $ case mode of
       Normal -> styleText "NORMAL" $ fg Magenta
