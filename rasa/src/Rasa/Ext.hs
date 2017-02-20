@@ -238,8 +238,8 @@ module Rasa.Ext
   -- requiring them to depend upon each other. Use them liberally in your own extensions.
   , Width
   , Height
-  , RenderInfo(..)
   , ScrollPos
+  , RenderInfo(..)
   , Renderable(..)
   ) where
 

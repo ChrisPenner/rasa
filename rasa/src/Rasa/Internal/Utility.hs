@@ -26,6 +26,8 @@ import qualified Yi.Rope as Y
 type Width = Int
 type Height = Int
 
+-- | RenderInfo is the data necessary to render something; it consists of a block of
+-- text with its associated styles. It is a Monoid and can be appended with other 'RenderInfo's.
 data RenderInfo =
   RenderInfo Y.YiString Styles
 
@@ -59,7 +61,9 @@ instance Renderable RenderInfo where
   render _ _ _ r = return (Just r)
 
 type ScrollPos = Int
--- | Crop to only the in-view portion.
+
+-- | Crop text verticaly to only the visible portion according to viewport height and
+-- scroll position.
 cropToViewport :: Height -> ScrollPos -> RenderInfo -> RenderInfo
 cropToViewport height scrollAmt (RenderInfo txt styles) = RenderInfo trimmedText adjustedStyles
   where

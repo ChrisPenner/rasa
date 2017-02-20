@@ -21,7 +21,7 @@ import Control.Applicative
 import Data.Default
 
 -- | These represent the possible colors for 'fg' or 'bg'.
--- 'DefColor' represents the terminal's default color.
+-- 'DefColor' represents the renderer's default color.
 data Color =
     Black
   | Red
@@ -35,7 +35,7 @@ data Color =
   deriving (Show, Eq)
 
 -- | These represent the possible extra attributes which may be applied.
--- 'DefFlair' represents the terminal's default text attributes.
+-- 'DefFlair' represents the renderer's default text attributes.
 data Flair =
     Standout
   | Underline
@@ -77,14 +77,17 @@ fg a = Style (Just a, Nothing, Nothing)
 bg :: Color -> Style
 bg a = Style (Nothing, Just a, Nothing)
 
--- Create a new 'Style' with the given 'Flair' as its flair.
+-- | Create a new 'Style' with the given 'Flair' as its flair.
 flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
 data ComputeStyles = ComputeStyles
 
+-- | Pass this a 'BufAction' which computes styles based on the current buffer
+-- and they'll be collected for the renderer.
 addStyleProvider :: BufAction Styles -> BufAction ListenerId
 addStyleProvider provider = addBufListener (const provider :: ComputeStyles -> BufAction Styles)
 
+-- | Collect all provided styles, this is useful for renderers.
 getStyles :: BufAction Styles
 getStyles = dispatchBufEvent ComputeStyles

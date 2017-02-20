@@ -18,7 +18,8 @@ data StatusBar = StatusBar [AnyRenderable]
 getStatusBar :: BufAction StatusBar
 getStatusBar = StatusBar <$> dispatchBufEvent GetStatusBar
 
--- | Add some info to a combined status bar
+-- | This registers a 'BufAction' which results in a renderable and runs it
+-- at render time to add the resulting 'Renderable' to the status bar.
 addStatus :: Renderable r => BufAction r -> BufAction ListenerId
 addStatus bufAction = addBufListener (const (toRenderList <$> bufAction) :: GetStatusBar -> BufAction [AnyRenderable])
   where toRenderList x = [AnyRenderable x]
