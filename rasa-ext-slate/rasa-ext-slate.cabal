@@ -24,8 +24,6 @@ library
 
   build-depends:       base >= 4.8 && < 5
                      , rasa
-                     , rasa-ext-style
-                     , rasa-ext-status-bar
                      , rasa-ext-views
                      , recursion-schemes
                      , text

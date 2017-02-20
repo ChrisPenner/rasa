@@ -2,7 +2,6 @@
 module Rasa.Ext.Slate.Internal.Attributes where
 
 import Rasa.Ext
-import Rasa.Ext.Style
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
 import Data.Bifunctor
@@ -51,17 +50,18 @@ instance Monoid AttrMonoid where
   AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
-applyAttrs :: [Span CrdRange V.Attr] -> Y.YiString -> V.Image
-applyAttrs atts txt = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines txt)
+applyAttrs :: RenderInfo -> V.Image
+applyAttrs (RenderInfo txt styles) = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines txt)
   where mergedSpans = second getAttr <$> combineSpans (fmap AttrMonoid <$> atts)
         -- Newlines aren't rendered; so we replace them with spaces so they're selectable
         padSpaces = (`Y.append` "  ")
+        atts = second convertStyle <$> styles
 
+-- | Makes and image from text and styles
 textAndStylesToImage :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
-textAndStylesToImage atts lines' = vertCat $ (reset V.<|>) . uncurry attrLine <$> pairLines atts lines'
+textAndStylesToImage atts lines' = V.vertCat $ wrapResets . uncurry attrLine <$> pairLines atts lines'
   where
-    vertCat = foldr ((V.<->) . (V.<|> reset)) V.emptyImage
-
+    wrapResets img = reset V.<|> img V.<|> reset
 
 -- | Applies the list of attrs to the line and returns a 'V.Image'. It assumes that the list
 -- contains only 'Coord's on the same line (i.e. row == 0)

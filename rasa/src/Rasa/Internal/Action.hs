@@ -19,6 +19,8 @@ import Rasa.Internal.Editor
 import Rasa.Internal.Buffer
 import Rasa.Internal.Extensions
 
+import qualified Yi.Rope as Y
+
 -- | dispatchActionAsync allows you to perform a task asynchronously and then apply the
 -- result. In @dispatchActionAsync asyncAction@, @asyncAction@ is an IO which resolves to
 -- an Action, note that the context in which the second action is executed is
@@ -82,8 +84,8 @@ bufferDo :: [BufRef] -> BufAction r -> Action [r]
 bufferDo bufRefs bufAct = liftActionF $ BufferDo bufRefs bufAct id
 
 -- | Adds a new buffer and returns the BufRef
-addBuffer :: Action BufRef
-addBuffer = liftActionF $ AddBuffer id
+addBuffer :: Y.YiString -> Action BufRef
+addBuffer txt = liftActionF $ AddBuffer txt id
 
 -- | Returns an up-to-date list of all 'BufRef's
 getBufRefs :: Action [BufRef]

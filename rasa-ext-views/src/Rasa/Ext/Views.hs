@@ -1,10 +1,25 @@
 module Rasa.Ext.Views
   ( viewports
-  , getBufferViews
-  , bufRef
+  -- * Working with Views
+  , View(..)
+  , viewable
   , splitRule
   , active
   , scrollPos
+  , getViews
+
+  -- * View Structure
+  -- | Views are stored as a Tree, with 'Split's determining
+  -- the layout of each branch.
+  , Split(..)
+  , Dir(..)
+  , SplitRule(..)
+  , Window
+  , BiTree(..)
+  , BiTreeF(..)
+
+
+  -- * Provided Actions
   , A.rotate
   , A.closeInactive
   , A.focusViewLeft
@@ -19,16 +34,47 @@ module Rasa.Ext.Views
   , A.focusDo
   , A.focusDo_
   , A.focusedBufs
+  , A.isFocused
   , A.scrollBy
-  , Dir(..)
-  , SplitRule(..)
-  , Window
-  , Split(..)
-  , View(..)
-  , BiTree(..)
-  , BiTreeF(..)
+
+  -- * Creating Widgets
+  , Widgets
+
+  -- | Lenses for accessing parts of 'Widgets':
+  , topBar
+  , bottomBar
+  , leftBar
+  , rightBar
+  , HasWidgets(..)
+
+  -- ** Providing Widgets
+  -- | The following functions register a BufAction which yields some renderable;
+  -- On each render that renderable will be used as a top/bottom/left/right bar respectively.
+  , addTopBar
+  , addBottomBar
+  , addLeftBar
+  , addRightBar
+
+  -- * Provided Widgets
+  , enableLineNumbers
+  , disableLineNumbers
+  , toggleLineNumbers
+  , checkLineNumbers
+
+  , addTopStatus
+  , addBottomStatus
   ) where
 
+import Rasa.Ext
 import Rasa.Ext.Views.Internal.BiTree
 import Rasa.Ext.Views.Internal.Views
+import Rasa.Ext.Views.Internal.Widgets
+import Rasa.Ext.Views.Internal.LineNumbers
+import Rasa.Ext.Views.Internal.StatusBar
 import Rasa.Ext.Views.Internal.Actions as A
+
+-- | Main export from the views extension, add this to your rasa config.
+viewports :: Action ()
+viewports = do
+  onBufAdded_ A.addSplit
+  lineNumbers

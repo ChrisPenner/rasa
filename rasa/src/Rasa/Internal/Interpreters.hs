@@ -103,10 +103,12 @@ actionInterpreter (Free actionF) =
       liftIO . void . forkIO $ dispatcherToIO dispatcher
       actionInterpreter next
 
-    (AddBuffer toNext) -> do
+    (AddBuffer txt toNext) -> do
       bufId <- nextBufId <+= 1
-      buffers.at bufId ?= def
-      actionInterpreter . toNext $ BufRef bufId
+      let bufRef = BufRef bufId
+      buffers.at bufId ?= mkBuffer txt bufRef
+      let Action dBufAdded = dispatchBufAdded (BufAdded bufRef)
+      actionInterpreter (dBufAdded >> toNext bufRef)
 
     (GetBufRefs toNext) ->
       use (buffers.to IM.keys) >>= actionInterpreter . toNext . fmap BufRef
@@ -149,10 +151,15 @@ bufActionInterpreter (Free bufActionF) =
       text .= newText
       bufActionInterpreter next
 
+    (GetBufRef toNext) -> do
+      bref <- use ref
+      bufActionInterpreter $ toNext bref
+
+
     (SetRange rng newText next) -> do
       text.range rng .= newText
-      lift . dispatchBufTextChanged $ BufTextChanged rng newText
-      bufActionInterpreter next
+      let (BufAction dispatchChange) = dispatchBufTextChanged $ BufTextChanged rng newText
+      bufActionInterpreter (dispatchChange >> next)
 
     (LiftAction act toNext) -> lift act >>= bufActionInterpreter . toNext
 

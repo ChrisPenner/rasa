@@ -2,6 +2,7 @@ module Rasa.Internal.BufAction
   ( BufAction(..)
   , getText
   , setText
+  , getBufRef
   , getRange
   , setRange
   , getBufExt
@@ -12,6 +13,7 @@ module Rasa.Internal.BufAction
 
 import Rasa.Internal.ActionMonads
 import Rasa.Internal.Range
+import Rasa.Internal.Buffer
 
 import Control.Lens
 import Data.Default
@@ -34,6 +36,10 @@ getRange rng = view (range rng) <$> getText
 -- | Sets the range of text from the buffer
 setRange :: CrdRange -> Y.YiString -> BufAction ()
 setRange rng txt = liftBufAction $ SetRange rng txt ()
+
+-- | Gets the current buffer's 'BufRef'
+getBufRef :: BufAction BufRef
+getBufRef = liftBufAction $ GetBufRef id
 
 -- | Retrieve some buffer extension state
 getBufExt :: (Typeable ext, Show ext, Default ext) => BufAction ext

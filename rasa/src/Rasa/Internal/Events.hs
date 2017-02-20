@@ -1,6 +1,7 @@
 {-# language ExistentialQuantification #-}
 module Rasa.Internal.Events
   ( Init(..)
+  , AfterInit(..)
   , BeforeEvent(..)
   , BeforeRender(..)
   , OnRender(..)
@@ -19,6 +20,9 @@ import qualified Yi.Rope as Y
 
 -- | This event is dispatched exactly once when the editor starts up.
 data Init = Init deriving (Show, Eq, Typeable)
+
+-- | This event is dispatched exactly once when the editor starts up after onInit has occurred.
+data AfterInit = AfterInit deriving (Show, Eq, Typeable)
 
 -- | This event is dispatched immediately before dispatching any events from
 -- asyncronous event listeners (like 'Keypress's)

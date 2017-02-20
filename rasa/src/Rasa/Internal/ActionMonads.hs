@@ -32,7 +32,7 @@ data ActionF next where
   BufferDo :: [BufRef]  -> BufAction r -> ([r] -> next) -> ActionF next
   DispatchActionAsync :: IO (Action ()) -> next  -> ActionF next
   AsyncActionProvider :: ((Action () -> IO ()) -> IO ()) -> next  -> ActionF next
-  AddBuffer :: (BufRef -> next) -> ActionF next
+  AddBuffer :: Y.YiString -> (BufRef -> next) -> ActionF next
   GetBufRefs :: ([BufRef] -> next) -> ActionF next
   GetExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> ActionF next
   SetExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> ActionF next
@@ -78,6 +78,7 @@ newtype Action a = Action
 data BufActionF next where
   GetText :: (Y.YiString -> next) -> BufActionF next
   SetText :: Y.YiString -> next -> BufActionF next
+  GetBufRef :: (BufRef -> next) -> BufActionF next
   GetBufExt :: (Typeable ext, Show ext, Default ext) => (ext -> next) -> BufActionF next
   SetBufExt :: (Typeable ext, Show ext, Default ext) => ext -> next -> BufActionF next
   SetRange :: CrdRange -> Y.YiString -> next -> BufActionF next

@@ -20,7 +20,6 @@ library
                        Rasa.Ext.Cursors.Internal.Base
   build-depends:       base >= 4.8 && < 5
                      , rasa
-                     , rasa-ext-style
                      , text-lens
                      , lens
                      , mtl

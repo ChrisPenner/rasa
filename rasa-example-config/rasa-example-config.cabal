@@ -20,13 +20,13 @@ executable rasa
                      , rasa
                      , rasa-ext-views
                      , rasa-ext-vim
-                     , rasa-ext-style
                      , rasa-ext-cursors
-                     , rasa-ext-status-bar
                      , rasa-ext-logger
                      , rasa-ext-files
                      , rasa-ext-slate
                      , lens
+                     , data-default
+                     , yi-rope
                      , mtl
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N

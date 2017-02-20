@@ -8,12 +8,11 @@ module Rasa.Ext.Cursors.Internal.Base
   , setRanges
   , overEachRange
   , addRange
-  , displayRange
+  , setStyleProvider
   ) where
 
 
 import Rasa.Ext
-import Rasa.Ext.Style
 
 import Control.Monad.State
 import Control.Lens
@@ -73,9 +72,9 @@ overEachRange f = rangeDo f >>= setRanges
 addRange :: CrdRange -> BufAction ()
 addRange r = overRanges (++[r])
 
--- | Sets style attributes to show a given range.
-displayRange ::  BufAction ()
-displayRange = rangeDo_ setStyle
+-- | Adds cursor specific styles
+setStyleProvider :: BufAction ()
+setStyleProvider = void . addStyleProvider $ rangeDo setStyle
   where
-    setStyle :: CrdRange -> BufAction ()
-    setStyle r = addStyle r (flair ReverseVideo)
+    setStyle :: CrdRange -> BufAction (Span CrdRange Style)
+    setStyle r = return $ Span r (flair ReverseVideo)

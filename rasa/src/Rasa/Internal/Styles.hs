@@ -1,24 +1,27 @@
-{-# language TemplateHaskell #-}
-module Rasa.Ext.Style 
-  ( style
-  , styles
-  , addStyle
-  , fg
+{-# language
+  GeneralizedNewtypeDeriving
+#-}
+module Rasa.Internal.Styles
+  ( fg
   , bg
   , flair
   , Color(..)
   , Flair(..)
   , Style(..)
+  , Styles
+  , addStyleProvider
+  , getStyles
   ) where
 
-import Rasa.Ext
-import Control.Lens
+import Rasa.Internal.Range
+import Rasa.Internal.BufAction
+import Rasa.Internal.Listeners
 
-import Data.Default
 import Control.Applicative
+import Data.Default
 
 -- | These represent the possible colors for 'fg' or 'bg'.
--- 'DefColor' represents the terminal's default color.
+-- 'DefColor' represents the renderer's default color.
 data Color =
     Black
   | Red
@@ -32,7 +35,7 @@ data Color =
   deriving (Show, Eq)
 
 -- | These represent the possible extra attributes which may be applied.
--- 'DefFlair' represents the terminal's default text attributes.
+-- 'DefFlair' represents the renderer's default text attributes.
 data Flair =
     Standout
   | Underline
@@ -58,16 +61,13 @@ instance Monoid Style where
 
   mempty = Style (Nothing, Nothing, Nothing)
 
-newtype Styles =
-  Styles {
-  -- This list must always stay sorted by the index of the styles
-  _styles :: [Span CrdRange Style]
-         } deriving (Show, Eq)
+type Styles = [Span CrdRange Style]
+newtype StyleMap =
+  StyleMap Styles
+  deriving (Show, Eq, Monoid)
 
-makeLenses ''Styles
-
-instance Default Styles where
-  def = Styles []
+instance Default StyleMap where
+  def = StyleMap []
 
 -- | Create a new 'Style' with the given 'Color' as the foreground.
 fg :: Color -> Style
@@ -77,20 +77,17 @@ fg a = Style (Just a, Nothing, Nothing)
 bg :: Color -> Style
 bg a = Style (Nothing, Just a, Nothing)
 
--- Create a new 'Style' with the given 'Flair' as its flair.
+-- | Create a new 'Style' with the given 'Flair' as its flair.
 flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
--- | Applies a style over a given range in the buffer's style list.
-addStyle :: CrdRange -> Style -> BufAction ()
-addStyle r st = overBufExt (styles %~ (Span r st:))
+data ComputeStyles = ComputeStyles
 
--- | The main export for the style extension. Add this to your user config.
---
--- e.g.
---
--- > rasa $ do
--- >    style
--- >    ...
-style :: Action ()
-style = afterEveryRender_ . buffersDo_ . setBufExt $ Styles []
+-- | Pass this a 'BufAction' which computes styles based on the current buffer
+-- and they'll be collected for the renderer.
+addStyleProvider :: BufAction Styles -> BufAction ListenerId
+addStyleProvider provider = addBufListener (const provider :: ComputeStyles -> BufAction Styles)
+
+-- | Collect all provided styles, this is useful for renderers.
+getStyles :: BufAction Styles
+getStyles = dispatchBufEvent ComputeStyles

@@ -13,7 +13,6 @@ module Rasa.Internal.Actions
 
   -- * Editor Actions
   , exit
-  , newBuffer
   , getBufRefs
   , nextBufRef
   , prevBufRef
@@ -21,15 +20,10 @@ module Rasa.Internal.Actions
 
 import Rasa.Internal.Editor
 import Rasa.Internal.Action
-import Rasa.Internal.Events
-import Rasa.Internal.Listeners
 import Rasa.Internal.BufAction
 
 import Control.Monad
 import Data.Maybe
-
-import qualified Yi.Rope as Y
-
 
 -- | This lifts a 'Rasa.Action.BufAction' to an 'Rasa.Action.Action' which
 -- performs the 'Rasa.Action.BufAction' on every buffer and collects the return
@@ -51,14 +45,6 @@ bufDo bufRef bufAct = listToMaybe <$> bufferDo [bufRef] bufAct
 
 bufDo_ :: BufRef -> BufAction a -> Action ()
 bufDo_ bufRef bufAct = void $ bufDo bufRef bufAct
-
--- | This adds a new buffer with the given text, returning a reference to that buffer.
-newBuffer :: Y.YiString -> Action BufRef
-newBuffer txt = do
-  bufRef <- addBuffer
-  void $ bufferDo [bufRef] (setText txt)
-  dispatchBufAdded $ BufAdded bufRef
-  return bufRef
 
 -- | Gets 'BufRef' that comes after the one provided
 nextBufRef :: BufRef -> Action BufRef

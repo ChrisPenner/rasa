@@ -45,7 +45,7 @@ module Rasa.Ext
   , exit
 
   -- * Managing Buffers
-  , newBuffer
+  , addBuffer
   , nextBufRef
   , prevBufRef
   , getBufRefs
@@ -58,6 +58,7 @@ module Rasa.Ext
   , HasEditor
   , getText
   , getRange
+  , getBufRef
 
   -- * Actions over Buffers
   , BufAction
@@ -163,6 +164,7 @@ module Rasa.Ext
 
   -- * Built-in Event Listeners
   , onInit
+  , afterInit
   , beforeEveryEvent
   , beforeEveryEvent_
   , beforeEveryRender
@@ -173,6 +175,9 @@ module Rasa.Ext
   , afterEveryRender_
   , onExit
   , onBufAdded
+  , onBufAdded_
+  , onEveryNewBuffer
+  , onEveryNewBuffer_
   , onBufTextChanged
   , onKeypress
 
@@ -208,11 +213,34 @@ module Rasa.Ext
   , moveRangeByN
   , moveCursorByN
 
+  -- * Styles
+  -- | A common representation for text styling
+  , fg
+  , bg
+  , flair
+  , Color(..)
+  , Flair(..)
+  , Style(..)
+  , Styles
+  , addStyleProvider
+  , getStyles
+  , styleText
+
    -- * Useful Utilities
   , asText
   , asString
   , asLines
   , clamp
+  , cropToViewport
+
+  -- * Common Types/Interfaces
+  -- | These exist to help unify the interfaces of many different extensions without
+  -- requiring them to depend upon each other. Use them liberally in your own extensions.
+  , Width
+  , Height
+  , ScrollPos
+  , RenderInfo(..)
+  , Renderable(..)
   ) where
 
 import Rasa.Internal.Action
@@ -223,6 +251,8 @@ import Rasa.Internal.Buffer
 import Rasa.Internal.Editor
 import Rasa.Internal.Events
 import Rasa.Internal.Extensions
-import Rasa.Internal.Range
 import Rasa.Internal.Listeners
+import Rasa.Internal.Range
+import Rasa.Internal.Styles
 import Rasa.Internal.Text
+import Rasa.Internal.Utility
