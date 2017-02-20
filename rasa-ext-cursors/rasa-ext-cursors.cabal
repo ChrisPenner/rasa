@@ -1,5 +1,5 @@
 name:                rasa-ext-cursors
-version:             0.1.5
+version:             0.1.6
 synopsis:            Rasa Ext adding cursor(s)
 description:         Rasa Ext adding cursor(s)
 homepage:            https://github.com/ChrisPenner/rasa/
