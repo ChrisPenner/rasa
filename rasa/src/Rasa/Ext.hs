@@ -111,6 +111,7 @@ module Rasa.Ext
   -- In practice you won't typically need to do this unless you're
   -- doing something complicated.
   , HasExts(..)
+  , ExtMap
   , ext
   , getExt
   , setExt

@@ -13,6 +13,7 @@ import Control.Lens
 import Data.Default
 import Data.Typeable
 import qualified Yi.Rope as Y
+import qualified Data.Text as T
 
 -- | A type representing the current mode of a buffer
 data VimMode
@@ -97,6 +98,10 @@ insert [KEnter []] = insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
 insert [Keypress c []] = insertText (Y.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
+data UpperCaser = UpperCaser BufRef
+instance Renderable UpperCaser where
+  render width height scrollAmt (UpperCaser bufRef) = bufDo bufRef getText >>= render width height scrollAmt . fmap (Y.withText T.toUpper)
+
 -- | Listeners for keypresses when in 'Normal' mode
 normal :: [Keypress] -> BufAction ()
 normal [Keypress 'i' []] = setMode Insert
@@ -121,6 +126,8 @@ normal [Keypress 'e' [Ctrl]] = liftAction $ scrollBy 1 -- Scroll down
 normal [Keypress 'd' [Ctrl]] = liftAction $ scrollBy 7 -- Half-Page down
 normal [Keypress 'y' [Ctrl]] = liftAction $ scrollBy (-1) -- Scroll up
 normal [Keypress 'u' [Ctrl]] = liftAction $ scrollBy (-7) -- Half-Page up
+
+normal [Keypress 'U' []] = getBufRef >>= liftAction . addComputedSplit . UpperCaser
 
 normal [KLeft []] = liftAction focusViewLeft
 normal [KRight []] = liftAction focusViewRight

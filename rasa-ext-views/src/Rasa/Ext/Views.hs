@@ -28,7 +28,8 @@ module Rasa.Ext.Views
   , A.focusViewBelow
   , A.hSplit
   , A.vSplit
-  , A.addSplit
+  , A.addComputedSplit
+  , A.addBufferSplit
   , A.nextBuf
   , A.prevBuf
   , A.focusDo
@@ -76,5 +77,5 @@ import Rasa.Ext.Views.Internal.Actions as A
 -- | Main export from the views extension, add this to your rasa config.
 viewports :: Action ()
 viewports = do
-  onBufAdded_ A.addSplit
+  onBufAdded_ A.addSplitOnNewBuffer
   lineNumbers

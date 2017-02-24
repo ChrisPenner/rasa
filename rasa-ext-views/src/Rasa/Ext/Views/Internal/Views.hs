@@ -87,11 +87,13 @@ instance Default Split where
   def = Split def def
 
 -- | Represents a renderable entity
-data Viewable =
-  BufView BufRef
-    | EmptyView
+data Viewable where
+  BufView :: BufRef -> Viewable
+  RenderableView :: Renderable r => r -> Viewable
+  EmptyView :: Viewable
 
 instance Renderable Viewable where
+  render width height scrollPos (RenderableView r) = render width height scrollPos r
   render _ height scrollPos (BufView br) = bufDo br $ do
     txt <- getText
     styles <- getStyles
@@ -109,8 +111,12 @@ data View = View
   { _active :: Bool
   , _viewable :: Viewable
   , _scrollPos :: Int
+  , _viewExts :: ExtMap
   }
 makeLenses ''View
+
+instance HasExts View where
+  exts = viewExts
 
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
@@ -165,7 +171,7 @@ vSplit = splitView Vert
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: Dir -> Viewable -> Window -> Window
-addSplit d vw = Branch (def & dir .~ d) (Leaf View{_active=False, _viewable=vw, _scrollPos=0})
+addSplit d vw = Branch (def & dir .~ d) (Leaf View{_active=False, _viewable=vw, _scrollPos=0, _viewExts=mempty})
 
 -- | Close any views which match a given predicate
 closeBy :: (View -> Bool) -> Window -> Maybe Window

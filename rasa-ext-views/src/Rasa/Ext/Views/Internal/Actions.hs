@@ -7,7 +7,9 @@ module Rasa.Ext.Views.Internal.Actions
   , focusViewBelow
   , hSplit
   , vSplit
-  , addSplit
+  , addComputedSplit
+  , addBufferSplit
+  , addSplitOnNewBuffer
   , nextBuf
   , prevBuf
   , focusDo
@@ -60,13 +62,25 @@ hSplit = V.overWindows V.hSplit
 vSplit :: Action ()
 vSplit = V.overWindows V.vSplit
 
--- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: BufAdded -> Action ()
-addSplit (BufAdded bRef) = do
+-- | Add a split for the given renderable. Use 'addBufferSplit' if the renderable is a buffer.
+addComputedSplit :: Renderable r => r -> Action ()
+addComputedSplit r = do
   mWin <- V.getViews
   case mWin of
-    Nothing -> V.setViews . Just $ Leaf (V.View True (V.BufView bRef) 0)
+    Nothing -> V.setViews . Just $ Leaf (V.View True (V.RenderableView r) 0 mempty)
+    Just win -> V.setViews . Just $ V.addSplit V.Vert (V.RenderableView r) win
+
+-- | Add a new split at the top level in the given direction containing the given buffer.
+addBufferSplit :: BufRef -> Action ()
+addBufferSplit bRef = do
+  mWin <- V.getViews
+  case mWin of
+    Nothing -> V.setViews . Just $ Leaf (V.View True (V.BufView bRef) 0 mempty)
     Just win -> V.setViews . Just $ V.addSplit V.Vert (V.BufView bRef) win
+
+-- | Add split event listener
+addSplitOnNewBuffer :: BufAdded -> Action ()
+addSplitOnNewBuffer (BufAdded bRef) = addBufferSplit bRef
 
 -- | Select the next buffer in any active viewports
 nextBuf :: Action ()

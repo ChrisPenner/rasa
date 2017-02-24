@@ -26,7 +26,7 @@ type ExtMap = Map TypeRep Ext
 -- | Members of this class have access to editor extensions.
 class HasExts s where
   -- | This lens focuses the Extensions States
-  exts :: Lens' s (Map TypeRep Ext)
+  exts :: Lens' s ExtMap
 
 -- | This is a lens which will focus the extension state that matches the type
 -- inferred as the focal point. It's a little bit of magic, if you treat the
