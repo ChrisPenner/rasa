@@ -11,6 +11,7 @@ import Rasa.Ext.Cursors
 import Control.Monad
 import Control.Lens
 import Data.Default
+import Data.Maybe (fromMaybe)
 import Data.Typeable
 import qualified Yi.Rope as Y
 
@@ -178,8 +179,19 @@ normal _ = return ()
 
 -- | Move cursors to end of the line
 endOfLine :: BufAction ()
-endOfLine = findNext "\n"
+endOfLine = do 
+  txt <- getText
+  overRanges . map $ overBoth $ coordEndOfLine txt
+  where
+    coordEndOfLine :: Y.YiString -> Coord -> Coord
+    coordEndOfLine txt (Coord row col) = Coord row maxColumn
+      where
+        maxColumn :: Int
+        maxColumn = fromMaybe col (txt ^? asLines . ix row . to Y.length)
 
 -- | Move cursors to start of the line
 startOfLine :: BufAction ()
-startOfLine = findPrev "\n"
+startOfLine = overRanges . map $ overBoth coordStartOfLine
+  where
+    coordStartOfLine :: Coord -> Coord
+    coordStartOfLine (Coord x _) = Coord x 0
