@@ -44,7 +44,7 @@ instance Monoid Widgets where
     Widgets (a<>a') (b<>b') (c<>c') (d<>d')
 
 class HasWidgets r where
-  computeWidgets :: r -> Action Widgets
+  computeWidgets :: r -> App Widgets
 
 -- | This represents types which can provide a set of widgets
 instance HasWidgets View where

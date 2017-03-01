@@ -83,8 +83,8 @@ instance Show Buffer where
     where
       extText = intercalate "\n" $ show <$> b^.exts.to M.toList
 
+type BufAction a = StateT Buffer App a
 
-type BufAction a = StateT Buffer IO a
 newtype Buffers = Buffers
   { _buffers' :: IM.IntMap Buffer
   } deriving Show

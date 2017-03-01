@@ -8,15 +8,15 @@ import Rasa.Ext
 
 import Control.Monad.State
 
-logger :: Action ()
+logger :: App ()
 logger = do
   onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
-  onEveryRender_ $ do
-    ed <- getEditor
-    liftIO $ appendFile "logs.log" (show ed)
+  onEveryRender_ $ return ()
+    -- ed <- getEditor
+    -- liftIO $ appendFile "logs.log" (show ed)
 
-logInfo :: String -> Action ()
+logInfo :: String -> App ()
 logInfo msg = liftIO $ appendFile "info.log" ("INFO: " ++ msg ++ "\n")
 
-logError :: String -> Action ()
+logError :: String -> App ()
 logError msg = liftIO $ appendFile "error.log" ("ERROR: " ++ msg ++ "\n")

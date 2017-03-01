@@ -56,7 +56,7 @@ setHist = setBufExt . VimHist
 -- > rasa $ do
 -- >    vim
 -- >    ...
-vim :: Action ()
+vim :: App ()
 vim = do
   void $ onKeypress handleKeypress
   onEveryNewBuffer_ . addBottomStatus $ do
@@ -66,7 +66,7 @@ vim = do
       Insert -> styleText "INSERT" $ fg Green
 
 -- | The event listener which listens for keypresses and responds appropriately
-handleKeypress :: Keypress -> Action ()
+handleKeypress :: Keypress -> App ()
 handleKeypress keypress = focusDo_ $ do
   mode <- getMode
   preHist <- getHist

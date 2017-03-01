@@ -56,6 +56,7 @@ import Rasa.Internal.Listeners
 
 import Control.Lens
 import Control.Monad
+import Control.Monad.State
 import Data.Maybe
 import Data.Default
 import Data.Typeable
@@ -152,10 +153,16 @@ getBuffer (BufRef bufInd) =
 -- longer exist.
 -- TODO!!!
 bufferDo :: [BufRef] -> BufAction r -> App [r]
-bufferDo bufRefs bufAct = App $ do
-  results <- forM bufRefs $ \(BufRef bInd) ->
-    zoom (buffers.at bInd._Just) ((:[]) <$> bufAct)
+bufferDo bufRefs bufAct = do
+  results <- forM bufRefs $ \(BufRef bInd) -> do
+    zoomer (buffers.at bInd._Just) ((:[]) <$> bufAct)
   return . concat $ results
+
+zoomer l act = do
+  s <- get
+  (r, s) <- get >>= runStateT (zoom l act)
+  put s
+  return r
 
 -- | This lifts a 'Rasa.App.BufAction' to an 'Rasa.App.App' which
 -- performs the 'Rasa.App.BufAction' on every buffer and collects the return
