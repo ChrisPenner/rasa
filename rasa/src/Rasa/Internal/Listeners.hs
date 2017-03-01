@@ -6,19 +6,9 @@
 #-}
 
 module Rasa.Internal.Listeners
-  ( onInit
-  , dispatchInit
-
-  , afterInit
-  , dispatchAfterInit
-
-  , beforeEveryRender
+  ( beforeEveryRender
   , beforeEveryRender_
   , dispatchBeforeRender
-
-  , beforeEveryEvent
-  , beforeEveryEvent_
-  , dispatchBeforeEvent
 
   , onEveryRender
   , onEveryRender_
@@ -29,7 +19,6 @@ module Rasa.Internal.Listeners
   , dispatchAfterRender
 
   , onExit
-  , dispatchExit
 
   , onKeypress
   , dispatchKeypress
@@ -54,37 +43,6 @@ onKeypress actionF = addListener (void <$> actionF)
 -- | Dispatch a 'Keypress' event.
 dispatchKeypress :: Keypress -> App ()
 dispatchKeypress = dispatchEvent
-
--- | Registers an action to be performed during the Initialization phase.
---
--- This phase occurs exactly ONCE when the editor starts up.
--- Though arbitrary actions may be performed in the configuration block;
--- it's recommended to embed such actions in the onInit event listener
--- so that all event listeners are registered before anything Apps occur.
-onInit :: App result -> App ()
-onInit action = void $ addListener (const (void action) :: Init -> App ())
-
--- | Dispatch the 'Init' action.
-dispatchInit :: App ()
-dispatchInit = dispatchEvent Init
-
-afterInit :: App a -> App ()
-afterInit action = void $ addListener (const (void action) :: AfterInit -> App ())
-
--- | Dispatch the 'Init' action.
-dispatchAfterInit :: App ()
-dispatchAfterInit = dispatchEvent AfterInit
-
--- | Registers an action to be performed BEFORE each event phase.
-beforeEveryEvent :: App a -> App ListenerId
-beforeEveryEvent action = addListener (const (void action) :: BeforeEvent -> App ())
-
-beforeEveryEvent_ :: App a -> App ()
-beforeEveryEvent_ = void . beforeEveryEvent
-
--- | Dispatch the 'BeforeEvent' action.
-dispatchBeforeEvent :: App ()
-dispatchBeforeEvent = dispatchEvent BeforeEvent
 
 -- | Registers an action to be performed BEFORE each render phase.
 --
@@ -127,16 +85,3 @@ afterEveryRender_ = void . afterEveryRender
 -- | Dispatch the 'AfterRender' action.
 dispatchAfterRender :: App ()
 dispatchAfterRender = dispatchEvent AfterRender
-
--- | Registers an action to be performed during the exit phase.
---
--- This is only triggered exactly once when the editor is shutting down. It
--- allows an opportunity to do clean-up, kill any processes you've started, or
--- save any data before the editor terminates.
-
-onExit :: App a -> App ()
-onExit action = void $ addListener (const $ void action :: Exit -> App ())
-
--- | Dispatch the 'Exit' action.
-dispatchExit :: App ()
-dispatchExit = dispatchEvent Exit

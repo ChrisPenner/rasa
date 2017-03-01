@@ -25,7 +25,11 @@ import Pipes.Parse
 -- >   slate
 
 rasa :: App () -> IO ()
-rasa = void . reflex
+rasa initialization = void $ reflex (initialization >> hooks)
+  where hooks = beforeEvent_ $ do
+          dispatchBeforeRender
+          dispatchOnRender
+          dispatchAfterRender
 
 -- rasa :: Action () -> IO ()
 -- rasa initialize = do

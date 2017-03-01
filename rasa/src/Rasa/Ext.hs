@@ -90,17 +90,12 @@ module Rasa.Ext
   , BufTextChanged(..)
 
   -- * Built-in Event Listeners
-  , onInit
-  , afterInit
-  , beforeEveryEvent
-  , beforeEveryEvent_
   , beforeEveryRender
   , beforeEveryRender_
   , onEveryRender
   , onEveryRender_
   , afterEveryRender
   , afterEveryRender_
-  , onExit
   , onBufAdded
   , onBufAdded_
   , onEveryNewBuffer
