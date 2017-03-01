@@ -13,9 +13,10 @@ module Rasa.Internal.Styles
   , getStyles
   ) where
 
+import Reflex
 import Rasa.Internal.Range
-import Rasa.Internal.BufAction
-import Rasa.Internal.Listeners
+import Rasa.Internal.Buffer
+import Rasa.Internal.BufActions
 
 import Control.Applicative
 import Data.Default

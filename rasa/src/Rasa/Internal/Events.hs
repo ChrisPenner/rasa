@@ -14,8 +14,8 @@ module Rasa.Internal.Events
   ) where
 
 import Data.Dynamic
-import Rasa.Internal.Editor
 import Rasa.Internal.Range
+import Rasa.Internal.Buffer
 import qualified Yi.Rope as Y
 
 -- | This event is dispatched exactly once when the editor starts up.

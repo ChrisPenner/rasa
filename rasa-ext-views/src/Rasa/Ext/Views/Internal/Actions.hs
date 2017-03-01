@@ -27,41 +27,41 @@ import Data.Maybe
 import Data.List
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
-rotate :: Action ()
+rotate :: App ()
 rotate = V.overWindows V.rotate
 
 -- | Move focus from any viewports one viewport to the left
-focusViewLeft :: Action ()
+focusViewLeft :: App ()
 focusViewLeft = V.overWindows V.focusViewLeft
 
 -- | Move focus from any viewports one viewport to the right
-focusViewRight :: Action ()
+focusViewRight :: App ()
 focusViewRight = V.overWindows V.focusViewRight
 
 -- | Move focus from any viewports one viewport above
-focusViewAbove :: Action ()
+focusViewAbove :: App ()
 focusViewAbove = V.overWindows V.focusViewAbove
 
 -- | Move focus from any viewports one viewport below
-focusViewBelow :: Action ()
+focusViewBelow :: App ()
 focusViewBelow = V.overWindows V.focusViewBelow
 
 -- | Close all inactive viewports
-closeInactive :: Action ()
+closeInactive :: App ()
 closeInactive = do
   mWindows <- V.getViews
   V.setViews $ mWindows >>= V.closeBy (not . view V.active)
 
 -- | Split active views horizontally
-hSplit :: Action ()
+hSplit :: App ()
 hSplit = V.overWindows V.hSplit
 
 -- | Split active views vertically
-vSplit :: Action ()
+vSplit :: App ()
 vSplit = V.overWindows V.vSplit
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: BufAdded -> Action ()
+addSplit :: BufAdded -> App ()
 addSplit (BufAdded bRef) = do
   mWin <- V.getViews
   case mWin of
@@ -69,7 +69,7 @@ addSplit (BufAdded bRef) = do
     Just win -> V.setViews . Just $ V.addSplit V.Vert (V.BufView bRef) win
 
 -- | Select the next buffer in any active viewports
-nextBuf :: Action ()
+nextBuf :: App ()
 nextBuf = V.traverseViews next
   where
     next vw
@@ -82,7 +82,7 @@ nextBuf = V.traverseViews next
     getNextBufRef v = return v
 
 -- | Select the previous buffer in any active viewports
-prevBuf :: Action ()
+prevBuf :: App ()
 prevBuf = V.traverseViews prev
   where
     prev vw
@@ -95,7 +95,7 @@ prevBuf = V.traverseViews prev
     getPrevBufRef v = return v
 
 -- | Get bufRefs for all buffers that are selected in at least one viewport
-focusedBufs :: Action [BufRef]
+focusedBufs :: App [BufRef]
 focusedBufs = do
   mWindows <- V.getViews
   case mWindows of
@@ -111,15 +111,15 @@ isFocused = do
   return $ br `elem` inFocus
 
 -- | Run a bufAction over all focused buffers and return any results.
-focusDo :: BufAction a -> Action [a]
+focusDo :: BufAction a -> App [a]
 focusDo bufAct = do
   bufRefs <- focusedBufs
   catMaybes <$> mapM (`bufDo` bufAct) bufRefs
 
 -- | 'focusDo' with a void return
-focusDo_ :: BufAction a -> Action ()
+focusDo_ :: BufAction a -> App ()
 focusDo_ = void . focusDo
 
 -- | Scrolls each focused viewport by the given amount.
-scrollBy :: Int -> Action ()
+scrollBy :: Int -> App ()
 scrollBy amt = V.overWindows $ V.scrollBy amt

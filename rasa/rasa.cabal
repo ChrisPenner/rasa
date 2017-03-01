@@ -53,16 +53,9 @@ library
   exposed-modules:     Rasa
                        Rasa.Ext
                        Rasa.Testing
-                       Rasa.Internal.ActionMonads
-                       Rasa.Internal.Action
-                       Rasa.Internal.Actions
-                       Rasa.Internal.BufAction
                        Rasa.Internal.BufActions
                        Rasa.Internal.Buffer
-                       Rasa.Internal.Editor
                        Rasa.Internal.Events
-                       Rasa.Internal.Extensions
-                       Rasa.Internal.Interpreters
                        Rasa.Internal.Listeners
                        Rasa.Internal.Range
                        Rasa.Internal.Styles
@@ -71,6 +64,7 @@ library
 
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5
+                     , reflex
                      , async
                      , bifunctors
                      , profunctors

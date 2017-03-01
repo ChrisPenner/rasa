@@ -18,6 +18,7 @@ packages:
 - ./rasa-ext-vim
 - ./rasa-example-config
 - ./text-lens
+- ../reflex
 
 extra-deps:
 - vty-5.14
