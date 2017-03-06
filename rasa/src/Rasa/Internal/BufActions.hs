@@ -1,4 +1,5 @@
 {-# language OverloadedStrings #-}
+{-# language RankNTypes #-}
 module Rasa.Internal.BufActions
   ( overRange
   , replaceRange
@@ -46,17 +47,15 @@ module Rasa.Internal.BufActions
 
   ) where
 
-import Reflex
+import Eve
 
 import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 import Rasa.Internal.Text
 import Rasa.Internal.Events
-import Rasa.Internal.Listeners
 
 import Control.Lens
 import Control.Monad
-import Control.Monad.State
 import Data.Maybe
 import Data.Default
 import Data.Typeable
@@ -151,18 +150,11 @@ getBuffer (BufRef bufInd) =
 --
 -- Result list is not guaranteed to be the same length or positioning as input BufRef list; some buffers may no
 -- longer exist.
--- TODO!!!
 bufferDo :: [BufRef] -> BufAction r -> App [r]
 bufferDo bufRefs bufAct = do
-  results <- forM bufRefs $ \(BufRef bInd) -> do
-    zoomer (buffers.at bInd._Just) ((:[]) <$> bufAct)
-  return . concat $ results
-
-zoomer l act = do
-  s <- get
-  (r, s) <- get >>= runStateT (zoom l act)
-  put s
-  return r
+  r <- forM bufRefs $ \(BufRef bInd) ->
+    runAction (buffers.at bInd._Just) ((:[]) <$> bufAct)
+  return $ concat r
 
 -- | This lifts a 'Rasa.App.BufAction' to an 'Rasa.App.App' which
 -- performs the 'Rasa.App.BufAction' on every buffer and collects the return

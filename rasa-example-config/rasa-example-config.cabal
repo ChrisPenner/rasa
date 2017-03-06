@@ -28,7 +28,7 @@ executable rasa
                      , data-default
                      , yi-rope
                      , mtl
-                     , reflex
+                     , eve
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
 

@@ -24,14 +24,12 @@ module Rasa.Internal.Buffer
   ) where
 
 
-import Reflex
+import Eve
 
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
-import Control.Monad.State
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
-import Data.Maybe
 import Data.List
 import Data.Default
 
@@ -83,7 +81,7 @@ instance Show Buffer where
     where
       extText = intercalate "\n" $ show <$> b^.exts.to M.toList
 
-type BufAction a = StateT Buffer App a
+type BufAction a = Action Buffer a
 
 newtype Buffers = Buffers
   { _buffers' :: IM.IntMap Buffer

@@ -13,7 +13,7 @@ module Rasa.Internal.Styles
   , getStyles
   ) where
 
-import Reflex
+import Eve
 import Rasa.Internal.Range
 import Rasa.Internal.Buffer
 import Rasa.Internal.BufActions

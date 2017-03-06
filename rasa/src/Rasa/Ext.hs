@@ -157,10 +157,10 @@ module Rasa.Ext
   , RenderInfo(..)
   , Renderable(..)
 
-  , module Reflex
+  , module Eve
   ) where
 
-import Reflex
+import Eve
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer
 import Rasa.Internal.Events

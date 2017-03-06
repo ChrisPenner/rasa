@@ -24,17 +24,10 @@ module Rasa.Internal.Listeners
   , dispatchKeypress
   ) where
 
-import Reflex
-import Rasa.Internal.Buffer
+import Eve
 import Rasa.Internal.Events
 
-import Control.Lens
 import Control.Monad
-import Control.Monad.State
-import Data.Default
-import Data.Typeable
-import Data.Maybe
-import qualified Data.Map as M
 
 -- | Trigger an 'App' on a 'Keypress'
 onKeypress :: (Keypress -> App result) -> App ListenerId

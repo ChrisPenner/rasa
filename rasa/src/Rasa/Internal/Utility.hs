@@ -11,7 +11,7 @@ module Rasa.Internal.Utility
   , styleText
   ) where
 
-import Reflex
+import Eve
 import Rasa.Internal.Styles
 import Rasa.Internal.BufActions
 import Rasa.Internal.Buffer
