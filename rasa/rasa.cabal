@@ -52,7 +52,6 @@ library
   hs-source-dirs:      src
   exposed-modules:     Rasa
                        Rasa.Ext
-                       Rasa.Testing
                        Rasa.Internal.BufActions
                        Rasa.Internal.Buffer
                        Rasa.Internal.Events
@@ -90,6 +89,7 @@ test-suite rasa-test
   main-is:             Spec.hs
   build-depends:       base
                      , rasa
+                     , eve
                      , hspec
                      , lens
                      , yi-rope
@@ -102,12 +102,9 @@ test-suite rasa-test
                      , Rasa.Internal.ActionSpec
                      , Rasa.Internal.ActionsSpec
                      , Rasa.Internal.AsyncSpec
-                     , Rasa.Internal.BufActionSpec
                      , Rasa.Internal.BufActionsSpec
                      , Rasa.Internal.BufferSpec
-                     , Rasa.Internal.EditorSpec
                      , Rasa.Internal.EventsSpec
-                     , Rasa.Internal.ExtensionsSpec
                      , Rasa.Internal.ListenersSpec
                      , Rasa.Internal.RangeSpec
                      , Rasa.Internal.TextSpec
