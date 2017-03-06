@@ -48,19 +48,19 @@ instance Default NextBufId where
   def = NextBufId 0
 
 makeLenses ''NextBufId
-nextBufId :: HasExts s => Lens' s Int
-nextBufId = ext.nextBufId'
+nextBufId :: HasStates s => Lens' s Int
+nextBufId = stateLens.nextBufId'
 
 -- | A buffer, holds the text in the buffer and any extension states that are set on the buffer.
 data Buffer = Buffer
   { _text' :: Y.YiString
-  , _bufExts' :: Exts
+  , _bufStates' :: States
   , _ref :: BufRef
   }
 makeLenses ''Buffer
 
-instance HasExts Buffer where
-  exts = bufExts'
+instance HasStates Buffer where
+  states = bufStates'
 
 instance HasEvents Buffer where
 
@@ -79,7 +79,7 @@ instance Show Buffer where
   show b = "text:" ++ (Y.toString . Y.take 30 $ (b^.text)) ++ "...,\n"
            ++ "exts: " ++ extText ++ "}>\n"
     where
-      extText = intercalate "\n" $ show <$> b^.exts.to M.toList
+      extText = intercalate "\n" $ show <$> b^.states.to M.toList
 
 type BufAction a = Action Buffer a
 
@@ -92,14 +92,14 @@ instance Default Buffers where
   def = Buffers mempty
 
 -- | A lens over the map of available buffers
-buffers :: HasExts s => Lens' s (IM.IntMap Buffer)
-buffers = ext.buffers'
+buffers :: HasStates s => Lens' s (IM.IntMap Buffer)
+buffers = stateLens.buffers'
 
 -- | Creates a new buffer from the given text.
 mkBuffer :: Y.YiString -> BufRef -> Buffer
 mkBuffer txt bRef =
   Buffer
     { _text' = txt
-    , _bufExts' = mempty
+    , _bufStates' = mempty
     , _ref = bRef
     }

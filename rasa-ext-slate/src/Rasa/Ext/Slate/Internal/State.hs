@@ -16,13 +16,13 @@ initUi :: App V.Vty
 initUi = do
   cfg <- liftIO V.standardIOConfig
   v <- liftIO $ V.mkVty cfg
-  ext .= Just (Slate v)
+  stateLens .= Just (Slate v)
   return v
 
 -- | Gets vty by checking if it has been initialized yet, if not it runs the initialization.
 getVty :: App V.Vty
 getVty = do
-  v <- use ext
+  v <- use stateLens
   case v of
     Just (Slate v') -> return v'
     Nothing -> initUi

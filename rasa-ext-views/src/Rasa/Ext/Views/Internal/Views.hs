@@ -126,18 +126,18 @@ instance Default Views where
 -- | Gets the stored views
 getViews :: App (Maybe Window)
 getViews = do
-  Views mWin <- use ext
+  Views mWin <- use stateLens
   return mWin
 
 -- | Sets the stored views
 setViews :: Maybe Window -> App ()
-setViews v = ext .= Views v
+setViews v = stateLens .= Views v
 
 -- | Run function over stored windows
 overWindows :: (Window -> Window) -> App ()
 overWindows f = do
-  Views mWin <- use ext
-  ext .= (Views $ fmap f mWin)
+  Views mWin <- use stateLens
+  stateLens .= (Views $ fmap f mWin)
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Window -> Window

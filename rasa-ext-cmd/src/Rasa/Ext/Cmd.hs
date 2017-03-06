@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Rasa.Ext.Cmd
   ( addCmd
   , runCmd
@@ -26,12 +24,12 @@ instance Default Cmd where
 -- TODO try switching to T.Text -> (T.Text -> a) -> App ()
 addCmd :: String -> (String -> App ()) -> App ()
 addCmd alias mkEvent =
-  ext %= add
+  stateLens %= add
     where add (Cmd commands) = Cmd $ commands & at alias ?~ mkEvent
 
 runCmd :: String -> String -> App ()
 runCmd alias args = do
-  Cmd commands <- use ext
+  Cmd commands <- use stateLens
   let mCmd = commands^.at alias
   case mCmd of
     Just cmd -> cmd args

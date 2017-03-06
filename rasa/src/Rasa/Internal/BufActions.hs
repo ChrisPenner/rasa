@@ -85,16 +85,16 @@ getBufRef :: BufAction BufRef
 getBufRef = use ref
 
 -- | Retrieve some buffer extension state
-getBufExt :: (Typeable ext, Show ext, Default ext) => BufAction ext
-getBufExt = use ext
+getBufExt :: (Typeable s, Show s, Default s) => BufAction s
+getBufExt = use stateLens
 
 -- | Set some buffer extension state
-setBufExt :: (Typeable ext, Show ext, Default ext) => ext -> BufAction ()
-setBufExt newExt = ext .= newExt
+setBufExt :: (Typeable s, Show s, Default s) => s -> BufAction ()
+setBufExt newExt = stateLens .= newExt
 
 -- | Set some buffer extension state
-overBufExt :: (Typeable ext, Show ext, Default ext) => (ext -> ext) -> BufAction ()
-overBufExt f = ext %= f
+overBufExt :: (Typeable s, Show s, Default s) => (s -> s) -> BufAction ()
+overBufExt f = stateLens %= f
 
 -- -- | This lifts up an 'Action' to be run inside a 'BufAction'
 -- liftAction :: App r -> BufAction r
