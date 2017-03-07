@@ -97,8 +97,8 @@ overBufExt :: (Typeable s, Show s, Default s) => (s -> s) -> BufAction ()
 overBufExt f = stateLens %= f
 
 -- -- | This lifts up an 'Action' to be run inside a 'BufAction'
--- liftAction :: App r -> BufAction r
--- liftAction action = liftBufAction $ LiftAction action id
+-- liftApp :: App r -> BufAction r
+-- liftApp action = liftBufAction $ LiftAction action id
 
 -- | Runs function over given range of text
 overRange :: CrdRange -> (Y.YiString -> Y.YiString) -> BufAction ()

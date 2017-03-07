@@ -10,7 +10,7 @@ import Control.Monad.State
 
 logger :: App ()
 logger = do
-  onInit $ liftIO $ writeFile "logs.log" "Event Log\n"
+  liftIO $ writeFile "logs.log" "Event Log\n"
   onEveryRender_ $ return ()
     -- ed <- getEditor
     -- liftIO $ appendFile "logs.log" (show ed)

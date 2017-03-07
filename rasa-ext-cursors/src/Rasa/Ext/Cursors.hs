@@ -27,5 +27,5 @@ import Rasa.Ext.Cursors.Internal.Actions
 
 -- | Registers listeners for the extension. The user should add this to their config.
 cursors :: App ()
-cursors = onInit . onBufAdded $
+cursors = onBufAdded_ $
   \(BufAdded bufRef) -> bufDo_ bufRef setStyleProvider

@@ -17,7 +17,7 @@ import Control.Monad.IO.Class
 -- >    ...
 slate :: App ()
 slate = do
-  onInit terminalEvents
+  terminalEvents
   onEveryRender_ renderAll
   onExit shutdown
 

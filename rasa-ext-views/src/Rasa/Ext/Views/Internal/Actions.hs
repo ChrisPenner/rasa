@@ -106,7 +106,7 @@ focusedBufs = do
 -- | Returns whether the current buffer is focused in at least one view.
 isFocused :: BufAction Bool
 isFocused = do
-  inFocus <- liftAction focusedBufs
+  inFocus <- liftApp focusedBufs
   br <- getBufRef
   return $ br `elem` inFocus
 

@@ -26,10 +26,8 @@
 -- >
 -- > logger :: Action ()
 -- > logger = do
--- >   onInit $ liftIO $ writeFile "logs" "==Logs==\n"
--- >   -- Listeners should also be registered using 'onInit'.
--- >   -- It ensures all listeners are ready before any actions occur.
--- >   onInit $ onKeypress logKeypress
+-- >   liftIO $ writeFile "logs" "==Logs==\n"
+-- >   onKeypress logKeypress
 -- >   onExit $ liftIO $ appendFile "logs" "==Done=="
 --
 -- Check out this tutorial on building extensions, it's also just a great way to learn
