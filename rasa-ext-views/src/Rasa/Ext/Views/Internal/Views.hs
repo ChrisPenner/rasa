@@ -124,20 +124,20 @@ instance Default Views where
   def = Views Nothing
 
 -- | Gets the stored views
-getViews :: Action (Maybe Window)
+getViews :: App (Maybe Window)
 getViews = do
-  Views mWin <- getExt
+  Views mWin <- use stateLens
   return mWin
 
 -- | Sets the stored views
-setViews :: Maybe Window -> Action ()
-setViews = setExt . Views
+setViews :: Maybe Window -> App ()
+setViews v = stateLens .= Views v
 
 -- | Run function over stored windows
-overWindows :: (Window -> Window) -> Action ()
+overWindows :: (Window -> Window) -> App ()
 overWindows f = do
-  Views mWin <- getExt
-  setExt . Views $ fmap f mWin
+  Views mWin <- use stateLens
+  stateLens .= (Views $ fmap f mWin)
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Window -> Window
@@ -253,7 +253,7 @@ scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
     scroll = max 0 . (+ amt)
 
 -- | Alters views by a given function.
-traverseViews :: (View -> Action View) -> Action ()
+traverseViews :: (View -> App View) -> App ()
 traverseViews f = do
   mWin <- getViews
   mResult <- sequence $ traverse f <$> mWin

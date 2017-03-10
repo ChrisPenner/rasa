@@ -57,7 +57,7 @@ setHist = setBufExt . VimHist
 -- > rasa $ do
 -- >    vim
 -- >    ...
-vim :: Action ()
+vim :: App ()
 vim = do
   void $ onKeypress handleKeypress
   onEveryNewBuffer_ . addBottomStatus $ do
@@ -67,7 +67,7 @@ vim = do
       Insert -> styleText "INSERT" $ fg Green
 
 -- | The event listener which listens for keypresses and responds appropriately
-handleKeypress :: Keypress -> Action ()
+handleKeypress :: Keypress -> App ()
 handleKeypress keypress = focusDo_ $ do
   mode <- getMode
   preHist <- getHist
@@ -81,9 +81,9 @@ handleKeypress keypress = focusDo_ $ do
 
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()
-anyMode [Keypress 'c' [Ctrl]] = liftAction exit
-anyMode [KPageDown []] = liftAction $ scrollBy 14 -- Page down
-anyMode [KPageUp []] = liftAction $ scrollBy (-14) -- Page up
+anyMode [Keypress 'c' [Ctrl]] = liftApp exit
+anyMode [KPageDown []] = liftApp $ scrollBy 14 -- Page down
+anyMode [KPageUp []] = liftApp $ scrollBy (-14) -- Page up
 anyMode [KHome []] = startOfLine
 anyMode [KEnd []] = endOfLine
 anyMode _ = return ()
@@ -111,22 +111,22 @@ normal [Keypress 'g' [], Keypress 'g' []] = setRanges [Range (Coord 0 0) (Coord 
 normal [Keypress 's' []] = addHist $ Keypress 's' []
 normal [Keypress 's' [], Keypress 'n' []] = toggleLineNumbers
 
-normal [Keypress '+' []] = liftAction nextBuf
-normal [Keypress '-' []] = liftAction prevBuf
-normal [Keypress 'w' [Ctrl]] = liftAction hSplit
-normal [Keypress 'v' [Ctrl]] = liftAction vSplit
-normal [Keypress 'o' [Ctrl]] = liftAction closeInactive
-normal [Keypress 'r' [Ctrl]] = liftAction rotate
+normal [Keypress '+' []] = liftApp nextBuf
+normal [Keypress '-' []] = liftApp prevBuf
+normal [Keypress 'w' [Ctrl]] = liftApp hSplit
+normal [Keypress 'v' [Ctrl]] = liftApp vSplit
+normal [Keypress 'o' [Ctrl]] = liftApp closeInactive
+normal [Keypress 'r' [Ctrl]] = liftApp rotate
 
-normal [Keypress 'e' [Ctrl]] = liftAction $ scrollBy 1 -- Scroll down
-normal [Keypress 'd' [Ctrl]] = liftAction $ scrollBy 7 -- Half-Page down
-normal [Keypress 'y' [Ctrl]] = liftAction $ scrollBy (-1) -- Scroll up
-normal [Keypress 'u' [Ctrl]] = liftAction $ scrollBy (-7) -- Half-Page up
+normal [Keypress 'e' [Ctrl]] = liftApp $ scrollBy 1 -- Scroll down
+normal [Keypress 'd' [Ctrl]] = liftApp $ scrollBy 7 -- Half-Page down
+normal [Keypress 'y' [Ctrl]] = liftApp $ scrollBy (-1) -- Scroll up
+normal [Keypress 'u' [Ctrl]] = liftApp $ scrollBy (-7) -- Half-Page up
 
-normal [KLeft []] = liftAction focusViewLeft
-normal [KRight []] = liftAction focusViewRight
-normal [KUp []] = liftAction focusViewAbove
-normal [KDown []] = liftAction focusViewBelow
+normal [KLeft []] = liftApp focusViewLeft
+normal [KRight []] = liftApp focusViewRight
+normal [KUp []] = liftApp focusViewAbove
+normal [KDown []] = liftApp focusViewBelow
 
 
 normal [Keypress 'G' []] = do

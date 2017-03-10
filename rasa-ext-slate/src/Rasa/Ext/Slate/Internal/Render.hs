@@ -20,13 +20,13 @@ import Control.Lens
 import Control.Monad.IO.Class
 
 -- | Get the current terminal size.
-getSize :: Action (Width, Height)
+getSize :: App (Width, Height)
 getSize = do
   v <- getVty
   liftIO $ V.displayBounds $ V.outputIface v
 
 -- | Render the Editor
-renderAll :: Action ()
+renderAll :: App ()
 renderAll = do
   (width, height) <- getSize
   mViews <- getViews
@@ -56,7 +56,7 @@ splitByRule (FromEnd amt) sz = (start, end)
     end = min sz amt
 
 -- | Recursively render components of a Window to a 'V.Image' combining the results in the proper locations.
-renderWindow :: BiTree Split View -> Width -> Height -> Action V.Image
+renderWindow :: BiTree Split View -> Width -> Height -> App V.Image
 renderWindow = cata alg
   where
     mkBorder = V.charFill (V.defAttr `V.withForeColor` V.green)
@@ -88,7 +88,7 @@ type Left = V.Image
 type Right = V.Image
 
 -- | Renders widgets to images
-widgetsToImages :: Width -> Height -> ScrollPos -> Widgets -> Action (Top, Bottom, Left, Right)
+widgetsToImages :: Width -> Height -> ScrollPos -> Widgets -> App (Top, Bottom, Left, Right)
 widgetsToImages width height scrollAmt widgets = do
   top <- renderHorBar width (widgets^.topBar)
   bottom <- renderHorBar width (widgets^.bottomBar)
@@ -101,7 +101,7 @@ widgetsToImages width height scrollAmt widgets = do
       renderVertBar h rs = V.resizeHeight h . V.horizCat <$> traverse (renderToImage 1 h scrollAmt) rs
 
 -- | Render a given 'View' to a 'V.Image' given the context of the associated buffer and a size to render it in.
-renderView :: Width -> Height -> View -> Action V.Image
+renderView :: Width -> Height -> View -> App V.Image
 renderView width height vw = do
   widgets <- computeWidgets vw
   (top, bottom, left, right)  <- widgetsToImages width height scrollAmt widgets
@@ -112,5 +112,5 @@ renderView width height vw = do
   where
     scrollAmt = vw^.scrollPos
 
-renderToImage :: Renderable r => Width -> Height -> ScrollPos -> r -> Action V.Image
+renderToImage :: Renderable r => Width -> Height -> ScrollPos -> r -> App V.Image
 renderToImage w h scroll r = maybe V.emptyImage applyAttrs <$> render w h scroll r

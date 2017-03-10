@@ -56,7 +56,7 @@ getFilename = do
   return filename
 
 -- | Main export, use this in your Rasa config
-files :: Action ()
+files :: App ()
 files = do
   onEveryNewBuffer_ $ do
     void . onBufTextChanged $ bufferChanged
@@ -100,13 +100,13 @@ setFilename :: String -> BufAction ()
 setFilename fname = setBufExt $ FileInfo (Just fname)
 
 -- | Add a buffer for a file
-addFile :: String -> Y.YiString -> Action ()
+addFile :: String -> Y.YiString -> App ()
 addFile fname txt = do
   newBuf <- addBuffer txt
   bufDo_ newBuf (setFilename fname)
 
 -- | Load files from command line
-loadFiles :: Action ()
+loadFiles :: App ()
 loadFiles = do
   fileNames <- liftIO getArgs
   fileTexts <- liftIO $ traverse TIO.readFile fileNames

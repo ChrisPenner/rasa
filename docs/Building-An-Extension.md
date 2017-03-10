@@ -70,7 +70,7 @@ main :: IO ()
 main = rasa $ do
   -- some plugins...
   -- Add the new action here!
-  onInit helloWorld
+  helloWorld
 ```
 
 Okay let's try again! `stack build && stack exec rasa` (you may want to alias
@@ -136,26 +136,26 @@ rasa/rasa-example-config/app/Main.hs:28:10: error:
                 with actual type ‘Keypress -> Action ()’
 ```
 
-Hrmm, right! Now that we're listening for keypress events we don't want to use
-`onInit` anymore, Rasa provides a way to register listeners for different events;
-we'll learn how to listen for any arbitrary event later; but for now it's time for
-`onKeypress`! 
+Hrmm, right! Now that we're listening for keypress events we need to set up an
+event-listener! Rasa provides a way to register listeners for different events;
+we'll learn how to listen for any arbitrary event later; but for now it's time
+for `onKeypress`!
 
 ```haskell
 onKeypress :: (Keypress -> Action ()) -> Action ListenerId
 ```
 
 So we've got our function from our event type (Keypress), so let's try
-registering it using `onKeypress`; we'll do all of this within `onInit` so the
-listener is registered when Rasa starts. The onKeypress function
-returns a reference to the newly created listener so that we could cancel the
-listener using `removeListener` later if we wanted to; but since we don't need
-to do that; we'll just ignore it.
+registering it using `onKeypress`; The onKeypress function returns a reference
+to the newly created listener so that we could cancel the listener using
+`removeListener` later if we wanted to; but since we don't need to do that;
+we'll just ignore it by using `void` from `Control.Monad`.
 
 ```haskell
+import Control.Monad
 main = rasa $ do
   -- other extensions
-  onInit $ onKeypress helloWorld
+  void $ onKeypress helloWorld
 ```
 
 Okay, let's build that and run it, now in a separate terminal we'll run
@@ -213,7 +213,7 @@ import qualified Yi.Rope as Y
 main = rasa $ do
   -- other extensions
   cursors
-  onInit $ onKeypress copyPasta
+  void $ onKeypress copyPasta
 
 copyPasta :: Keypress -> Action ()
 copyPasta (Keypress 'y' _) = focusDo_ $ rangeDo_ copier
@@ -504,7 +504,7 @@ newBuf (BufAdded bufRef) = bufDo_ bufRef (addCopyListener copyListener)
 
 main = rasa $ do
   -- other extensions
-  onInit . onBufAdded $ newBuf
+  onBufAdded_ $ newBuf
 ```
 
 Okay so this works; but there was a bit of boiler-plate to get it going!
@@ -599,7 +599,7 @@ newtype Copied = Copied String
 -- We've renamed things so we can export a single 'Action'
 -- that the user can embed in their config.
 copyPasta :: Action ()
-copyPasta = onInit $ onKeypress keyListener
+copyPasta = void $ onKeypress keyListener
 
 keyListener :: Keypress -> Action ()
 keyListener (Keypress 'y' _) = do

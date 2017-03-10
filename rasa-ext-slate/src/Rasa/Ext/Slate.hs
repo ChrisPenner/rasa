@@ -15,14 +15,14 @@ import Control.Monad.IO.Class
 -- > rasa $ do
 -- >    slate
 -- >    ...
-slate :: Action ()
+slate :: App ()
 slate = do
-  onInit terminalEvents
+  terminalEvents
   onEveryRender_ renderAll
   onExit shutdown
 
 -- | Call vty shutdown procedure (if this doesn't happen the terminal ends up in strange states)
-shutdown :: Action ()
+shutdown :: App ()
 shutdown = do
   v <- getVty
   liftIO $ V.shutdown v

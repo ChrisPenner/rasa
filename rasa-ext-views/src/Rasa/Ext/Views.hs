@@ -19,7 +19,7 @@ module Rasa.Ext.Views
   , BiTreeF(..)
 
 
-  -- * Provided Actions
+  -- * ProvidedApps
   , A.rotate
   , A.closeInactive
   , A.focusViewLeft
@@ -74,7 +74,7 @@ import Rasa.Ext.Views.Internal.StatusBar
 import Rasa.Ext.Views.Internal.Actions as A
 
 -- | Main export from the views extension, add this to your rasa config.
-viewports :: Action ()
+viewports :: App ()
 viewports = do
   onBufAdded_ A.addSplit
   lineNumbers

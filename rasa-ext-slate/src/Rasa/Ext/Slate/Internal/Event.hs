@@ -8,7 +8,7 @@ import Control.Monad
 import qualified Graphics.Vty as V
 
 -- | Provides keypress events from the terminal, converted from Vty events.
-terminalEvents :: Action ()
+terminalEvents :: App ()
 terminalEvents = do
     v <- getVty
     asyncActionProvider $ getEvents v

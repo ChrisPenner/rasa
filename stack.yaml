@@ -18,8 +18,10 @@ packages:
 - ./rasa-ext-vim
 - ./rasa-example-config
 - ./text-lens
+# - ../eve
 
 extra-deps:
+- eve-0.1.2
 - vty-5.14
 - recursion-schemes-5.0.1
 

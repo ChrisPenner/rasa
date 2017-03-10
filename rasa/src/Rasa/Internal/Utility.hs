@@ -11,11 +11,10 @@ module Rasa.Internal.Utility
   , styleText
   ) where
 
-import Rasa.Internal.ActionMonads
-import Rasa.Internal.Editor
-import Rasa.Internal.Actions
+import Eve
 import Rasa.Internal.Styles
-import Rasa.Internal.BufAction
+import Rasa.Internal.BufActions
+import Rasa.Internal.Buffer
 import Rasa.Internal.Range
 
 import Control.Lens
@@ -42,7 +41,7 @@ instance Monoid RenderInfo where
 
 -- | Represents how to render an entity
 class Renderable r where
-  render :: Width -> Height -> ScrollPos -> r -> Action (Maybe RenderInfo)
+  render :: Width -> Height -> ScrollPos -> r -> App (Maybe RenderInfo)
 
 instance Renderable r => Renderable (Maybe r) where
   render width height scrollPos (Just r) = render width height scrollPos r

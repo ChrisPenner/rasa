@@ -35,7 +35,7 @@ checkLineNumbers = do
   LineNumbers b <- getBufExt
   return b
 
-lineNumbers :: Action ()
+lineNumbers :: App ()
 lineNumbers = onEveryNewBuffer_ . addLeftBar $ do
   enabled <- checkLineNumbers
   if enabled

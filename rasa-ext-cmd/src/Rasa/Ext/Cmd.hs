@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Rasa.Ext.Cmd
   ( addCmd
   , runCmd
@@ -13,7 +11,7 @@ import Data.Default
 import Data.Typeable
 
 data Cmd =
-  Cmd (Map String (String -> Action ()))
+  Cmd (Map String (String -> App ()))
   deriving (Typeable)
 
 instance Show Cmd where
@@ -23,15 +21,15 @@ instance Default Cmd where
   def = Cmd empty
 
 -- It would be nice to make this a little more generic, but I'm not sure how right now.
--- TODO try switching to T.Text -> (T.Text -> a) -> Action ()
-addCmd :: String -> (String -> Action ()) -> Action ()
+-- TODO try switching to T.Text -> (T.Text -> a) -> App ()
+addCmd :: String -> (String -> App ()) -> App ()
 addCmd alias mkEvent =
-  overExt add
+  stateLens %= add
     where add (Cmd commands) = Cmd $ commands & at alias ?~ mkEvent
 
-runCmd :: String -> String -> Action ()
+runCmd :: String -> String -> App ()
 runCmd alias args = do
-  Cmd commands <- getExt
+  Cmd commands <- use stateLens
   let mCmd = commands^.at alias
   case mCmd of
     Just cmd -> cmd args

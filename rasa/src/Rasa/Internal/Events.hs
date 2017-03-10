@@ -1,12 +1,8 @@
 {-# language ExistentialQuantification #-}
 module Rasa.Internal.Events
-  ( Init(..)
-  , AfterInit(..)
-  , BeforeEvent(..)
-  , BeforeRender(..)
+  ( BeforeRender(..)
   , OnRender(..)
   , AfterRender(..)
-  , Exit(..)
   , BufAdded(..)
   , Keypress(..)
   , Mod(..)
@@ -14,19 +10,9 @@ module Rasa.Internal.Events
   ) where
 
 import Data.Dynamic
-import Rasa.Internal.Editor
 import Rasa.Internal.Range
+import Rasa.Internal.Buffer
 import qualified Yi.Rope as Y
-
--- | This event is dispatched exactly once when the editor starts up.
-data Init = Init deriving (Show, Eq, Typeable)
-
--- | This event is dispatched exactly once when the editor starts up after onInit has occurred.
-data AfterInit = AfterInit deriving (Show, Eq, Typeable)
-
--- | This event is dispatched immediately before dispatching any events from
--- asyncronous event listeners (like 'Keypress's)
-data BeforeEvent = BeforeEvent deriving (Show, Eq, Typeable)
 
 -- | This event is dispatched immediately before dispatching
 -- the 'OnRender' event.
@@ -37,10 +23,6 @@ data OnRender = OnRender deriving (Show, Eq, Typeable)
 
 -- | This event is dispatched immediately after dispatching 'OnRender'.
 data AfterRender = AfterRender deriving (Show, Eq, Typeable)
-
--- | This event is dispatched before exiting the editor, listen for this to do
--- any clean-up (saving files, etc.)
-data Exit = Exit deriving (Show, Eq, Typeable)
 
 -- | This event is dispatched after adding a new buffer. The contained BufRef refers to the new buffer.
 data BufAdded = BufAdded BufRef deriving (Show, Eq, Typeable)
