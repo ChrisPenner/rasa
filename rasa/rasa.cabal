@@ -1,5 +1,5 @@
 name:                rasa
-version:             0.1.11
+version:             0.1.12
 synopsis:            A modular text editor
 homepage:            https://github.com/ChrisPenner/rasa#readme
 license:             GPL-3
@@ -63,7 +63,7 @@ library
 
   ghc-options:         -Wall
   build-depends:       base >= 4.8 && < 5
-                     , eve
+                     , eve == 0.1.2
                      , async
                      , bifunctors
                      , profunctors
