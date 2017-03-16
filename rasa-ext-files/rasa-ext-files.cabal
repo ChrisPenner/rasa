@@ -1,5 +1,5 @@
 name:                rasa-ext-files
-version:             0.1.4
+version:             0.1.5
 synopsis:            Rasa Ext for filesystem actions
 description:         Rasa Ext for filesystem actions
 homepage:            https://github.com/ChrisPenner/rasa/

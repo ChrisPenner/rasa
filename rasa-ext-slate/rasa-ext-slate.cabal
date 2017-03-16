@@ -1,5 +1,5 @@
 name:                rasa-ext-slate
-version:             0.1.7
+version:             0.1.8
 synopsis:            Rasa extension for rendering to terminal with vty
 description:         Rasa extension for rendering to terminal with vty
 homepage:            https://github.com/ChrisPenner/rasa/
