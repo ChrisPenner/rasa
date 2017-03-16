@@ -21,7 +21,7 @@ packages:
 # - ../eve
 
 extra-deps:
-- eve-0.1.2
+- eve-0.1.7
 - vty-5.14
 - recursion-schemes-5.0.1
 

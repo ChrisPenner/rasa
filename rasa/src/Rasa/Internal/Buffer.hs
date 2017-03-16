@@ -20,7 +20,6 @@ module Rasa.Internal.Buffer
 
   , buffers
   , nextBufId
-
   ) where
 
 
@@ -28,9 +27,7 @@ import Eve
 
 import qualified Yi.Rope as Y
 import Control.Lens hiding (matching)
-import qualified Data.Map as M
 import qualified Data.IntMap as IM
-import Data.List
 import Data.Default
 
 -- | An opaque reference to a buffer.
@@ -77,9 +74,6 @@ text = buffer.text'
 
 instance Show Buffer where
   show b = "text:" ++ (Y.toString . Y.take 30 $ (b^.text)) ++ "...,\n"
-           ++ "exts: " ++ extText ++ "}>\n"
-    where
-      extText = intercalate "\n" $ show <$> b^.states.to M.toList
 
 type BufAction a = Action Buffer a
 

@@ -85,15 +85,15 @@ getBufRef :: BufAction BufRef
 getBufRef = use ref
 
 -- | Retrieve some buffer extension state
-getBufExt :: (Typeable s, Show s, Default s) => BufAction s
+getBufExt :: (Typeable s, Default s) => BufAction s
 getBufExt = use stateLens
 
 -- | Set some buffer extension state
-setBufExt :: (Typeable s, Show s, Default s) => s -> BufAction ()
+setBufExt :: (Typeable s, Default s) => s -> BufAction ()
 setBufExt newExt = stateLens .= newExt
 
 -- | Set some buffer extension state
-overBufExt :: (Typeable s, Show s, Default s) => (s -> s) -> BufAction ()
+overBufExt :: (Typeable s, Default s) => (s -> s) -> BufAction ()
 overBufExt f = stateLens %= f
 
 -- -- | This lifts up an 'Action' to be run inside a 'BufAction'
@@ -153,7 +153,7 @@ getBuffer (BufRef bufInd) =
 bufferDo :: [BufRef] -> BufAction r -> App [r]
 bufferDo bufRefs bufAct = do
   r <- forM bufRefs $ \(BufRef bInd) ->
-    runAction (buffers.at bInd._Just) ((:[]) <$> bufAct)
+    runActionOver (buffers.at bInd._Just) ((:[]) <$> bufAct)
   return $ concat r
 
 -- | This lifts a 'Rasa.App.BufAction' to an 'Rasa.App.App' which
@@ -231,14 +231,14 @@ dispatchBufTextChanged :: BufTextChanged -> BufAction ()
 dispatchBufTextChanged = dispatchBufEvent
 
 -- | Dispatches an event of any type to the BufAction's buffer.
--- See 'dispatchEvent'
+-- See 'dispatchLocalEvent'
 dispatchBufEvent :: (Monoid result, Typeable eventType, Typeable result) => (eventType -> BufAction result)
-dispatchBufEvent = dispatchEvent
+dispatchBufEvent = dispatchLocalEvent
 
 -- | Adds a listener to the BufAction's buffer.
 -- See 'addListener'
 addBufListener :: (Typeable eventType, Typeable result, Monoid result) => (eventType -> BufAction result) -> BufAction ListenerId
-addBufListener = addListener
+addBufListener = addLocalListener
 
 addBufListener_ :: (Typeable eventType, Typeable result, Monoid result) => (eventType -> BufAction result) -> BufAction ()
 addBufListener_ = void . addBufListener
@@ -246,4 +246,4 @@ addBufListener_ = void . addBufListener
 -- | Removes a listener from the BufAction's buffer.
 -- See 'removeListener'
 removeBufListener :: ListenerId -> BufAction ()
-removeBufListener = removeListener
+removeBufListener = removeLocalListener

@@ -1,5 +1,5 @@
 name:                rasa-ext-vim
-version:             0.1.7
+version:             0.1.8
 synopsis:            Rasa Ext for vim bindings
 description:         Rasa Ext for vim bindings
 homepage:            https://github.com/ChrisPenner/rasa/

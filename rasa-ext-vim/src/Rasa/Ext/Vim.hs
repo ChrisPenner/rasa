@@ -81,9 +81,9 @@ handleKeypress keypress = focusDo_ $ do
 
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()
-anyMode [Keypress 'c' [Ctrl]] = liftApp exit
-anyMode [KPageDown []] = liftApp $ scrollBy 14 -- Page down
-anyMode [KPageUp []] = liftApp $ scrollBy (-14) -- Page up
+anyMode [Keypress 'c' [Ctrl]] = runApp exit
+anyMode [KPageDown []] = runApp $ scrollBy 14 -- Page down
+anyMode [KPageUp []] = runApp $ scrollBy (-14) -- Page up
 anyMode [KHome []] = startOfLine
 anyMode [KEnd []] = endOfLine
 anyMode _ = return ()
@@ -111,22 +111,22 @@ normal [Keypress 'g' [], Keypress 'g' []] = setRanges [Range (Coord 0 0) (Coord 
 normal [Keypress 's' []] = addHist $ Keypress 's' []
 normal [Keypress 's' [], Keypress 'n' []] = toggleLineNumbers
 
-normal [Keypress '+' []] = liftApp nextBuf
-normal [Keypress '-' []] = liftApp prevBuf
-normal [Keypress 'w' [Ctrl]] = liftApp hSplit
-normal [Keypress 'v' [Ctrl]] = liftApp vSplit
-normal [Keypress 'o' [Ctrl]] = liftApp closeInactive
-normal [Keypress 'r' [Ctrl]] = liftApp rotate
+normal [Keypress '+' []] = runApp nextBuf
+normal [Keypress '-' []] = runApp prevBuf
+normal [Keypress 'w' [Ctrl]] = runApp hSplit
+normal [Keypress 'v' [Ctrl]] = runApp vSplit
+normal [Keypress 'o' [Ctrl]] = runApp closeInactive
+normal [Keypress 'r' [Ctrl]] = runApp rotate
 
-normal [Keypress 'e' [Ctrl]] = liftApp $ scrollBy 1 -- Scroll down
-normal [Keypress 'd' [Ctrl]] = liftApp $ scrollBy 7 -- Half-Page down
-normal [Keypress 'y' [Ctrl]] = liftApp $ scrollBy (-1) -- Scroll up
-normal [Keypress 'u' [Ctrl]] = liftApp $ scrollBy (-7) -- Half-Page up
+normal [Keypress 'e' [Ctrl]] = runApp $ scrollBy 1 -- Scroll down
+normal [Keypress 'd' [Ctrl]] = runApp $ scrollBy 7 -- Half-Page down
+normal [Keypress 'y' [Ctrl]] = runApp $ scrollBy (-1) -- Scroll up
+normal [Keypress 'u' [Ctrl]] = runApp $ scrollBy (-7) -- Half-Page up
 
-normal [KLeft []] = liftApp focusViewLeft
-normal [KRight []] = liftApp focusViewRight
-normal [KUp []] = liftApp focusViewAbove
-normal [KDown []] = liftApp focusViewBelow
+normal [KLeft []] = runApp focusViewLeft
+normal [KRight []] = runApp focusViewRight
+normal [KUp []] = runApp focusViewAbove
+normal [KDown []] = runApp focusViewBelow
 
 
 normal [Keypress 'G' []] = do

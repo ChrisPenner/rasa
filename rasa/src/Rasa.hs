@@ -5,7 +5,6 @@ import Eve
 import Rasa.Internal.Listeners
 
 import Control.Monad
-import Data.Default
 
 -- | The main function to run rasa.
 --

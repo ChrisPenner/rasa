@@ -1,5 +1,5 @@
 name:                rasa-ext-views
-version:             0.1.5
+version:             0.1.6
 synopsis:            Rasa Ext managing rendering views
 description:         Rasa Ext managing rendering views
 homepage:            https://github.com/ChrisPenner/rasa/
