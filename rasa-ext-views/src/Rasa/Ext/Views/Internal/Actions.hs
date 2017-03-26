@@ -13,6 +13,8 @@ module Rasa.Ext.Views.Internal.Actions
   , focusDo_
   , activeViewsDo
   , activeViewsDo_
+  , viewBufDo
+  , viewBufDo_
   , focusedBufs
   , isFocused
   , hSplit
@@ -115,6 +117,16 @@ focusDo bufAct = do
 focusDo_ :: BufAction a -> App ()
 focusDo_ = void . focusDo
 
+viewBufDo :: Monoid a => BufAction a -> V.ViewAction a
+viewBufDo bufAction = do
+  mBufRef <- preuse (V.viewable . V._BufViewRef)
+  fromMaybe mempty <$> case mBufRef of
+                       Just bufRef -> runApp $ bufDo bufRef bufAction
+                       Nothing -> return $ Just mempty
+
+viewBufDo_ :: Monoid a => BufAction a -> V.ViewAction ()
+viewBufDo_ = void . viewBufDo
+
 activeViewsDo :: Monoid a => V.ViewAction a -> App a
 activeViewsDo = runActionOver (V.viewTree._Just.traverse.filtered (view V.active))
 
@@ -128,4 +140,3 @@ hSplit = V.viewTree._Just %= V.splitView V.Hor
 -- | Split active views vertically
 vSplit :: App ()
 vSplit = V.viewTree._Just %= V.splitView V.Vert
-
