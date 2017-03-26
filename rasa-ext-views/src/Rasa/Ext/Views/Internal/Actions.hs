@@ -15,6 +15,8 @@ module Rasa.Ext.Views.Internal.Actions
   , activeViewsDo_
   , focusedBufs
   , isFocused
+  , hSplit
+  , vSplit
   ) where
 
 import Rasa.Ext
@@ -118,3 +120,12 @@ activeViewsDo = runActionOver (V.viewTree._Just.traverse.filtered (view V.active
 
 activeViewsDo_ :: Monoid a => V.ViewAction a -> App ()
 activeViewsDo_ = void . activeViewsDo
+
+-- | Split active views horizontally
+hSplit :: App ()
+hSplit = V.viewTree._Just %= V.splitView V.Hor
+
+-- | Split active views vertically
+vSplit :: App ()
+vSplit = V.viewTree._Just %= V.splitView V.Vert
+

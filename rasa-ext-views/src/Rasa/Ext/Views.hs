@@ -17,9 +17,9 @@ module Rasa.Ext.Views
   , Window
   , BiTree(..)
   , BiTreeF(..)
+  , viewTree
 
-
-  -- * ProvidedApps
+  -- * Provided Actions
   , A.rotate
   , A.closeInactive
   , A.focusViewLeft

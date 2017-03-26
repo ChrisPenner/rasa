@@ -20,10 +20,9 @@ module Rasa.Ext.Views.Internal.Views
   , focusViewAbove
   , focusViewBelow
   , viewTree
-  , hSplit
-  , vSplit
   , addSplit
   , scrollBy
+  , splitView
   , Dir(..)
   , SplitRule(..)
   , Window
@@ -165,14 +164,6 @@ splitView d = cata alg
                             then Branch (Split d def) (Leaf vw) (Leaf (vw & active .~ False))
                             else Leaf vw
         alg b = embed b
-
--- | Split active views horizontally
-hSplit :: Window -> Window
-hSplit = splitView Hor
-
--- | Split active views vertically
-vSplit :: Window -> Window
-vSplit = splitView Vert
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: Dir -> Viewable -> Window -> Window

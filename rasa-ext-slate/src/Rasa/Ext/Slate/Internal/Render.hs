@@ -29,7 +29,7 @@ getSize = do
 renderAll :: App ()
 renderAll = do
   (width, height) <- getSize
-  mViews <- getViews
+  mViews <- use viewTree
   maybe (return ()) (vtyUpdate width height) mViews
   where
     vtyUpdate width height win = do
