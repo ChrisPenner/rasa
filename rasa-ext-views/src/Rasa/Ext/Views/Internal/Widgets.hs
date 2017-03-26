@@ -51,7 +51,8 @@ instance HasWidgets View where
   computeWidgets vw = do
     rest <- case vw^.viewable of
               EmptyView -> return mempty
-              (BufView br) -> getBufWidgets br
+              VRenderable _ -> return mempty
+              BufView br -> getBufWidgets br
     return $ activeBar `mappend` rest
     where
       activeBar =

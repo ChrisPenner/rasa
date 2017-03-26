@@ -32,6 +32,7 @@ module Rasa.Ext.Views.Internal.Views
   , Split(..)
   , View(..)
   , Viewable(..)
+  , mkBufView
   , _BufViewRef
   , traverseViews
   ) where
@@ -87,11 +88,14 @@ instance Default Split where
   def = Split def def
 
 -- | Represents a renderable entity
-data Viewable =
-  BufView BufRef
-    | EmptyView
+data Viewable where
+  BufView :: BufRef -> Viewable
+  VRenderable :: forall r. Renderable r => r -> Viewable
+  EmptyView :: Viewable
 
 instance Renderable Viewable where
+  render width height scrollPos (VRenderable r) = render width height scrollPos r
+
   render _ height scrollPos (BufView br) = bufDo br $ do
     txt <- getText
     styles <- getStyles
@@ -109,8 +113,26 @@ data View = View
   { _active :: Bool
   , _viewable :: Viewable
   , _scrollPos :: Int
+  , _viewStates :: States
   }
 makeLenses ''View
+
+instance HasStates View where
+  states = viewStates
+
+instance HasEvents View
+
+instance Default View where
+  def = View
+    { _active=False
+    , _viewable=EmptyView
+    , _scrollPos=0
+    , _viewStates=def
+    }
+
+mkBufView :: BufRef -> View
+mkBufView bRef = def & viewable .~ BufView bRef
+
 
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
@@ -165,7 +187,7 @@ vSplit = splitView Vert
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 addSplit :: Dir -> Viewable -> Window -> Window
-addSplit d vw = Branch (def & dir .~ d) (Leaf View{_active=False, _viewable=vw, _scrollPos=0})
+addSplit d v = Branch (def & dir .~ d) (Leaf $ def & viewable .~ v)
 
 -- | Close any views which match a given predicate
 closeBy :: (View -> Bool) -> Window -> Maybe Window

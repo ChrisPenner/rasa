@@ -65,7 +65,7 @@ addSplit :: BufAdded -> App ()
 addSplit (BufAdded bRef) = do
   mWin <- V.getViews
   case mWin of
-    Nothing -> V.setViews . Just $ Leaf (V.View True (V.BufView bRef) 0)
+    Nothing -> V.setViews . Just . Leaf $ (V.mkBufView bRef & V.active .~ True)
     Just win -> V.setViews . Just $ V.addSplit V.Vert (V.BufView bRef) win
 
 -- | Select the next buffer in any active viewports
