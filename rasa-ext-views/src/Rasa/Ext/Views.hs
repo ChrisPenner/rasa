@@ -7,7 +7,6 @@ module Rasa.Ext.Views
   , splitRule
   , active
   , scrollPos
-  , getViews
 
   -- * View Structure
   -- | Views are stored as a Tree, with 'Split's determining
@@ -27,8 +26,6 @@ module Rasa.Ext.Views
   , A.focusViewRight
   , A.focusViewAbove
   , A.focusViewBelow
-  , A.hSplit
-  , A.vSplit
   , A.addRenderableSplit
   , A.nextBuf
   , A.prevBuf
@@ -36,7 +33,11 @@ module Rasa.Ext.Views
   , A.focusDo_
   , A.focusedBufs
   , A.isFocused
-  , A.scrollBy
+  , A.activeViewsDo
+  , A.activeViewsDo_
+  , scrollBy
+  , hSplit
+  , vSplit
 
   -- * Creating Widgets
   , Widgets

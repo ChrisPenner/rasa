@@ -19,9 +19,7 @@ module Rasa.Ext.Views.Internal.Views
   , focusViewRight
   , focusViewAbove
   , focusViewBelow
-  , getViews
-  , setViews
-  , overWindows
+  , viewTree
   , hSplit
   , vSplit
   , addSplit
@@ -35,7 +33,6 @@ module Rasa.Ext.Views.Internal.Views
   , Viewable(..)
   , mkBufView
   , _BufViewRef
-  , traverseViews
   ) where
 
 import Rasa.Ext
@@ -139,30 +136,19 @@ mkBufView bRef = def & viewable .~ BufView bRef
 
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
-data Views where
-  Views :: Maybe Window -> Views
+data Views = Views
+  { _viewTree' :: Maybe Window
+  }
+makeLenses ''Views
+
+viewTree :: Lens' AppState (Maybe Window)
+viewTree = makeStateLens viewTree'
 
 instance Show Views where
   show _ = "Views"
 
 instance Default Views where
   def = Views Nothing
-
--- | Gets the stored views
-getViews :: App (Maybe Window)
-getViews = do
-  Views mWin <- use stateLens
-  return mWin
-
--- | Sets the stored views
-setViews :: Maybe Window -> App ()
-setViews v = stateLens .= Views v
-
--- | Run function over stored windows
-overWindows :: (Window -> Window) -> App ()
-overWindows f = do
-  Views mWin <- use stateLens
-  stateLens .= (Views $ fmap f mWin)
 
 -- | Flip all Horizontal splits to Vertical ones and vice versa.
 rotate :: Window -> Window
@@ -272,14 +258,7 @@ ensureOneActive w = if not $ anyOf traverse _active w
                        else w
 
 -- | Scroll all active viewports by the given amount.
-scrollBy :: Int -> Window -> Window
-scrollBy amt = traverse.filtered (view active).scrollPos %~ scroll
+scrollBy :: Int -> ViewAction ()
+scrollBy amt = scrollPos %= scroll
   where
     scroll = max 0 . (+ amt)
-
--- | Alters views by a given function.
-traverseViews :: (View -> App View) -> App ()
-traverseViews f = do
-  mWin <- getViews
-  mResult <- sequence $ traverse f <$> mWin
-  setViews mResult

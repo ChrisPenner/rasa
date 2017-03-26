@@ -82,8 +82,8 @@ handleKeypress keypress = focusDo_ $ do
 -- | Listeners for keypresses that run regardless of current mode.
 anyMode :: [Keypress] -> BufAction ()
 anyMode [Keypress 'c' [Ctrl]] = runApp exit
-anyMode [KPageDown []] = runApp $ scrollBy 14 -- Page down
-anyMode [KPageUp []] = runApp $ scrollBy (-14) -- Page up
+anyMode [KPageDown []] = runApp . activeViewsDo_ $ scrollBy 14 -- Page down
+anyMode [KPageUp []] = runApp . activeViewsDo_ $ scrollBy (-14) -- Page up
 anyMode [KHome []] = startOfLine
 anyMode [KEnd []] = endOfLine
 anyMode [Keypress 'a' [Ctrl]] = runApp $ addRenderableSplit (VRenderable ("hi" :: Y.YiString))
@@ -119,10 +119,10 @@ normal [Keypress 'v' [Ctrl]] = runApp vSplit
 normal [Keypress 'o' [Ctrl]] = runApp closeInactive
 normal [Keypress 'r' [Ctrl]] = runApp rotate
 
-normal [Keypress 'e' [Ctrl]] = runApp $ scrollBy 1 -- Scroll down
-normal [Keypress 'd' [Ctrl]] = runApp $ scrollBy 7 -- Half-Page down
-normal [Keypress 'y' [Ctrl]] = runApp $ scrollBy (-1) -- Scroll up
-normal [Keypress 'u' [Ctrl]] = runApp $ scrollBy (-7) -- Half-Page up
+normal [Keypress 'e' [Ctrl]] = runApp . activeViewsDo_ $ scrollBy 1 -- Scroll down
+normal [Keypress 'd' [Ctrl]] = runApp . activeViewsDo_ $ scrollBy 7 -- Half-Page down
+normal [Keypress 'y' [Ctrl]] = runApp . activeViewsDo_ $ scrollBy (-1) -- Scroll up
+normal [Keypress 'u' [Ctrl]] = runApp . activeViewsDo_ $ scrollBy (-7) -- Half-Page up
 
 normal [KLeft []] = runApp focusViewLeft
 normal [KRight []] = runApp focusViewRight
