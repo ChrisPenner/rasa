@@ -7,7 +7,8 @@ module Rasa.Ext.Views.Internal.Actions
   , focusViewBelow
   , hSplit
   , vSplit
-  , addSplit
+  , addRenderableSplit
+  , autoAddBufSplit
   , nextBuf
   , prevBuf
   , focusDo
@@ -23,6 +24,7 @@ import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
 import Control.Monad
+import Data.Default
 import Data.Maybe
 import Data.List
 
@@ -60,9 +62,17 @@ hSplit = V.overWindows V.hSplit
 vSplit :: App ()
 vSplit = V.overWindows V.vSplit
 
+-- | Add a new split at the top level containing the given Renderable
+addRenderableSplit :: Renderable r => r -> App ()
+addRenderableSplit r = do
+  mWin <- V.getViews
+  case mWin of
+    Nothing -> V.setViews . Just . Leaf $ (def & V.viewable .~ V.VRenderable r)
+    Just win -> V.setViews . Just $ V.addSplit V.Vert (V.VRenderable r) win
+
 -- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: BufAdded -> App ()
-addSplit (BufAdded bRef) = do
+autoAddBufSplit :: BufAdded -> App ()
+autoAddBufSplit (BufAdded bRef) = do
   mWin <- V.getViews
   case mWin of
     Nothing -> V.setViews . Just . Leaf $ (V.mkBufView bRef & V.active .~ True)

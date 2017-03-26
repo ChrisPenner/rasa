@@ -86,6 +86,7 @@ anyMode [KPageDown []] = runApp $ scrollBy 14 -- Page down
 anyMode [KPageUp []] = runApp $ scrollBy (-14) -- Page up
 anyMode [KHome []] = startOfLine
 anyMode [KEnd []] = endOfLine
+anyMode [Keypress 'a' [Ctrl]] = runApp $ addRenderableSplit (VRenderable ("hi" :: Y.YiString))
 anyMode _ = return ()
 
 -- | Listeners for keypresses when in 'Insert' mode
@@ -179,7 +180,7 @@ normal _ = return ()
 
 -- | Move cursors to end of the line
 endOfLine :: BufAction ()
-endOfLine = do 
+endOfLine = do
   txt <- getText
   overRanges . map $ overBoth $ coordEndOfLine txt
   where

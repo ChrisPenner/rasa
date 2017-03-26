@@ -31,6 +31,7 @@ module Rasa.Ext.Views.Internal.Views
   , Window
   , Split(..)
   , View(..)
+  , ViewAction
   , Viewable(..)
   , mkBufView
   , _BufViewRef
@@ -129,6 +130,8 @@ instance Default View where
     , _scrollPos=0
     , _viewStates=def
     }
+
+type ViewAction a = Action View a
 
 mkBufView :: BufRef -> View
 mkBufView bRef = def & viewable .~ BufView bRef
