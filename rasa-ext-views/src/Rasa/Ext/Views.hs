@@ -3,6 +3,7 @@ module Rasa.Ext.Views
   -- * Working with Views
   , View(..)
   , Viewable(..)
+  , ViewAction
   , viewable
   , splitRule
   , active
@@ -35,6 +36,8 @@ module Rasa.Ext.Views
   , A.isFocused
   , A.activeViewsDo
   , A.activeViewsDo_
+  , A.viewBufDo
+  , A.viewBufDo_
   , scrollBy
   , hSplit
   , vSplit

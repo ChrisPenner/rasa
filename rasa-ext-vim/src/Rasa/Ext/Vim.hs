@@ -1,4 +1,5 @@
-{-# Language OverloadedStrings #-}
+{-# language OverloadedStrings #-}
+{-# language TemplateHaskell #-}
 module Rasa.Ext.Vim
   ( vim
   ) where
@@ -24,31 +25,23 @@ data VimMode
 instance Default VimMode where
   def = Normal
 
-getMode :: BufAction VimMode
-getMode = getBufExt
-
-setMode :: VimMode -> BufAction ()
-setMode = setBufExt
+mode :: Lens' View VimMode
+mode = stateLens
 
 -- | A history of any keypresses which haven't matched a pattern
-newtype VimHist =
-  VimHist [Keypress]
-  deriving (Show, Typeable)
+newtype VimHist = VimHist 
+  { _vimHist' :: [Keypress]
+  } deriving (Show, Typeable)
+makeLenses ''VimHist
 
 instance Default VimHist where
   def = VimHist []
 
-addHist :: Keypress -> BufAction ()
-addHist keypress = overBufExt extend
-  where extend (VimHist hist) = VimHist $ hist ++ [keypress]
+vimHist :: Lens' View [Keypress]
+vimHist = makeStateLens vimHist'
 
-getHist :: BufAction [Keypress]
-getHist = do
-  VimHist h <- getBufExt
-  return h
-
-setHist :: [Keypress] -> BufAction ()
-setHist = setBufExt . VimHist
+addHist :: Keypress -> ViewAction ()
+addHist keypress = vimHist <>= [keypress]
 
 -- | The main export for the vim keybinding extension. Add this to your user config.
 --
@@ -61,56 +54,56 @@ vim :: App ()
 vim = do
   void $ onKeypress handleKeypress
   onEveryNewBuffer_ . addBottomStatus $ do
-    mode <- getMode
+    mode <- use mode
     return $ case mode of
       Normal -> styleText "NORMAL" $ fg Magenta
       Insert -> styleText "INSERT" $ fg Green
 
 -- | The event listener which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> App ()
-handleKeypress keypress = focusDo_ $ do
-  mode <- getMode
-  preHist <- getHist
+handleKeypress keypress = activeViewsDo_ $ do
+  mode <- use mode
+  preHist <- use vimHist
   case mode of
     Normal -> normal $ preHist ++ [keypress]
     Insert -> insert $ preHist ++ [keypress]
   anyMode $ preHist ++ [keypress]
-  postHist <- getHist
+  postHist <- use vimHist
   -- If nothing changed than an action must have happened
-  unless (preHist /= postHist) (setHist [])
+  unless (preHist /= postHist) (vimHist .= [])
 
 -- | Listeners for keypresses that run regardless of current mode.
-anyMode :: [Keypress] -> BufAction ()
+anyMode :: [Keypress] -> ViewAction ()
 anyMode [Keypress 'c' [Ctrl]] = runApp exit
 anyMode [KPageDown []] = runApp . activeViewsDo_ $ scrollBy 14 -- Page down
 anyMode [KPageUp []] = runApp . activeViewsDo_ $ scrollBy (-14) -- Page up
-anyMode [KHome []] = startOfLine
-anyMode [KEnd []] = endOfLine
+anyMode [KHome []] = viewBufDo startOfLine
+anyMode [KEnd []] = viewBufDo endOfLine
 anyMode [Keypress 'a' [Ctrl]] = runApp $ addRenderableSplit (VRenderable ("hi" :: Y.YiString))
 anyMode _ = return ()
 
 -- | Listeners for keypresses when in 'Insert' mode
-insert :: [Keypress] -> BufAction ()
-insert [KEsc []] = setMode Normal
+insert :: [Keypress] -> ViewAction ()
+insert [KEsc []] = mode .= Normal
 
-insert [KBS []] = moveRangesByN (-1) >> delete
-insert [KDel []] = delete
-insert [KEnter []] = insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
-insert [Keypress c []] = insertText (Y.singleton c) >> moveRangesByN 1
+insert [KBS []] = viewBufDo $ moveRangesByN (-1) >> delete
+insert [KDel []] = viewBufDo delete
+insert [KEnter []] = viewBufDo $ insertText "\n" >> moveRangesByC (Coord 1 0) >> startOfLine
+insert [Keypress c []] = viewBufDo $ insertText (Y.singleton c) >> moveRangesByN 1
 insert _ = return ()
 
 -- | Listeners for keypresses when in 'Normal' mode
-normal :: [Keypress] -> BufAction ()
-normal [Keypress 'i' []] = setMode Insert
-normal [Keypress 'I' []] = startOfLine >> setMode Insert
-normal [Keypress 'a' []] = moveRangesByN 1 >> setMode Insert
-normal [Keypress 'A' []] = endOfLine >> setMode Insert
-normal [Keypress '0' []] = startOfLine
-normal [Keypress '$' []] = endOfLine
+normal :: [Keypress] -> ViewAction ()
+normal [Keypress 'i' []] = mode .= Insert
+normal [Keypress 'I' []] = viewBufDo startOfLine >> mode .= Insert
+normal [Keypress 'a' []] = viewBufDo (moveRangesByN 1) >> mode .= Insert
+normal [Keypress 'A' []] = viewBufDo endOfLine >> mode .= Insert
+normal [Keypress '0' []] = viewBufDo startOfLine
+normal [Keypress '$' []] = viewBufDo endOfLine
 normal [Keypress 'g' []] = addHist $ Keypress 'g' []
-normal [Keypress 'g' [], Keypress 'g' []] = setRanges [Range (Coord 0 0) (Coord 0 1)]
+normal [Keypress 'g' [], Keypress 'g' []] = viewBufDo $ setRanges [Range (Coord 0 0) (Coord 0 1)]
 normal [Keypress 's' []] = addHist $ Keypress 's' []
-normal [Keypress 's' [], Keypress 'n' []] = toggleLineNumbers
+normal [Keypress 's' [], Keypress 'n' []] = viewBufDo toggleLineNumbers
 
 normal [Keypress '+' []] = runApp nextBuf
 normal [Keypress '-' []] = runApp prevBuf
@@ -130,20 +123,20 @@ normal [KUp []] = runApp focusViewAbove
 normal [KDown []] = runApp focusViewBelow
 
 
-normal [Keypress 'G' []] = do
+normal [Keypress 'G' []] = viewBufDo $ do
   txt <- getText
   setRanges [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
 
-normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByC (Coord 1 0) >> setMode Insert
-normal [Keypress 'O' []] = startOfLine >> insertText "\n" >> setMode Insert
-normal [Keypress 'h' []] = moveRangesByN (-1)
-normal [Keypress 'l' []] = moveRangesByN 1
-normal [Keypress 'k' []] = moveRangesByC $ Coord (-1) 0
-normal [Keypress 'K' []] = rangeDo_ $ addRange . moveRange (Coord (-1) 0)
-normal [Keypress 'j' []] = moveRangesByC $ Coord 1 0
-normal [Keypress 'J' []] = rangeDo_ $ addRange . moveRange (Coord 1 0)
-normal [Keypress 'w' []] = findNext " " >> moveRangesByC (Coord 0 1)
-normal [Keypress 'W' []] = rangeDo_ addCursor
+normal [Keypress 'o' []] = viewBufDo (endOfLine >> insertText "\n" >> moveRangesByC (Coord 1 0)) >> mode .= Insert
+normal [Keypress 'O' []] = viewBufDo (startOfLine >> insertText "\n") >> mode .= Insert
+normal [Keypress 'h' []] = viewBufDo $ moveRangesByN (-1)
+normal [Keypress 'l' []] = viewBufDo $ moveRangesByN 1
+normal [Keypress 'k' []] = viewBufDo $ moveRangesByC $ Coord (-1) 0
+normal [Keypress 'K' []] = viewBufDo $ rangeDo_ $ addRange . moveRange (Coord (-1) 0)
+normal [Keypress 'j' []] = viewBufDo $ moveRangesByC $ Coord 1 0
+normal [Keypress 'J' []] = viewBufDo $ rangeDo_ $ addRange . moveRange (Coord 1 0)
+normal [Keypress 'w' []] = viewBufDo $ findNext " " >> moveRangesByC (Coord 0 1)
+normal [Keypress 'W' []] = viewBufDo $ rangeDo_ addCursor
   where
     addCursor (Range _ end) = do
       next <- findNextFrom " " end
@@ -151,8 +144,8 @@ normal [Keypress 'W' []] = rangeDo_ addCursor
           newEnd = moveCursorByN 1 newStart
       addRange $ Range newStart newEnd
 
-normal [Keypress 'b' []] = moveRangesByN (-1) >> findPrev " "
-normal [Keypress 'B' []] = rangeDo_ addCursor
+normal [Keypress 'b' []] = viewBufDo $ moveRangesByN (-1) >> findPrev " "
+normal [Keypress 'B' []] = viewBufDo $ rangeDo_ addCursor
   where
     addCursor (Range start _) = do
       next <- findPrevFrom " " start
@@ -161,21 +154,21 @@ normal [Keypress 'B' []] = rangeDo_ addCursor
       addRange $ Range newStart newEnd
 
 normal [Keypress 'f' []] = addHist $ Keypress 'f' []
-normal [Keypress 'f' [],Keypress x []] = findNext $ Y.singleton x
+normal [Keypress 'f' [],Keypress x []] = viewBufDo $ findNext $ Y.singleton x
 normal [Keypress 't' []] = addHist $ Keypress 't' []
-normal [Keypress 't' [],Keypress x []] = findNext (Y.singleton x) >> moveRangesByN (-1)
+normal [Keypress 't' [],Keypress x []] = viewBufDo $ findNext (Y.singleton x) >> moveRangesByN (-1)
 normal [Keypress 'T' []] = addHist $ Keypress 'T' []
-normal [Keypress 'T' [],Keypress x []] = findPrev (Y.singleton x)
+normal [Keypress 'T' [],Keypress x []] = viewBufDo $ findPrev (Y.singleton x)
 normal [Keypress 'F' []] = addHist $ Keypress 'F' []
-normal [Keypress 'F' [],Keypress x []] = findPrev (Y.singleton x) >> moveRangesByN (-1)
-normal [Keypress 'X' []] = moveRangesByN (-1) >> delete
-normal [Keypress 'x' []] = delete
-normal [Keypress 's' [Ctrl]] = save
-normal [Keypress ';' []] = do
+normal [Keypress 'F' [],Keypress x []] = viewBufDo $ findPrev (Y.singleton x) >> moveRangesByN (-1)
+normal [Keypress 'X' []] = viewBufDo $ moveRangesByN (-1) >> delete
+normal [Keypress 'x' []] = viewBufDo delete
+normal [Keypress 's' [Ctrl]] = viewBufDo save
+normal [Keypress ';' []] = viewBufDo $ do
   rngs <- getRanges
   setRanges (rngs^.reversed.to (take 1))
 normal [Keypress 'r' []] = addHist $ Keypress 'r' []
-normal [Keypress 'r' [],Keypress c []] = delete >> insertText (Y.singleton c)
+normal [Keypress 'r' [],Keypress c []] = viewBufDo $ delete >> insertText (Y.singleton c)
 normal _ = return ()
 
 -- | Move cursors to end of the line
