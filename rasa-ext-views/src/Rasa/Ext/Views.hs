@@ -41,6 +41,7 @@ module Rasa.Ext.Views
   , scrollBy
   , hSplit
   , vSplit
+  , A.onNewView
 
   -- * Creating Widgets
   , Widgets

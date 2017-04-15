@@ -19,6 +19,7 @@ module Rasa.Ext.Views.Internal.Actions
   , isFocused
   , hSplit
   , vSplit
+  , onNewView
   ) where
 
 import Rasa.Ext
@@ -27,7 +28,6 @@ import Rasa.Ext.Views.Internal.BiTree
 
 import Control.Lens
 import Control.Monad
-import Data.Default
 import Data.Maybe
 import Data.List
 
@@ -62,16 +62,24 @@ addRenderableSplit :: Renderable r => r -> App ()
 addRenderableSplit r = do
   mWin <- use V.viewTree
   case mWin of
-    Nothing -> V.viewTree ?= Leaf (def & V.viewable .~ V.VRenderable r)
-    Just win -> V.viewTree ?= V.addSplit V.Vert (V.VRenderable r) win
+    Nothing -> do
+      vw <- V.mkView False (V.VRenderable r)
+      V.viewTree ?= Leaf vw
+    Just win -> do
+      vw <- V.mkView False (V.VRenderable r)
+      V.viewTree ?= V.addSplit V.Vert vw win
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
 autoAddBufSplit :: BufAdded -> App ()
 autoAddBufSplit (BufAdded bRef) = do
   mWin <- use V.viewTree
   case mWin of
-    Nothing -> V.viewTree ?= Leaf (V.mkBufView bRef & V.active .~ True)
-    Just win -> V.viewTree ?= V.addSplit V.Vert (V.BufView bRef) win
+    Nothing -> do
+      vw <- (V.active .~ True) <$> V.mkBufView bRef
+      V.viewTree ?= Leaf vw
+    Just win -> do
+      vw <- V.mkBufView bRef
+      V.viewTree ?= V.addSplit V.Vert vw win
 
 -- | Select the next buffer in any active viewports
 nextBuf :: App ()
@@ -140,3 +148,6 @@ hSplit = V.viewTree._Just %= V.splitView V.Hor
 -- | Split active views vertically
 vSplit :: App ()
 vSplit = V.viewTree._Just %= V.splitView V.Vert
+
+onNewView :: V.ViewAction () -> App ()
+onNewView action = V.newViewListeners <>= action

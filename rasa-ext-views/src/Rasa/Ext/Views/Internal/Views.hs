@@ -1,13 +1,11 @@
-{-# language
-    FlexibleInstances
-  , TemplateHaskell
-  , DeriveFunctor
-  , GeneralizedNewtypeDeriving
-  , ExistentialQuantification
-  , ScopedTypeVariables
-  , GADTs
-  , RankNTypes
-#-}
+{-# language FlexibleInstances #-}
+{-# language TemplateHaskell #-}
+{-# language DeriveFunctor #-}
+{-# language GeneralizedNewtypeDeriving #-}
+{-# language ExistentialQuantification #-}
+{-# language ScopedTypeVariables #-}
+{-# language GADTs #-}
+{-# language RankNTypes #-}
 module Rasa.Ext.Views.Internal.Views
   ( rotate
   , splitRule
@@ -23,6 +21,7 @@ module Rasa.Ext.Views.Internal.Views
   , addSplit
   , scrollBy
   , splitView
+  , newViewListeners
   , Dir(..)
   , SplitRule(..)
   , Window
@@ -30,6 +29,7 @@ module Rasa.Ext.Views.Internal.Views
   , View(..)
   , ViewAction
   , Viewable(..)
+  , mkView
   , mkBufView
   , _BufViewRef
   ) where
@@ -129,10 +129,6 @@ instance Default View where
 
 type ViewAction a = Action View a
 
-mkBufView :: BufRef -> View
-mkBufView bRef = def & viewable .~ BufView bRef
-
-
 -- | A tree of windows branched with splits.
 type Window = BiTree Split View
 data Views = Views
@@ -166,8 +162,8 @@ splitView d = cata alg
         alg b = embed b
 
 -- | Add a new split at the top level in the given direction containing the given buffer.
-addSplit :: Dir -> Viewable -> Window -> Window
-addSplit d v = Branch (def & dir .~ d) (Leaf $ def & viewable .~ v)
+addSplit :: Dir -> View -> Window -> Window
+addSplit d vw = Branch (def & dir .~ d) (Leaf vw)
 
 -- | Close any views which match a given predicate
 closeBy :: (View -> Bool) -> Window -> Maybe Window
@@ -253,3 +249,41 @@ scrollBy :: Int -> ViewAction ()
 scrollBy amt = scrollPos %= scroll
   where
     scroll = max 0 . (+ amt)
+
+data NewViewListeners = NewViewListeners
+  { _newViewListeners' :: ViewAction ()
+  }
+makeLenses ''NewViewListeners
+
+newViewListeners :: Lens' AppState (ViewAction ())
+newViewListeners = makeStateLens newViewListeners'
+
+instance Default NewViewListeners where
+  def = NewViewListeners mempty
+
+data TempView = TempView
+  { _tmp :: View
+  }
+makeLenses ''TempView
+
+instance Default TempView where
+  def = TempView def
+
+tempView :: Lens' AppState View
+tempView = makeStateLens tmp
+
+newView :: App View
+newView = do
+  viewListeners <- use newViewListeners
+  tempView .= def
+  runActionOver tempView viewListeners
+  use tempView
+
+mkView :: Bool -> Viewable -> App View
+mkView active' viewable' = do
+  vw <- newView
+  return $ vw & active .~ active' & viewable .~ viewable'
+
+mkBufView :: BufRef -> App View
+mkBufView bRef = (viewable .~ BufView bRef) <$> newView
+

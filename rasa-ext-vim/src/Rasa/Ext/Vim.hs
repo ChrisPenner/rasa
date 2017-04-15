@@ -53,18 +53,18 @@ addHist keypress = vimHist <>= [keypress]
 vim :: App ()
 vim = do
   void $ onKeypress handleKeypress
-  onEveryNewBuffer_ . addBottomStatus $ do
-    mode <- use mode
-    return $ case mode of
+  onNewView . void . addBottomStatus $ do
+    mode' <- use mode
+    return $ case mode' of
       Normal -> styleText "NORMAL" $ fg Magenta
       Insert -> styleText "INSERT" $ fg Green
 
 -- | The event listener which listens for keypresses and responds appropriately
 handleKeypress :: Keypress -> App ()
 handleKeypress keypress = activeViewsDo_ $ do
-  mode <- use mode
+  mode' <- use mode
   preHist <- use vimHist
-  case mode of
+  case mode' of
     Normal -> normal $ preHist ++ [keypress]
     Insert -> insert $ preHist ++ [keypress]
   anyMode $ preHist ++ [keypress]
