@@ -24,8 +24,6 @@ library
                      , extra
   default-language:    Haskell2010
 
-  default-extensions:  OverloadedStrings
-
   ghc-options:         -Wall
 
 test-suite text-lens-test
