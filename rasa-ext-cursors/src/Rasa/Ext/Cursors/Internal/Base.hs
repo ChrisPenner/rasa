@@ -70,7 +70,7 @@ overEachRange f = rangeDo f >>= setRanges
 
 -- | Adds a new range to the list of ranges.
 addRange :: CrdRange -> BufAction ()
-addRange r = overRanges (++[r])
+addRange r = overRanges (r:)
 
 -- | Adds cursor specific styles
 setStyleProvider :: BufAction ()

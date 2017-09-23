@@ -137,10 +137,18 @@ normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByC (Coord 
 normal [Keypress 'O' []] = startOfLine >> insertText "\n" >> setMode Insert
 normal [Keypress 'h' []] = moveRangesByN (-1)
 normal [Keypress 'l' []] = moveRangesByN 1
-normal [Keypress 'k' []] = moveRangesByC $ Coord (-1) 0
-normal [Keypress 'K' []] = rangeDo_ $ addRange . moveRange (Coord (-1) 0)
 normal [Keypress 'j' []] = moveRangesByC $ Coord 1 0
-normal [Keypress 'J' []] = rangeDo_ $ addRange . moveRange (Coord 1 0)
+normal [Keypress 'k' []] = moveRangesByC $ Coord (-1) 0
+normal [Keypress 'J' []] = do
+  ranges <- getRanges
+  moveRangesByC (Coord 1 0)
+  overRanges (ranges ++)
+
+normal [Keypress 'K' []] = do
+  ranges <- getRanges
+  moveRangesByC (Coord (-1) 0)
+  overRanges (ranges ++)
+
 normal [Keypress 'w' []] = findNext " " >> moveRangesByC (Coord 0 1)
 normal [Keypress 'W' []] = rangeDo_ addCursor
   where
@@ -179,7 +187,7 @@ normal _ = return ()
 
 -- | Move cursors to end of the line
 endOfLine :: BufAction ()
-endOfLine = do 
+endOfLine = do
   txt <- getText
   overRanges . map $ overBoth $ coordEndOfLine txt
   where

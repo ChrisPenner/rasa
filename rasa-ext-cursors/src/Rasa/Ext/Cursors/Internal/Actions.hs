@@ -76,8 +76,8 @@ findPrevFrom pat c = do
 
 -- | Move all ranges by the given number of columns
 moveRangesByN :: Int -> BufAction ()
-moveRangesByN n = overEachRange $ return . moveRangeByN n
+moveRangesByN = overRanges . fmap . moveRangeByN
 
 -- | Move all ranges by the given number of rows and columns
 moveRangesByC :: Coord -> BufAction ()
-moveRangesByC c = overEachRange $ return . moveRange c
+moveRangesByC = overRanges . fmap . moveRange
