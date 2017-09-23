@@ -38,7 +38,6 @@ module Rasa.Internal.Range
 import Rasa.Internal.Text
 import Control.Lens
 
-import Data.Maybe
 import Data.Monoid
 import Data.List
 import Data.Bifunctor
@@ -176,7 +175,8 @@ clampCoord txt (Coord row col) =
   Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
   where
     maxRow = Y.countNewLines txt
-    maxColumn = fromMaybe col (txt ^? asLines . ix row . to Y.length)
+    selectedRow = fst . Y.splitAtLine 1 . snd . Y.splitAtLine row $ txt
+    maxColumn = Y.length selectedRow
 
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
 clampRange :: Y.YiString -> CrdRange -> CrdRange
@@ -237,22 +237,15 @@ sizeOf txt = Coord (Y.countNewLines txt) (Y.length (txt ^. asLines . _last))
 -- | A lens over text before a given 'Coord'
 beforeC :: Coord -> Lens' Y.YiString  Y.YiString
 beforeC c@(Coord row col) = lens getter setter
-  where getter txt =
-          txt ^.. asLines . taking (row + 1) traverse
-              & _last %~ Y.take col
-              & Y.concat
-
+  where getter txt = let (before, after) = Y.splitAtLine row $ txt
+                      in before <> Y.take col after
         setter old new = let suffix = old ^. afterC c
                           in new <> suffix
 
 -- | A lens over text after a given 'Coord'
 afterC :: Coord -> Lens' Y.YiString  Y.YiString
 afterC c@(Coord row col) = lens getter setter
-  where getter txt =
-          txt ^.. asLines . dropping row traverse
-              & _head %~ Y.drop col
-              & Y.concat
-
+  where getter txt = Y.drop col . snd . Y.splitAtLine row $ txt
         setter old new = let prefix = old ^. beforeC c
                           in prefix <> new
 
