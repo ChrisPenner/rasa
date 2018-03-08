@@ -23,7 +23,7 @@ packages:
 extra-deps:
 - eve-0.1.7
 - vty-5.14
-- recursion-schemes-5.0.1
+- recursion-schemes-5.0.2
 
 # Uncomment the following if you'd like to use a locally installed version
 # of icu4c INSTEAD of relying on nix.
@@ -33,5 +33,5 @@ extra-deps:
 # extra-include-dirs:
 # - /usr/local/opt/icu4c/include
 
-resolver: lts-7.11
+resolver: lts-10.7
 pvp-bounds: both
