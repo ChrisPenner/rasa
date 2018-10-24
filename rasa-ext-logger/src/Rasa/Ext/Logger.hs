@@ -7,6 +7,7 @@ module Rasa.Ext.Logger
 import Rasa.Ext
 
 import Control.Monad.State
+import Control.Monad.IO.Class (MonadIO)
 
 logger :: App ()
 logger = do
@@ -15,8 +16,8 @@ logger = do
     -- ed <- getEditor
     -- liftIO $ appendFile "logs.log" (show ed)
 
-logInfo :: String -> App ()
+logInfo :: MonadIO m => String -> m ()
 logInfo msg = liftIO $ appendFile "info.log" ("INFO: " ++ msg ++ "\n")
 
-logError :: String -> App ()
+logError :: MonadIO m => String -> m ()
 logError msg = liftIO $ appendFile "error.log" ("ERROR: " ++ msg ++ "\n")
