@@ -55,10 +55,12 @@ newtype Style = Style (Maybe Color, Maybe Color, Maybe Flair)
 instance Default Style where
   def = Style (Just DefColor, Just DefColor, Just DefFlair)
 
+instance Semigroup Style where
+  Style (a, b, c) <> Style (a', b', c') = Style (a' <|> a, b' <|> b, c' <|> c)
+
 -- | The monoid instance replaces any attributes which have a 'Just' in the new 'Style'
 -- and persists any that are 'Nothing' in the new style (using 'Data.Alternative' for 'Data.Maybe')
 instance Monoid Style where
-  Style (a, b, c) `mappend` Style (a', b', c') = Style (a' <|> a, b' <|> b, c' <|> c)
 
   mempty = Style (Nothing, Nothing, Nothing)
 
@@ -66,6 +68,7 @@ type Styles = [Span CrdRange Style]
 newtype StyleMap =
   StyleMap Styles
   deriving (Show, Eq, Monoid)
+  deriving (Show, Eq, Semigroup, Monoid)
 
 instance Default StyleMap where
   def = StyleMap []

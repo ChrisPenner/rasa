@@ -1,4 +1,5 @@
 flags: {}
+resolver: lts-12.16
 extra-package-dbs: []
 
 nix:
@@ -33,5 +34,4 @@ extra-deps:
 # extra-include-dirs:
 # - /usr/local/opt/icu4c/include
 
-resolver: lts-10.7
 pvp-bounds: both
