@@ -23,7 +23,7 @@ packages:
 
 extra-deps:
 - eve-0.1.7
-- vty-5.14
+- vty-5.25
 - recursion-schemes-5.0.2
 
 # Uncomment the following if you'd like to use a locally installed version
