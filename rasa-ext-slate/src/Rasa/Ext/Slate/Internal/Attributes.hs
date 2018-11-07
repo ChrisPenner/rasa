@@ -23,6 +23,7 @@ convertFlair ReverseVideo = V.SetTo V.reverseVideo
 convertFlair Blink =  V.SetTo V.blink
 convertFlair Dim = V.SetTo  V.dim
 convertFlair Bold = V.SetTo V.bold
+convertFlair Italic = V.SetTo V.italic
 convertFlair DefFlair = V.Default
 
 -- | Convert colors from "Rasa.Ext.Style" into 'V.Color's

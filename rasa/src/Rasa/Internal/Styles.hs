@@ -44,6 +44,7 @@ data Flair =
   | Blink
   | Dim
   | Bold
+  | Italic
   | DefFlair
   deriving (Show, Eq)
 
