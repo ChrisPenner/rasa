@@ -30,7 +30,7 @@ library
                      , mtl
                      , yi-rope
                      , lens
-                     , vty >= 5.14
+                     , vty >= 5.25
                      , rasa-ext-logger
   default-language:    Haskell2010
 

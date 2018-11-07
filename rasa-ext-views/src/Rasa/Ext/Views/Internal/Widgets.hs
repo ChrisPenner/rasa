@@ -38,10 +38,12 @@ data Widgets = Widgets
 
 makeLenses ''Widgets
 
+instance Semigroup Widgets where
+  (Widgets a b c d) <> (Widgets a' b' c' d') =
+    Widgets (a<>a') (b<>b') (c<>c') (d<>d')
+  
 instance Monoid Widgets where
   mempty = Widgets mempty mempty mempty mempty
-  (Widgets a b c d) `mappend` (Widgets a' b' c' d') =
-    Widgets (a<>a') (b<>b') (c<>c') (d<>d')
 
 class HasWidgets r where
   computeWidgets :: r -> App Widgets

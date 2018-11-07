@@ -5,6 +5,7 @@ import Rasa.Ext
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
 import Data.Bifunctor
+import Data.Text (Text, pack)
 
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
@@ -12,6 +13,7 @@ convertStyle (Style (fg', bg', flair')) = V.Attr
                                         (maybe V.KeepCurrent convertFlair flair')
                                         (maybe V.KeepCurrent convertColor fg')
                                         (maybe V.KeepCurrent convertColor bg')
+                                        (maybe V.KeepCurrent convertUrl (Just ""))
 
 -- | Convert flair from "Rasa.Ext.Style" into 'V.Style's
 convertFlair :: Flair -> V.MaybeDefault V.Style
@@ -35,6 +37,9 @@ convertColor Cyan = V.SetTo V.cyan
 convertColor White = V.SetTo V.white
 convertColor DefColor = V.Default
 
+convertUrl :: Text -> V.MaybeDefault Text
+convertUrl = V.SetTo
+
 -- | helper to reset to default attributes
 reset :: V.Image
 reset = V.text' V.defAttr ""
@@ -44,10 +49,13 @@ newtype AttrMonoid = AttrMonoid {
   getAttr :: V.Attr
 }
 
+instance Semigroup AttrMonoid where
+  AttrMonoid v <> AttrMonoid v' = AttrMonoid $ v <> v'
+
+
 -- | We want 'mempty' to be 'V.defAttr' instead of 'V.currentAttr' for use in 'combineSpans'.
 instance Monoid AttrMonoid where
   mempty = AttrMonoid V.defAttr
-  AttrMonoid v `mappend` AttrMonoid v' = AttrMonoid $ v `mappend` v'
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: RenderInfo -> V.Image

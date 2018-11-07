@@ -30,14 +30,16 @@ type Height = Int
 data RenderInfo =
   RenderInfo Y.YiString Styles
 
+instance Semigroup RenderInfo where
+  RenderInfo txtA stylesA <> RenderInfo txtB stylesB =
+    RenderInfo
+      (txtA <> txtB)
+      (mappend stylesA $ first (moveRange (sizeOf txtA)) <$> stylesB)
+
 -- | Appends to RenderInfo by appending the text and styles while preserving
 -- proper text/style alignment
 instance Monoid RenderInfo where
   mempty = RenderInfo mempty mempty
-  RenderInfo txtA stylesA `mappend` RenderInfo txtB stylesB =
-    RenderInfo
-      (txtA `mappend` txtB)
-      (mappend stylesA $ first (moveRange (sizeOf txtA)) <$> stylesB)
 
 -- | Represents how to render an entity
 class Renderable r where
