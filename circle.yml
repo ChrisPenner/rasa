@@ -7,10 +7,11 @@ dependencies:
     - wget -q -O- https://s3.amazonaws.com/download.fpcomplete.com/ubuntu/fpco.key | sudo apt-key add -
     - echo 'deb http://download.fpcomplete.com/ubuntu/precise stable main'|sudo tee /etc/apt/sources.list.d/fpco.list
     - stack upgrade
+    - stack setup
 
   override:
     # - stack --version
-    - stack --no-nix --install-ghc --no-terminal build --only-snapshot -j 1
+    - stack --no-nix --no-terminal build --only-snapshot -j 1
 
   cache_directories:
     - ~/.stack
