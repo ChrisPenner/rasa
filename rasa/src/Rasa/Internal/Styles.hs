@@ -67,7 +67,6 @@ instance Monoid Style where
 type Styles = [Span CrdRange Style]
 newtype StyleMap =
   StyleMap Styles
-  deriving (Show, Eq, Monoid)
   deriving (Show, Eq, Semigroup, Monoid)
 
 instance Default StyleMap where
