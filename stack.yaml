@@ -24,6 +24,10 @@ packages:
 extra-deps:
 - eve-0.1.7
 - vty-5.25
+- git: git@github.com:iilab/rasa-ext-syntax.git
+  commit: 20bbd32
+- git: git@github.com:iilab/rasa-ext-syntax-markdown.git
+  commit: 9e326a8
 - recursion-schemes-5.0.2
 
 # Uncomment the following if you'd like to use a locally installed version
