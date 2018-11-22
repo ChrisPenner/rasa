@@ -26,15 +26,20 @@ import Rasa.Ext
 import Rasa.Ext.Views
 import Rasa.Ext.Cmd
 
+import Rasa.Ext.Files.Internal.Events
+
+import qualified System.FilePath as FilePath
+import System.Directory
+
 -- | Stores filename
 data FileInfo =
-  FileInfo (Maybe String)
+  FileInfo (Maybe FilePath)
   deriving (Typeable, Show, Eq)
 
 instance Default FileInfo where
   def = FileInfo Nothing
 
-type Filename = String
+type Filename = FilePath
 
 -- | Stores File status; Clean means all changes are saved
 data FileStatus =
@@ -100,11 +105,11 @@ save = do
   setFileStatus Clean
 
 -- | Set the filename
-setFilename :: String -> BufAction ()
+setFilename :: FilePath -> BufAction ()
 setFilename fname = setBufExt $ FileInfo (Just fname)
 
 -- | Add a buffer for a file
-addFile :: String -> Y.YiString -> App ()
+addFile :: FilePath -> Y.YiString -> App ()
 addFile fname txt =
   do
     newBuf <- addBuffer txt
@@ -120,5 +125,8 @@ addFile fname txt =
 loadFiles :: App ()
 loadFiles = do
   fileNames <- liftIO getArgs
-  fileTexts <- liftIO $ traverse TIO.readFile fileNames
-  mapM_ (uncurry addFile) $ zip fileNames (Y.fromText <$> fileTexts)
+  -- Silently filter out invalid filenames or unexisting files for now
+  validFileNames <- return $ filter FilePath.isValid fileNames
+  existingFileNames <- liftIO $ filterM doesFileExist validFileNames
+  fileTexts <- liftIO $ traverse TIO.readFile existingFileNames
+  mapM_ (uncurry addFile) $ zip existingFileNames (Y.fromText <$> fileTexts)

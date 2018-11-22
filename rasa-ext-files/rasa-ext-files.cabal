@@ -28,6 +28,9 @@ library
                      , text
                      , mtl
                      , yi-rope
+                     , filepath
+                     , directory
+
   default-language:    Haskell2010
 
   default-extensions:
