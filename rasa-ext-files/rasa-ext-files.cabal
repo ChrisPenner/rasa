@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:
                        Rasa.Ext.Files
+                       Rasa.Ext.Files.Internal.Events
 
   build-depends:       base >= 4.8 && < 5
                      , rasa

@@ -5,6 +5,10 @@
 module Rasa.Ext.Files
   ( files
   , save
+  -- Events
+  , onFileLoaded
+  , dispatchFileLoaded
+  , FileLoaded(..), Extension(..)
   ) where
 
 import qualified Data.Text.IO as TIO
@@ -101,9 +105,16 @@ setFilename fname = setBufExt $ FileInfo (Just fname)
 
 -- | Add a buffer for a file
 addFile :: String -> Y.YiString -> App ()
-addFile fname txt = do
-  newBuf <- addBuffer txt
-  bufDo_ newBuf (setFilename fname)
+addFile fname txt =
+  do
+    newBuf <- addBuffer txt
+    dispatchFileLoaded $ extOf fname newBuf
+    bufDo_ newBuf (setFilename fname)
+  where
+    extOf f buf = FileLoaded (safeExt f) buf
+    safeExt f = case FilePath.takeExtensions f of
+      ext -> Extension $ ext
+      "" -> UnknownExtension
 
 -- | Load files from command line
 loadFiles :: App ()
