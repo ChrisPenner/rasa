@@ -9,6 +9,8 @@ import Rasa.Ext.Files
 import Rasa.Ext.Logger
 import Rasa.Ext.Cursors
 import Rasa.Ext.Slate
+import Rasa.Ext.Syntax
+import Rasa.Ext.Syntax.Markdown
 
 -- import Control.Monad
 -- import Control.Monad.Trans
@@ -26,4 +28,5 @@ main = rasa $ do
   cursors
   logger
   slate
+  syntax [markdown [Extension ".md"]]
   afterInit $ addBuffer "This is a buffer to get you started!\nYou can also pass command line args to rasa"

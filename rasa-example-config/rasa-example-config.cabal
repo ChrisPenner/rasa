@@ -24,6 +24,8 @@ executable rasa
                      , rasa-ext-logger
                      , rasa-ext-files
                      , rasa-ext-slate
+                     , rasa-ext-syntax
+                     , rasa-ext-syntax-markdown
                      , lens
                      , data-default
                      , yi-rope
