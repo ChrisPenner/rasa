@@ -59,11 +59,18 @@ instance Monoid AttrMonoid where
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: RenderInfo -> V.Image
-applyAttrs (RenderInfo txt styles) = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines txt)
-  where mergedSpans = second getAttr <$> combineSpans (fmap AttrMonoid <$> atts)
-        -- Newlines aren't rendered; so we replace them with spaces so they're selectable
-        padSpaces = (`Y.append` "  ")
-        atts = second convertStyle <$> styles
+applyAttrs (RenderInfo txt styles) =
+  textAndStylesToImage spans' (padSpaces <$> (Y.lines (padLastRow txt)))
+    where
+      atts = second convertStyle <$> styles
+      combined = combineSpans txt (fmap AttrMonoid <$> atts)
+      mergedSpans = second getAttr <$> combined
+      spans' = over (mapped . _1) (view (asCoord txt)) mergedSpans
+      -- Newlines aren't rendered; so we replace them with spaces so they're selectable
+      padSpaces = (`Y.append` " ")
+      -- If LastRow contains a \n we add a extra line, since Y.lines doesn't return one
+      padLastRow t | Y.last t == Just '\n' = Y.append t " "
+                   | otherwise = t
 
 -- | Makes and image from text and styles
 textAndStylesToImage :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image
