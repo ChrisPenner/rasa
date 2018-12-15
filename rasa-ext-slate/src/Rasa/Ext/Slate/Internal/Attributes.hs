@@ -4,6 +4,8 @@ module Rasa.Ext.Slate.Internal.Attributes where
 import Rasa.Ext
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
+
+import Data.Default
 import Data.Bifunctor
 import Data.Text (Text, pack)
 
@@ -12,10 +14,10 @@ import Control.Lens
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
 convertStyle (Style (fg', bg', flair')) = V.Attr
-                                        (maybe V.Default convertFlair flair')
-                                        (maybe V.Default convertColor fg')
-                                        (maybe V.Default convertColor bg')
-                                        (maybe V.Default convertUrl (Just ""))
+                                        (maybe V.KeepCurrent convertFlair flair')
+                                        (maybe V.KeepCurrent convertColor fg')
+                                        (maybe V.KeepCurrent convertColor bg')
+                                        (maybe V.KeepCurrent convertUrl (Just ""))
 
 -- | Convert flair from "Rasa.Ext.Style" into 'V.Style's
 convertFlair :: Flair -> V.MaybeDefault V.Style
@@ -54,18 +56,23 @@ newtype AttrMonoid = AttrMonoid { getAttr :: V.Attr }
 instance Semigroup AttrMonoid where
   AttrMonoid v <> AttrMonoid v' = AttrMonoid $ v <> v'
 
-
--- | We want 'mempty' to be 'V.defAttr' instead of 'V.currentAttr' for use in 'combineSpans'.
+-- | We want 'mempty' to be 'V.currentAttr' for consistence with the Style Monoid.
 instance Monoid AttrMonoid where
-  mempty = AttrMonoid V.defAttr
+  mempty = AttrMonoid V.currentAttr
+
+-- | We want 'def' to be 'V.defAttr'. We use this to create a base default style.
+instance Default AttrMonoid where
+  def = AttrMonoid V.defAttr
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: RenderInfo -> V.Image
 applyAttrs (RenderInfo txt styles) =
   textAndStylesToImage spans' (padSpaces <$> (Y.lines (padLastRow txt)))
     where
-      atts = second convertStyle <$> styles
-      combined = combineSpans txt (fmap AttrMonoid <$> atts)
+      -- Add def style as base style covering the whole text
+      base = [Span (Range (toCoord txt 0) (toCoord txt (Y.length txt))) def]
+      atts = second convertStyle <$> ( base <> styles )
+      combined = trace "combined: " $ combineSpans txt (fmap AttrMonoid <$> atts)
       mergedSpans = second getAttr <$> combined
       spans' = over (mapped . _1) (view (asCoord txt)) mergedSpans
       -- Newlines aren't rendered; so we replace them with spaces so they're selectable
