@@ -257,8 +257,8 @@ afterC c@(Coord row col) = lens getter setter
 -- | A lens over text which is encompassed by a 'Range'
 range :: CrdRange -> Lens' Y.YiString Y.YiString
 range (Range start end) = lens getter setter
-  where getter = view (beforeC end . afterC start)
+  where getter = view (beforeC (end + 1) . afterC start)
         setter old new = result
           where
-            setBefore = old & beforeC end .~ new
+            setBefore = old & beforeC (end + 1) .~ new
             result = old & afterC start .~ setBefore
