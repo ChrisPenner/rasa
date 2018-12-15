@@ -96,6 +96,7 @@ test-suite rasa-test
                      , quickcheck-instances
                      , QuickCheck
                      , containers
+                     , data-default
                      , IntervalMap
 
   other-modules:       ArbitraryInstances
