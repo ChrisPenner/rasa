@@ -3,7 +3,9 @@
   , OverloadedStrings
   , DeriveFunctor
   , ScopedTypeVariables
-  , TemplateHaskell 
+  , TemplateHaskell
+  , FlexibleInstances
+  , MultiParamTypeClasses
 #-}
 module Rasa.Internal.Range
   ( Coord
@@ -13,11 +15,12 @@ module Rasa.Internal.Range
   , overBoth
   , coordRow
   , coordCol
-  , Offset(..)
+  , Pos
   , asCoord
   , clampCoord
   , clampRange
   , Range(..)
+  , PosRange
   , CrdRange
   , range
   , rStart
@@ -33,6 +36,10 @@ module Rasa.Internal.Range
   , clamp
   , beforeC
   , afterC
+  , posSpans
+  , fromSpanList
+  , insertSpan
+  , chop
   ) where
 
 import Rasa.Internal.Text
@@ -44,6 +51,12 @@ import Data.Bifunctor
 import Data.Biapplicative
 import Data.Bitraversable
 import Data.Bifoldable
+
+
+-- Look into http://hackage.haskell.org/package/fingertree-0.1.4.1/docs/Data-IntervalMap-FingerTree.html
+import Data.IntervalMap.Generic.Interval (Interval(..), lowerBound, upperBound, rightClosed, overlaps, isEmpty)
+import Data.IntervalMap.Generic.Strict (IntervalMap)
+import qualified Data.IntervalMap as IM
 
 import qualified Yi.Rope as Y
 
@@ -188,43 +201,6 @@ clampCoord txt (Coord row col) =
 clampRange :: Y.YiString -> CrdRange -> CrdRange
 clampRange txt = overBoth (clampCoord txt)
 
--- | A Helper only used when combining many spans.
-data Marker
-  = Start
-  | End
-  deriving (Show, Eq)
-
-type ID = Int
--- | Combines a list of spans containing some monoidal data into a list of offsets with
--- with the data that applies from each Offset forwards.
-combineSpans
-  :: forall a.
-     Monoid a
-    => [Span CrdRange a] -> [(Coord, a)]
-combineSpans spans = combiner [] $ sortOn (view _3) (splitStartEnd idSpans)
-  where
-    idSpans :: [(ID, Span CrdRange a)]
-    idSpans = zip [1 ..] spans
-
-    splitStartEnd :: [(ID, Span CrdRange a)] -> [(Marker, ID, Coord, a)]
-    splitStartEnd [] = []
-    splitStartEnd ((i, Span (Range s e) d):rest) =
-      (Start, i, s, d) : (End, i, e, d) : splitStartEnd rest
-
-    withoutId :: ID -> [(ID, a)] -> [(ID, a)]
-    withoutId i = filter ((/= i) . fst)
-
-    combiner :: [(ID, a)] -> [(Marker, ID, Coord, a)] -> [(Coord, a)]
-    combiner _ [] = []
-    combiner cur ((Start, i, crd, mData):rest) =
-      let dataSum = foldMap snd cur <> mData
-          newData = (i, mData) : cur
-      in (crd, dataSum) : combiner newData rest
-    combiner cur ((End, i, crd, _):rest) =
-      let dataSum = foldMap snd newData
-          newData = withoutId i cur
-      in (crd, dataSum) : combiner newData rest
-
 -- | @clamp min max val@ restricts val to be within min and max (inclusive)
 clamp :: Int -> Int -> Int -> Int
 clamp mn mx n
@@ -263,3 +239,147 @@ range (Range start end) = lens getter setter
           where
             setBefore = old & beforeC (end + 1) .~ new
             result = old & afterC start .~ setBefore
+
+instance Ord e => Interval (e, e) e where
+    lowerBound (a,_) = a
+    upperBound (_,b) = b
+    rightClosed _ = False
+
+type Spans a = IntervalMap PosRange a
+
+-- | Combines a list of spans containing some monoidal data into a list of
+-- | positions with the data that applies from each Pos forwards.
+combineSpans :: (Monoid a) => Y.YiString -> [Span CrdRange a] -> [(Pos,a)]
+combineSpans txt spans = concat [ steps spans' , [final spans'] ]
+  where
+    spans' = fromSpanList (map (posSpans txt) spans)
+
+posSpans :: Y.YiString -> Span CrdRange a -> Span PosRange a
+posSpans txt (Span (Range s e) a) = Span (toPos txt s, (toPos txt e) + 1) a
+
+final :: Monoid a => Spans a -> (Pos, a)
+final s
+  | null s = (0, mempty)
+  | otherwise = case IM.findMax s of
+    (i,_) -> (upperBound i,mempty)
+
+steps :: Spans a -> [(Pos, a)]
+steps s = flip map (IM.toList s) $ \((s,_),a) -> (s,a)
+
+--     -- A = aa
+--     -- B =  b
+--     --     ---
+--     --     aa.
+--     --      b
+--
+--     -- A = aaa
+--     -- B =  b
+--     --     ---
+--     --     aaa.
+--     --      b
+
+fromSpanList :: (Monoid a) => [Span PosRange a] -> IntervalMap PosRange a
+fromSpanList xs = foldl' ins IM.empty xs
+  where
+    ins :: (Monoid a) => IntervalMap PosRange a -> Span PosRange a -> IntervalMap PosRange a
+    ins t (Span k x)
+      | isEmpty k = t
+      | otherwise = insertSpan k x t
+
+-- Seems that this is introducing a new invariant (i.e no overlapping keys)
+-- If that was enforced by the underlying data structure, it
+-- would surely have better asymptotics... And maybe some commutativity law with
+-- steps? i.e. steps (combineSpans [a]) = someOperation map steps [a]
+
+insertSpan :: (Monoid v) => PosRange -> v -> IntervalMap PosRange v -> IntervalMap PosRange v
+insertSpan key value (mp :: IntervalMap PosRange v)
+  | null mp = IM.singleton key value
+  | otherwise = case (IM.splitIntersecting mp key) of
+    -- (_,empty:: IntervalMap PosRange v ,_) -> IM.insert key value mp
+    (below, intersecting :: IntervalMap PosRange v , above) -> go intersecting
+      where
+        go i | null i    = IM.unions [ below, IM.singleton key value, above]
+             | otherwise = IM.unions [ below
+                                     , combine key value i
+                                     , above ]
+        -- Surely not the most efficient algorithm but sufficiently easy to reason about
+        --  - split all values in the map with the upper and lower bounds of inserted value
+        --  - split inserted value with all the intervals in the intersecting map
+        --  - unionWith with <>
+        combine :: (Semigroup v) => PosRange -> v -> IntervalMap PosRange v -> IntervalMap PosRange v
+        combine key value mp = IM.unionWith
+          (<>)
+          ((IM.foldrWithKey (chop [key]) IM.empty mp) :: IntervalMap PosRange v)
+          ((IM.foldrWithKey (chop (IM.keys mp)) IM.empty (IM.singleton key value)) :: IntervalMap PosRange v)
+        --   |. .|   |. .|  |.|
+        --  a a a a   b b  c c
+        --  a|a a|a   b b  c|c
+
+        -- foldrWithKey :: (k -> v -> a -> a) -> a -> IntervalMap k v -> a
+chop :: (Monoid v) => [PosRange] -> PosRange -> v -> IntervalMap PosRange v -> IntervalMap PosRange v
+chop ks key val acc = IM.union acc $ IM.unions $ concat splits
+  where
+    -- splits :: [[IntervalMap PosRange v]]
+    splits = flip map ks $ \k ->
+     flip map (splitIntervals k key) $ \j -> case overlaps j key of
+         True -> IM.singleton j val
+         False -> IM.empty
+
+insertMultipleKeys :: [PosRange] -> v -> IntervalMap PosRange v -> IntervalMap PosRange v
+insertMultipleKeys [] _ m = m
+insertMultipleKeys (k:ks) v m = IM.insert k v (insertMultipleKeys ks v m)
+
+splitIntervals :: PosRange -> PosRange -> [PosRange]
+splitIntervals a b | a `overlaps` b = splitOverlappingIntervals a b
+                   | otherwise      = [a,b]
+
+-- This can surely be written in one line.
+splitOverlappingIntervals :: PosRange -> PosRange -> [PosRange]
+splitOverlappingIntervals a b = case (compare a b, compareUpperBounds a b) of
+  -- aaaa
+  --  bbbb
+  (LT, LT) -> [ (lowerBound a, lowerBound b)
+              , (lowerBound b, upperBound a)
+              , (upperBound a, upperBound b)
+              ]
+  -- aaaa
+  --  bbb
+  (LT, EQ) -> [ (lowerBound a, lowerBound b)
+              , (lowerBound b, upperBound a)
+              ]
+  -- aaaa
+  --  bb
+  (LT, GT) -> [ (lowerBound a, lowerBound b)
+              , (lowerBound b, upperBound b)
+              , (upperBound b, upperBound a)
+              ]
+  -- aa
+  -- bbb
+  (EQ, LT) -> [ (lowerBound a, upperBound a)
+              , (upperBound a, upperBound b)
+              ]
+  -- aa
+  -- bb
+  (EQ, EQ ) -> [ a ]
+  -- aaa
+  -- bb
+  (EQ, GT) -> [ (lowerBound a, lowerBound b)
+              , (lowerBound b, upperBound a)
+              ]
+  --  aaa
+  -- bbbbb
+  (GT, LT) -> [ (lowerBound b, lowerBound a)
+              , (lowerBound a, upperBound a)
+              , (upperBound a, upperBound b)
+              ]
+  --  aaa
+  -- bbbb
+  (GT, EQ) -> [ (lowerBound b, lowerBound a)
+              , (lowerBound a, upperBound a)
+              ]
+  --  aaaa
+  -- bbbb
+  (GT, GT) -> [ (lowerBound b, lowerBound a)
+              , (lowerBound a, upperBound b)
+              , (upperBound b, upperBound a)
+              ]
