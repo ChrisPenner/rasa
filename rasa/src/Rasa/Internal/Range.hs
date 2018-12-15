@@ -245,6 +245,12 @@ instance Ord e => Interval (e, e) e where
     upperBound (_,b) = b
     rightClosed _ = False
 
+-- Spans seem like they're more than a semigroup as it should be possible
+-- to remove Spans from Spans. Like a Set, but slightly more because of the
+-- intervals, which should allow to remove " a " from "aaa" to give "a a".
+-- Possibly we want to allow to remove "aaa" from "a" as well to give "   ".
+-- A bit like if there was a set for each given Coord.
+
 type Spans a = IntervalMap PosRange a
 
 -- | Combines a list of spans containing some monoidal data into a list of
