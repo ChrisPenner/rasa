@@ -48,6 +48,7 @@ import Rasa.Internal.Text
 import Control.Lens
 
 import Data.Monoid
+import Data.Default
 import Data.List
 import Data.Bifunctor
 import Data.Biapplicative
