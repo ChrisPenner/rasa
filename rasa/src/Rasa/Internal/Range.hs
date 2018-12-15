@@ -47,7 +47,10 @@ import Data.Bifoldable
 
 import qualified Yi.Rope as Y
 
--- | This represents a range between two coordinates ('Coord')
+-- | This represents a position in the text
+type Pos = Int
+
+-- | This represents a range between two positions ('Pos')
 data Range a b = Range
   { _rStart :: a
   , _rEnd :: b
@@ -72,6 +75,8 @@ instance (Ord a, Ord b) => Ord (Range a b) where
     | otherwise = end <= end'
 
 -- | (Coord Row Column) represents a char in a block of text. (zero indexed)
+-- | A type alias to 'Range'' which specializes the types to 'Pos's.
+type PosRange = (Pos, Pos)
 -- e.g. Coord 0 0 is the first character in the text,
 -- Coord 2 1 is the second character of the third row
 data Coord' a b = Coord 
@@ -114,10 +119,6 @@ instance (Ord a, Ord b) => Ord (Coord' a b) where
     | a > a' = False
     | otherwise = b <= b'
 
--- | An 'Offset' represents an exact position in a file as a number of characters from the start.
-newtype Offset =
-  Offset Int
-  deriving (Show, Eq)
 
 -- | A span which maps a piece of Monoidal data over a range.
 data Span a b =
