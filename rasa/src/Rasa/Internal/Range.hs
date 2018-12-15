@@ -255,19 +255,13 @@ type Spans a = IntervalMap PosRange a
 
 -- | Combines a list of spans containing some monoidal data into a list of
 -- | positions with the data that applies from each Pos forwards.
-combineSpans :: (Monoid a) => Y.YiString -> [Span CrdRange a] -> [(Pos,a)]
-combineSpans txt spans = concat [ steps spans' , [final spans'] ]
+combineSpans :: (Monoid a, Default a) => Y.YiString -> [Span CrdRange a] -> [(Pos,a)]
+combineSpans txt spans = concat [ steps spans' ]
   where
     spans' = fromSpanList (map (posSpans txt) spans)
 
 posSpans :: Y.YiString -> Span CrdRange a -> Span PosRange a
 posSpans txt (Span (Range s e) a) = Span (toPos txt s, (toPos txt e) + 1) a
-
-final :: Monoid a => Spans a -> (Pos, a)
-final s
-  | null s = (0, mempty)
-  | otherwise = case IM.findMax s of
-    (i,_) -> (upperBound i,mempty)
 
 steps :: Spans a -> [(Pos, a)]
 steps s = flip map (IM.toList s) $ \((s,_),a) -> (s,a)
