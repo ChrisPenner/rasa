@@ -46,9 +46,8 @@ reset :: V.Image
 reset = V.text' V.defAttr ""
 
 -- | A newtype to define a (not necessarily law abiding) Monoid for 'V.Attr' which acts as we like.
-newtype AttrMonoid = AttrMonoid {
-  getAttr :: V.Attr
-}
+newtype AttrMonoid = AttrMonoid { getAttr :: V.Attr }
+  deriving (Show)
 
 instance Semigroup AttrMonoid where
   AttrMonoid v <> AttrMonoid v' = AttrMonoid $ v <> v'
