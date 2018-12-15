@@ -179,8 +179,9 @@ clampCoord :: Y.YiString -> Coord -> Coord
 clampCoord txt (Coord row col) =
   Coord (clamp 0 maxRow row) (clamp 0 maxColumn col)
   where
-    maxRow = Y.countNewLines txt
-    selectedRow = fst . Y.splitAtLine 1 . snd . Y.splitAtLine row $ txt
+    l = Y.lines txt
+    maxRow = length l
+    selectedRow = maybe Y.empty id (l ^? element row)
     maxColumn = Y.length selectedRow
 
 -- | This will restrict a given 'Range' to a valid one which lies within the given text.
