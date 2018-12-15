@@ -104,9 +104,10 @@ module Rasa.Ext
    -- * Ranges
   , Range(..)
   , CrdRange
+  , PosRange
   , Coord
   , Coord'(..)
-  , Offset(..)
+  , Pos(..)
   , Span(..)
   , overRow
   , overCol
