@@ -72,7 +72,7 @@ applyAttrs (RenderInfo txt styles) =
       -- Add def style as base style covering the whole text
       base = [Span (Range (toCoord txt 0) (toCoord txt (Y.length txt))) def]
       atts = second convertStyle <$> ( base <> styles )
-      combined = trace "combined: " $ combineSpans txt (fmap AttrMonoid <$> atts)
+      combined = combineSpans txt (fmap AttrMonoid <$> atts)
       mergedSpans = second getAttr <$> combined
       spans' = over (mapped . _1) (view (asCoord txt)) mergedSpans
       -- Newlines aren't rendered; so we replace them with spaces so they're selectable
