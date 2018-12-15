@@ -106,6 +106,16 @@ type CrdRange = Range Coord Coord
 instance Bifunctor Coord' where
   bimap f g (Coord a b) = Coord (f a) (g b)
 
+instance Biapplicative Coord' where
+  bipure = Coord
+  Coord f g <<*>> Coord a b = Coord (f a) (g b)
+
+instance (Ord a, Ord b) => Ord (Coord' a b) where
+  Coord a b <= Coord a' b'
+    | a < a' = True
+    | a > a' = False
+    | otherwise = b <= b'
+
 -- | Applies a function over the row of a 'Coord'
 overRow :: (Int -> Int) -> Coord -> Coord
 overRow = first
@@ -117,19 +127,6 @@ overCol = second
 -- | Applies a function over both functors in any 'Bifunctor'.
 overBoth :: Bifunctor f => (a -> b) -> f a a -> f b b
 overBoth f = bimap f f
-
-instance Biapplicative Coord' where
-  bipure = Coord
-  Coord f g <<*>> Coord a b = Coord (f a) (g b)
-
-instance (Ord a, Ord b) => Ord (Coord' a b) where
-  Coord a b <= Coord a' b'
-    | a < a' = True
-    | a > a' = False
-    | otherwise = b <= b'
-
-
-
 
 -- | Moves a 'Range' by a given 'Coord'
 -- It may be unintuitive, but for (Coord row col) a given range will be moved down by row and to the right by col.
@@ -156,22 +153,26 @@ instance (Num a, Num b) => Num (Coord' a b) where
   fromInteger i = Coord 0 (fromInteger i)
   signum (Coord row col) = Coord (signum row) (signum col)
 
--- | Given the text you're operating over, creates an iso from an 'Offset' to a 'Coord'.
-asCoord :: Y.YiString -> Iso' Offset Coord
-asCoord txt = iso (toCoord txt) (toOffset txt)
 
--- | Given the text you're operating over, converts a 'Coord' to an 'Offset'.
-toOffset :: Y.YiString -> Coord -> Offset
-toOffset txt (Coord row col) = Offset $ lenRows + col
+-- Is there really an Iso given that some Coord's can be outside of a
+-- text block?
+
+-- | Given the text you're operating over, creates an iso from an 'Pos' to a 'Coord'.
+asCoord :: Y.YiString -> Iso' Pos Coord
+asCoord txt = iso (toCoord txt) (toPos txt)
+
+-- | Given the text you're operating over, converts a 'Coord' to an 'Pos'.
+toPos :: Y.YiString -> Coord -> Pos
+toPos txt (Coord row col) = lenRows + col
   where
     lenRows = Y.length . Y.concat . take row . Y.lines' $ txt
 
--- | Given the text you're operating over, converts an 'Offset' to a 'Coord'.
-toCoord :: Y.YiString -> Offset -> Coord
-toCoord txt (Offset offset) = Coord numRows numColumns
+-- | Given the text you're operating over, converts an 'Pos' to a 'Coord'.
+toCoord :: Y.YiString -> Pos -> Coord
+toCoord txt pos = Coord numRows numColumns
   where
-    numRows = Y.countNewLines . Y.take offset $ txt
-    numColumns = (offset -) . Y.length . Y.concat . take numRows . Y.lines' $ txt
+    numRows = Y.countNewLines . Y.take pos $ txt
+    numColumns = (pos -) . Y.length . Y.concat . take numRows . Y.lines' $ txt
 
 -- | This will restrict a given 'Coord' to a valid one which lies within the given text.
 clampCoord :: Y.YiString -> Coord -> Coord
