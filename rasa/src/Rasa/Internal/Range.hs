@@ -74,19 +74,28 @@ instance (Ord a, Ord b) => Ord (Range a b) where
     | end == end' = start <= start'
     | otherwise = end <= end'
 
--- | (Coord Row Column) represents a char in a block of text. (zero indexed)
 -- | A type alias to 'Range'' which specializes the types to 'Pos's.
 type PosRange = (Pos, Pos)
+
+-- | A span which maps a piece of Monoidal data over a range.
+data Span a b =
+  Span a b
+  deriving (Show, Eq, Functor)
+
+instance Bifunctor Span where
+  bimap f g (Span a b) = Span (f a) (g b)
+
+-- | (Coord Row Column) represents a coordinate on screen. (zero indexed)
 -- e.g. Coord 0 0 is the first character in the text,
 -- Coord 2 1 is the second character of the third row
-data Coord' a b = Coord 
+data Coord' a b = Coord
   { _coordRow::a
   , _coordCol::b
   } deriving (Eq)
 makeLenses ''Coord'
 
 instance (Show a, Show b) => Show (Coord' a b) where
-  show (Coord a b) = "(Coord (row " ++ show a ++ ") (col " ++ show b ++ "))"
+  show (Coord a b) = "(Coord " ++ show a ++ " " ++ show b ++ ")"
 
 -- | A type alias to 'Coord'' which specializes the types to integers.
 type Coord = Coord' Int Int
@@ -120,13 +129,7 @@ instance (Ord a, Ord b) => Ord (Coord' a b) where
     | otherwise = b <= b'
 
 
--- | A span which maps a piece of Monoidal data over a range.
-data Span a b =
-  Span a b
-  deriving (Show, Eq, Functor)
 
-instance Bifunctor Span where
-  bimap f g (Span a b) = Span (f a) (g b)
 
 -- | Moves a 'Range' by a given 'Coord'
 -- It may be unintuitive, but for (Coord row col) a given range will be moved down by row and to the right by col.
