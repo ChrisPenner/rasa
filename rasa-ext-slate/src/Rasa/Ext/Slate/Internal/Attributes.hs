@@ -7,6 +7,8 @@ import qualified Graphics.Vty as V
 import Data.Bifunctor
 import Data.Text (Text, pack)
 
+import Control.Lens
+
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
 convertStyle (Style (fg', bg', flair')) = V.Attr
