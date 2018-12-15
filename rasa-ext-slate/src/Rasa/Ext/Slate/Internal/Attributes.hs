@@ -10,10 +10,10 @@ import Data.Text (Text, pack)
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
 convertStyle (Style (fg', bg', flair')) = V.Attr
-                                        (maybe V.KeepCurrent convertFlair flair')
-                                        (maybe V.KeepCurrent convertColor fg')
-                                        (maybe V.KeepCurrent convertColor bg')
-                                        (maybe V.KeepCurrent convertUrl (Just ""))
+                                        (maybe V.Default convertFlair flair')
+                                        (maybe V.Default convertColor fg')
+                                        (maybe V.Default convertColor bg')
+                                        (maybe V.Default convertUrl (Just ""))
 
 -- | Convert flair from "Rasa.Ext.Style" into 'V.Style's
 convertFlair :: Flair -> V.MaybeDefault V.Style
