@@ -17,6 +17,8 @@ module Rasa.Internal.Range
   , coordCol
   , Pos
   , asCoord
+  , toPos
+  , toCoord
   , clampCoord
   , clampRange
   , Range(..)

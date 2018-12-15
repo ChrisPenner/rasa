@@ -116,6 +116,8 @@ module Rasa.Ext
   , overBoth
   , combineSpans
   , asCoord
+  , toPos
+  , toCoord
   , clampCoord
   , clampRange
   , rStart
