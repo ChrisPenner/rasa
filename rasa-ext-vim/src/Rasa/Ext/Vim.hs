@@ -131,7 +131,7 @@ normal [KDown []] = runApp focusViewBelow
 
 normal [Keypress 'G' []] = do
   txt <- getText
-  setRanges [Range ((Offset $ Y.length txt - 1)^.asCoord txt) ((Offset $ Y.length txt)^.asCoord txt)]
+  setRanges [Range ((Y.length txt - 1)^.asCoord txt) ((Y.length txt)^.asCoord txt)]
 
 normal [Keypress 'o' []] = endOfLine >> insertText "\n" >> moveRangesByC (Coord 1 0) >> setMode Insert
 normal [Keypress 'O' []] = startOfLine >> insertText "\n" >> setMode Insert
