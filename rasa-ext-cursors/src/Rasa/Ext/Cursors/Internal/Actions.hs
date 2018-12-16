@@ -28,9 +28,9 @@ moveSameLineRangesBy (Range _ (Coord endRow endCol)) amt = do
 
 -- | Delete the text of all ranges in a buffer
 delete :: BufAction ()
-delete = rangeDo_ $ \r -> do
-  deleteRange r
-  moveSameLineRangesBy r (negate $ sizeOfR r)
+delete = rangeDo_ $ \(Range s e) -> do
+  deleteRange (Range s (e+1))
+  moveSameLineRangesBy (Range s (e+1)) (negate $ sizeOfR (Range s (e+1)))
 
 -- | Insert text at the beginning of all ranges in the buffer.
 insertText :: Y.YiString -> BufAction ()
