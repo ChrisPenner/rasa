@@ -4,8 +4,12 @@ module Rasa.Ext.Slate.Internal.Attributes where
 import Rasa.Ext
 import qualified Yi.Rope as Y
 import qualified Graphics.Vty as V
+
+import Data.Default
 import Data.Bifunctor
 import Data.Text (Text, pack)
+
+import Control.Lens
 
 -- | Convert style from "Rasa.Ext.Style" into 'V.Attr's
 convertStyle :: Style -> V.Attr
@@ -46,25 +50,36 @@ reset :: V.Image
 reset = V.text' V.defAttr ""
 
 -- | A newtype to define a (not necessarily law abiding) Monoid for 'V.Attr' which acts as we like.
-newtype AttrMonoid = AttrMonoid {
-  getAttr :: V.Attr
-}
+newtype AttrMonoid = AttrMonoid { getAttr :: V.Attr }
+  deriving (Show)
 
 instance Semigroup AttrMonoid where
   AttrMonoid v <> AttrMonoid v' = AttrMonoid $ v <> v'
 
-
--- | We want 'mempty' to be 'V.defAttr' instead of 'V.currentAttr' for use in 'combineSpans'.
+-- | We want 'mempty' to be 'V.currentAttr' for consistence with the Style Monoid.
 instance Monoid AttrMonoid where
-  mempty = AttrMonoid V.defAttr
+  mempty = AttrMonoid V.currentAttr
+
+-- | We want 'def' to be 'V.defAttr'. We use this to create a base default style.
+instance Default AttrMonoid where
+  def = AttrMonoid V.defAttr
 
 -- | Apply a list of styles to the given text, resulting in a 'V.Image'.
 applyAttrs :: RenderInfo -> V.Image
-applyAttrs (RenderInfo txt styles) = textAndStylesToImage mergedSpans (padSpaces <$> Y.lines txt)
-  where mergedSpans = second getAttr <$> combineSpans (fmap AttrMonoid <$> atts)
-        -- Newlines aren't rendered; so we replace them with spaces so they're selectable
-        padSpaces = (`Y.append` "  ")
-        atts = second convertStyle <$> styles
+applyAttrs (RenderInfo txt styles) =
+  textAndStylesToImage spans' (padSpaces <$> (Y.lines (padLastRow txt)))
+    where
+      -- Add def style as base style covering the whole text
+      base = [Span (Range (toCoord txt 0) (toCoord txt (Y.length txt))) def]
+      atts = second convertStyle <$> ( base <> styles )
+      combined = combineSpans txt (fmap AttrMonoid <$> atts)
+      mergedSpans = second getAttr <$> combined
+      spans' = over (mapped . _1) (view (asCoord txt)) mergedSpans
+      -- Newlines aren't rendered; so we replace them with spaces so they're selectable
+      padSpaces = (`Y.append` " ")
+      -- If LastRow contains a \n we add a extra line, since Y.lines doesn't return one
+      padLastRow t | Y.last t == Just '\n' = Y.append t " "
+                   | otherwise = t
 
 -- | Makes and image from text and styles
 textAndStylesToImage :: [(Coord, V.Attr)] -> [Y.YiString] -> V.Image

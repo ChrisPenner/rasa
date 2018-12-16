@@ -27,20 +27,20 @@ data Cursors =
   deriving (Typeable, Show)
 
 instance Default Cursors where
-  def = Cursors [Range (Coord 0 0) (Coord 0 1)]
+  def = Cursors [Range (Coord 0 0) (Coord 0 0)]
 
 -- | Adjusts input ranges to contain at least one character.
-ensureSize :: CrdRange -> CrdRange
-ensureSize r@(Range start end)
-  | start == end =
-    if start^.coordCol == 0 then r & rEnd %~ moveCursorByN 1
-                          else r & rStart %~ moveCursorByN (-1)
-  | otherwise = r
+-- ensureSize :: CrdRange -> CrdRange
+-- ensureSize r@(Range start end)
+--   | start == end =
+--     if start^.coordCol == 0 then r & rEnd %~ moveCursorByN 1
+--                           else r & rStart %~ moveCursorByN (-1)
+--   | otherwise = r
 
 -- | Sorts Ranges, removes duplicates, ensures they contain at least one character
 -- and restricts them to fit within the given text.
 cleanRanges :: Y.YiString -> [CrdRange] -> [CrdRange]
-cleanRanges txt = fmap (ensureSize . clampRange txt) . reverse . nub . sort
+cleanRanges txt = fmap (clampRange txt) . reverse . nub . sort
 
 -- | Get the list of ranges
 getRanges :: BufAction [CrdRange]

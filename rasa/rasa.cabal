@@ -77,6 +77,8 @@ library
                      , transformers
                      , yi-rope
                      , hspec
+                     , IntervalMap
+
 
   default-language:    Haskell2010
 
@@ -93,6 +95,9 @@ test-suite rasa-test
                      , text
                      , quickcheck-instances
                      , QuickCheck
+                     , containers
+                     , data-default
+                     , IntervalMap
 
   other-modules:       ArbitraryInstances
                      , RasaSpec
