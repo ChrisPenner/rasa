@@ -1,12 +1,12 @@
 flags: {}
-resolver: lts-12.16
+resolver: lts-16.17
 extra-package-dbs: []
 
-nix:
-  enable: true
-  packages:
-    - libcxx
-    - icu
+# nix:
+#   enable: true
+#   packages:
+#     - libcxx
+#     - icu
 
 packages:
 - ./rasa
@@ -22,16 +22,13 @@ packages:
 # - ../eve
 
 extra-deps:
-- eve-0.1.7
-- vty-5.25
-- recursion-schemes-5.0.2
+- eve-0.1.9.0
 
 # Uncomment the following if you'd like to use a locally installed version
 # of icu4c INSTEAD of relying on nix.
-#
-# extra-lib-dirs:
-# - /usr/local/opt/icu4c/lib
-# extra-include-dirs:
-# - /usr/local/opt/icu4c/include
+extra-lib-dirs:
+- /usr/local/opt/icu4c/lib
+extra-include-dirs:
+- /usr/local/opt/icu4c/include
 
 pvp-bounds: both
